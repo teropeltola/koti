@@ -193,12 +193,12 @@ class RpcUdp {
     this.dstAddr,
     this.listenPort,
   });
-  late final void dstAddr;
-  late final void listenPort;
+  late final String? dstAddr;
+  late final String? listenPort;
 
   RpcUdp.fromJson(Map<String, dynamic> json){
-    dstAddr = null;
-    listenPort = null;
+    dstAddr = '';
+    listenPort = '';
   }
 
   Map<String, dynamic> toJson() {

@@ -1,3 +1,5 @@
+import 'package:http/http.dart' as http;
+
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
@@ -82,11 +84,11 @@ class _MyHomePageState extends State<MyHomePage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                const url = oumanUrl;
-                final data1 = await loginOuman(url);
-                final data2 = await scrapeHtmlContent(url);
+                OumanDevice ouman = OumanDevice();
+                final data0 = await ouman.login();
+                final data2 = await ouman.getData();
                 setState(() {
-                  scrapedData = data2;
+                  scrapedData = '';
                 });
               },
               child: const Text('Scrape HTML Page'),

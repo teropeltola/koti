@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 
-import '../look_and_feel.dart';
+import '../../../look_and_feel.dart';
 
 class FunctionalityView {
 
-  FunctionalityView(dynamic myFunctionality);
+  dynamic myFunctionality;
+
+  FunctionalityView(this.myFunctionality);
 
   ButtonStyle buttonStyle (Color backgroundColor, Color foregroundColor) {
     return   ElevatedButton.styleFrom(

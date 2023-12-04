@@ -24,12 +24,11 @@ Future <bool> getPermissions() async {
 
 bool runningInSimulator = false;
 
-ShellyScan shellyScan = ShellyScan();
-
 Estates myEstates = Estates();
 
 ConnectionStatusListener connectionStatusListener = ConnectionStatusListener(activeWifiName);
 
+/*
 Estates _testEstates() {
   String wifiName = runningInSimulator ? simulatorWifiName() : '"VK3"';
 
@@ -42,20 +41,22 @@ Estates _testEstates() {
   return e;
 }
 
+ */
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initMySettings();
   await getPermissions();
   runningInSimulator = await isSimulator();
   await connectionStatusListener.initialize();
-  shellyScan.init();
+  await shellyScan.init();
   await myElectricityPrice.init();
 
   // myEstates = _testEstates();
 
   runApp(
-    ChangeNotifierProvider<ActiveWifiName>(
-      create: (_) => activeWifiName,
+    ChangeNotifierProvider<Estate>(
+      create: (_) => myEstates.currentEstate(),
       child: const MyApp()
     )
   );
@@ -63,7 +64,6 @@ void main() async {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
@@ -92,9 +92,9 @@ class _MyHomePageState extends State<MyHomePage> {
       return _firstPage( context, () {setState(() {});});
     }
     else {
-      return Consumer<ActiveWifiName>(
-          builder: (context, myWifi, child) =>
-              EstateView(estate: myEstates.currentEstate()));
+      return Consumer<Estate>(
+          builder: (context, estate, child) =>
+              EstateView());
     }
   }
 }
@@ -107,8 +107,8 @@ Widget _firstPage(BuildContext context, Function callback) {
       body: SingleChildScrollView(
         child: Column(children: <Widget>[
           Container(
-            margin: myContainerMargin,
-            padding: myContainerPadding,
+            margin: EdgeInsets.all(5),
+            padding: EdgeInsets.all(5),
             child: const InputDecorator(
               decoration: InputDecoration(labelText: 'Tervetuloa!'),
               child: Column(children: <Widget>[

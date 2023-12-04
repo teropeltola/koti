@@ -5,6 +5,8 @@ const appName = 'himatuikku';
 
 const familyDeliminator = '/';
 
+const String celsius =  "\u2103";
+
 ThemeData myTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -118,5 +120,31 @@ Color properTextColor(Color backgroundColor) {
   return backgroundColor.computeLuminance() < 0.5
       ? Colors.white
       : Colors.black;
+}
+
+Future<bool> askUserGuidance(BuildContext context, String titleText, String contentText) async {
+  bool? doExit = await showDialog<bool>(
+    context: context,
+    builder: (BuildContext dialogContext) {
+      return AlertDialog(
+          title: Text(titleText,
+                      textScaleFactor: myAlertDialogTitleScale),
+          content: Text(contentText),
+          actions: <Widget>[
+            TextButton(
+                child: const Text('Kyllä'),
+                onPressed: () async {
+                  Navigator.pop(dialogContext, true);
+                }),
+            TextButton(
+              child: const Text('En'),
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+            )
+          ]);
+    },
+  );
+  return doExit ?? false;
 }
 

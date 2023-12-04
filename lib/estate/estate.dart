@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 
 import '../devices/device/device.dart';
 import '../devices/wlan/active_wifi_name.dart';
-import '../view/functionality_view.dart';
+import '../functionalities/functionality/functionality.dart';
+import '../functionalities/functionality/view/functionality_view.dart';
+import '../look_and_feel.dart';
 
 class Estate extends ChangeNotifier {
   String name = '';
   String id = '';
   String myWifi = '';
   List <Device> devices = [];
-  List <Device> features = [];
+  List <Functionality> features = [];
 
   List <FunctionalityView> views = [];
 
@@ -50,16 +52,27 @@ class Estate extends ChangeNotifier {
     iAmActive = isMyWifi(currentWifiName);
 
     if (oldStatus != iAmActive) {
+      log.info('$name: ${iAmActive ? 'wifi-yhteys päälle' : 'wifi yhteys katkesi'}');
       notifyListeners();
       //broadcast
     }
   }
 
   void addDevice(Device newDevice) {
+    newDevice.myEstate = this;
     devices.add(newDevice);
   }
 
-  void addFunctionality(Device newFunctionality) {
+  bool deviceExists(String deviceId) {
+    for (int i=0; i<devices.length; i++) {
+      if (devices[i].id == deviceId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  void addFunctionality(Functionality newFunctionality) {
     features.add(newFunctionality);
   }
 
@@ -83,11 +96,15 @@ class Estate extends ChangeNotifier {
   }
 }
 
+Estate noEstates = Estate();
+
 class Estates {
   List <Estate> estates = [];
   List <Estate> currentStack = [Estate()];
 
-  Estate currentEstate () => currentStack.last;
+  Estate currentEstate () => (nbrOfEstates() > 0)
+                                ? currentStack.last
+                                : noEstates;
 
   int nbrOfEstates() => estates.length;
 

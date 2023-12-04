@@ -1,4 +1,7 @@
 
+import 'dart:async';
+
+import '../../look_and_feel.dart';
 import 'json/porssisahko_fi.dart';
 
 class ElectricityPriceTable {
@@ -222,3 +225,71 @@ class ElectricityChartData {
 }
 
 ElectricityPrice myElectricityPrice = ElectricityPrice();
+
+
+const int _fetchingStartHour = 14;
+const int _fetchingStartMinutes = 15;
+const int _retryInterval = 15;
+
+class InternetInfoFetcher {
+  late int _fetchingHour;
+  late int _fetchingMinutes;
+  late int _retryInterval;
+
+  late Timer _dailyTimer;
+  late Timer _retryTimer;
+
+  InternetInfoFetcher(int hour, int minutes, int retryInterval) {
+    _fetchingHour = hour;
+    _fetchingMinutes = minutes;
+    _retryInterval = retryInterval;
+
+    _setupDailyTimer();
+  }
+
+  void _setupDailyTimer() {
+    DateTime now = DateTime.now();
+
+    int hours = 0;
+
+    // Calculate the time until the next 14:00
+    if ((now.hour > _fetchingHour) ||
+        ((now.hour == _fetchingHour) && (now.minute >= _fetchingMinutes))) {
+      hours = 24-now.hour + _fetchingHour;
+    }
+    else {
+      hours = _fetchingHour - now.hour;
+    }
+    Duration initialDelay = Duration(
+      hours: hours,
+      minutes: _fetchingMinutes-now.minute,
+      seconds: -now.second,
+    );
+
+    // Schedule the daily task at given time
+    _dailyTimer = Timer(initialDelay, () {
+      _fetchInformation();
+      _setupRetryTimer();
+    });
+  }
+
+  void _setupRetryTimer() {
+    // Retry every set interval
+    _retryTimer = Timer.periodic(Duration(minutes: 15), (timer) {
+      _fetchInformation();
+      _setupRetryTimer();
+    });
+  }
+
+  Future<void> _fetchInformation() async {
+    // Implement your logic to fetch information from the internet
+    // This could involve using HTTP requests, Dio, or any other networking library
+
+    // For example, you might use the http package
+    // import 'package:http/http.dart' as http;
+    // http.get('your_api_endpoint');
+
+    // Replace the above with your actual implementation
+    log.info('fetching information fr');
+  }
+}

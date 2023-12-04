@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:koti/look_and_feel.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
-import '../../../view/functionality_view.dart';
+import '../../../functionalities/functionality/view/functionality_view.dart';
 import '../electricity_price.dart';
 
 class ElectricityPriceView extends StatefulWidget {
@@ -218,9 +218,10 @@ class ElectricityGridBlock extends FunctionalityView {
     return ElevatedButton(
       style: buttonStyle(backgroundColor, foregroundColor),
       onPressed: () async {
-          if (!myElectricityPrice.isInitialized()) {
+          // if (!myElectricityPrice.isInitialized()) {
+        // todo: sähkön hinta pitää hakea säännöllisesti joka päivä
             await myElectricityPrice.init();
-          }
+          //}
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
               return const ElectricityPriceView();

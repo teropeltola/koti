@@ -8,9 +8,9 @@ class ShellyScan {
   List <List<String>> response = [];
   BonsoirDiscoveryModel bonsoirDiscoveryModel = BonsoirDiscoveryModel();
 
-  void init() async {
+  Future<void> init() async {
     bonsoirDiscoveryModel.init(shellyBonsoirService);
-    bonsoirDiscoveryModel.start();
+    await bonsoirDiscoveryModel.start();
   }
 
   List<String> listPossibleServices() {
@@ -25,7 +25,12 @@ class ShellyScan {
     return serviceNames;
   }
   
-  BonsoirService resolveService(String serviceName) {
+  ResolvedBonsoirService resolveServiceData(String serviceName) {
+    dynamic dyn = _getServiceData(serviceName);
+    return dyn as ResolvedBonsoirService;
+  }
+
+  BonsoirService _getServiceData(serviceName) {
     BonsoirService? bs = bonsoirDiscoveryModel.getServiceData(serviceName);
     if (bs == null) {
       return const BonsoirService(name:'',type: '', port: 0, attributes: {});
@@ -37,4 +42,8 @@ class ShellyScan {
     return true;
   }
 }
+
+ShellyScan shellyScan = ShellyScan();
+
+
 

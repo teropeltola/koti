@@ -6,7 +6,7 @@ import 'package:talker_flutter/talker_flutter.dart';
 import '../look_and_feel.dart';
 
 TalkerScreenTheme _myTalkerScreenTheme = const TalkerScreenTheme(
-  backgroundColor: myPrimaryColor,
+  backgroundColor: Colors.white,
   textColor: Colors.blue,
   cardColor: Colors.white
 );
@@ -52,14 +52,14 @@ class _MyTalkerViewState extends State<MyTalkerView> {
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         primarySwatch: Colors.blue,
-        scaffoldBackgroundColor: Colors.grey[100],
+        scaffoldBackgroundColor: Colors.white,
       ),
       home: Builder(builder: (context) {
         return Scaffold(
           body: TalkerScreen(
               talker: widget.talker,
               theme: _myTalkerScreenTheme,
-              appBarTitle: 'lokit',
+              appBarTitle: 'loki',
           ),
         );
       }),

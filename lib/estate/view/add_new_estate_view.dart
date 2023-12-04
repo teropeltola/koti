@@ -1,9 +1,17 @@
+import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
-import 'package:koti/devices/plain_switch_functionality/view/plain_switch_functionality_view.dart';
+import 'package:koti/devices/ouman/ouman_device.dart';
 import 'package:koti/devices/wlan/active_wifi_name.dart';
 import 'package:provider/provider.dart';
 
-import '../../devices/plain_switch_functionality/plain_switch_functionality.dart';
+import '../../devices/device/view/edit_device_view.dart';
+import '../../devices/shelly/shelly.dart';
+import '../../devices/shelly/shelly_scan.dart';
+import '../../functionalities/heating_system_functionality/heating_system.dart';
+import '../../functionalities/heating_system_functionality/view/heating_system_view.dart';
+import '../../functionalities/tesla_functionality/view/tesla_functionality_view.dart';
+import '../../functionalities/weather_forecast/view/weather_forecast_view.dart';
+import '../../functionalities/weather_forecast/weather_forecast.dart';
 import '../../logic/dropdown_content.dart';
 import '../../network/electricity_price/electricity_price.dart';
 import '../../network/electricity_price/view/electricity_price_view.dart';
@@ -31,17 +39,50 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
   final FocusNode _focusNodeWifi = FocusNode();
   final myEstateNameController = TextEditingController();
   List<String> shellyServices = [];
+  List<Icon> serviceIcons = [];
 
   @override
   void initState() {
     super.initState();
-    shellyServices = shellyScan.listPossibleServices();
+
     newEstate.init('','e1',activeWifiName.activeWifiName, activeWifiBroadcaster);
+
+    OumanDevice ouman = OumanDevice();
+    ouman.fetchInformation();
+
+    newEstate.addDevice(ouman);
     newEstate.addView(ElectricityGridBlock(myElectricityPrice));
+    WeatherForecast myForecast = WeatherForecast();
+    myForecast.init(ouman.outsideTemperature);
+
+    newEstate.addView(WeatherForecastView(myForecast));
+    newEstate.addView(TeslaFunctionalityView(myElectricityPrice));
+
+    HeatingSystem heatingSystem = HeatingSystem();
+    heatingSystem.init(ouman);
+    newEstate.addView(HeatingSystemView(heatingSystem));
+
+    refresh();
   }
 
+  List<Icon> getServiceIcons(List<String> services) {
+    List<Icon> icons = [];
+    for (int i=0; i<services.length; i++) {
+      if (newEstate.deviceExists(services[i])) {
+        icons.add(const Icon(Icons.check,
+            color: Colors.green, size: 40));
+      }
+      else {
+        icons.add(const Icon(
+            Icons.add_home_work,
+            color: Colors.black, size: 40));
+      }
+    }
+    return icons;
+  }
   void refresh() {
-
+    shellyServices = shellyScan.listPossibleServices();
+    serviceIcons = getServiceIcons(shellyServices);
   }
 
   @override
@@ -53,8 +94,8 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ActiveWifiName>(
-      builder: (context, myActiveWifi, childNotUsed) {
+    return Consumer<Estate>(
+      builder: (context, estate, childNotUsed) {
         return Scaffold(
           appBar: AppBar(
             leading: IconButton(
@@ -62,31 +103,10 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                 tooltip: 'Palaa takaisin lisäämättä uutta asuntoa',
                 onPressed: () async {
                   // check if the user wants to cancel all the changes
-                  bool? doExit = await showDialog<bool>(
-                    context: context,
-                    builder: (BuildContext dialogContext) {
-                      return AlertDialog(
-                          title: const Text(
-                              'Poistuttaessa uusi asunto ei säily.',
-                              textScaleFactor: myAlertDialogTitleScale),
-                          content:
-                          const Text('Haluatko poistua lisäyssivulta ?'),
-                          actions: <Widget>[
-                            TextButton(
-                                child: const Text('Kyllä'),
-                                onPressed: () async {
-                                  Navigator.pop(dialogContext, true);
-                                }),
-                            TextButton(
-                              child: const Text('En'),
-                              onPressed: () {
-                                Navigator.pop(dialogContext, false);
-                              },
-                            )
-                          ]);
-                    },
-                  );
-                  doExit ??= false;
+                  bool doExit = await askUserGuidance(context,
+                      'Poistuttaessa uusi kohde ei säily.',
+                      'Haluatko poistua lisäyssivulta ?'
+                      );
                   if (doExit) {
                     Navigator.of(context).pop();
                   }
@@ -126,7 +146,7 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                           hintText: 'oletusarvona on nykyinen wifi',
                         ),
                         focusNode: _focusNodeWifi,
-                        initialValue: myActiveWifi.activeWifiName,
+                        initialValue: activeWifiName.activeWifiName,
                         autofocus: false,
                         textInputAction: TextInputAction.done,
                         maxLines: 1,
@@ -226,14 +246,24 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                                       child: ListTile(
                                         title: Text(shellyServices[index]),
                                         trailing: IconButton(
-                                          icon: const Icon(Icons.add_home_work,
-                                                  color: Colors.black, size: 40),
-                                              tooltip: 'Lisää asunnon laitteisiin',
-                                              onPressed: () async {
-                                                //newEstate.addDevice
-                                                //todo: lisää systeemiin
-                                                refresh();
-                                                setState(() {});
+                                          icon: serviceIcons[index],
+                                          tooltip: 'Lisää asunnon laitteisiin',
+                                          onPressed: () async {
+                                            if (! newEstate.deviceExists(shellyServices[index])) {
+                                              ResolvedBonsoirService bSData = shellyScan.resolveServiceData(shellyServices[index]);
+                                              if (bSData.name != '') {
+                                                ShellyDevice newDevice = ShellyDevice();
+                                                newDevice.initFromScan(bSData);
+                                                await Navigator.push(context, MaterialPageRoute(
+                                                  builder: (context) {
+                                                    return EditDeviceView(estate:newEstate, device: newDevice);
+                                                  },
+                                                ));
+                                              }
+                                            }
+
+                                            refresh();
+                                            setState(() {});
                                               })
                                       )
                                   )
@@ -259,12 +289,6 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                                 onPressed: () async {
                                   myEstates.addEstate(newEstate);
                                   myEstates.pushCurrent(newEstate);
-                                  //////////////
-                                  PlainSwitchFunctionality p = PlainSwitchFunctionality();
-                                  p.name = 'Valot';
-                                  newEstate.addFunctionality(p);
-                                  newEstate.addView(PlainSwitchFunctionalityView(p));
-                                  //////////////
                                   showSnackbarMessage('kohde lisätty!');
                                   Navigator.pop(context, true);
                                 },

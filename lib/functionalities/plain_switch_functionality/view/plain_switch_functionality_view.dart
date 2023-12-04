@@ -1,7 +1,7 @@
 
 import 'package:flutter/material.dart';
 
-import '../../../view/functionality_view.dart';
+import '../../functionality/view/functionality_view.dart';
 import '../plain_switch_functionality.dart';
 
 class PlainSwitchFunctionalityView extends FunctionalityView {
@@ -30,7 +30,7 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
           Text(
-          mySwitch.name,
+          mySwitch.device.name,
           style: const TextStyle(
           fontSize: 12)),
           Icon(

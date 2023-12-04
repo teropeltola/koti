@@ -4,9 +4,11 @@ import 'dart:async';
 
 import 'package:flutter/cupertino.dart';
 
+import '../../look_and_feel.dart';
+
 class ActiveWifiName extends ChangeNotifier{
 
-  var _activeWifiName= '';
+  var _activeWifiName = '';
   final _controller = StreamController<String>();
 
 
@@ -16,6 +18,12 @@ class ActiveWifiName extends ChangeNotifier{
 
   void changeWifiName(String newName) {
     _activeWifiName = newName;
+    if (newName.isEmpty) {
+      log.info('Ei wifi-yhteyttä');
+    }
+    else {
+      log.info('Aktiivinen wifi: $_activeWifiName');
+    }
     notifyListeners();
     _controller.sink.add(newName);
   }

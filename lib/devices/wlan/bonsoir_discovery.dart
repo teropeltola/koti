@@ -67,6 +67,7 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
     if (event.type == BonsoirDiscoveryEventType.discoveryServiceFound) {
       _services[service.name] = service;
       _servicesResolver[service.name] = () => _resolveService(service);
+      _resolveService(service);
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceResolved) {
       _services[service.name] = service;
       _servicesResolver.remove(service.name);

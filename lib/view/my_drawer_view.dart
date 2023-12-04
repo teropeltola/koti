@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:koti/devices/shelly/shelly_script_code.dart';
 
 import '../devices/ouman/view/ouman_view.dart';
 import '../devices/shelly/shelly.dart';
+import '../devices/shelly/shelly_code_editor_view.dart';
+import '../devices/shelly/shelly_script_analysis.dart';
 import '../devices/wlan/find_devices.dart';
 import '../estate/view/add_new_estate_view.dart';
 import '../look_and_feel.dart';
@@ -60,21 +63,6 @@ Drawer myDrawerView( BuildContext context,
           },
         ),
         ListTile(
-          leading: const Icon(Icons.gas_meter,
-              color: myPrimaryColor, size: 40),
-          title: const Text('Ouman'),
-          onTap: () async {
-            await Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return  const MyOumanApp();
-              },
-            ));
-            callback();
-            if (!context.mounted) return;
-            Navigator.pop(context);
-          },
-        ),
-        ListTile(
           leading: const Icon(Icons.network_check,
               color: myPrimaryColor, size: 40),
           title: const Text('Scan'),
@@ -115,6 +103,48 @@ Drawer myDrawerView( BuildContext context,
             Navigator.pop(context);
           },
         ),
+        ListTile(
+          leading: const Icon(Icons.code,
+              color: myPrimaryColor, size: 40),
+          title: const Text('Shelly koodi testejä'),
+          onTap: () async {
+            ShellyScriptAnalysis s = ShellyScriptAnalysis();
+            await s.test1();
+          }
+        ),
+        ListTile(
+            leading: const Icon(Icons.code,
+                color: myPrimaryColor, size: 40),
+            title: const Text('Shelly uusi koodi'),
+            onTap: () async {
+              ShellyScriptAnalysis s = ShellyScriptAnalysis();
+              ShellyScriptCode code = ShellyScriptCode();
+              await Navigator.push(context, MaterialPageRoute(
+                builder: (context) {
+                  return editCode(context, code, (){} );
+                },
+              ));
+              //code.modify();
+              code.modifiedCode = code.originalCode;
+              await s.test2(code);
+            }
+        ),
+        ListTile(
+          leading: const Icon(Icons.gas_meter,
+              color: myPrimaryColor, size: 40),
+          title: const Text('Ouman'),
+          onTap: () async {
+            await Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return  const MyOumanApp();
+              },
+            ));
+            callback();
+            if (!context.mounted) return;
+            Navigator.pop(context);
+          },
+        ),
+
       ],
     ),
   );
