@@ -1,20 +1,15 @@
-import'dart:async';
+
 import 'dart:convert';
-import 'package:http/http.dart' as http;
 
-import '../../../look_and_feel.dart';
-
-const String _latestPricesCommand = 'https://api.porssisahko.net/v1/latest-prices.json';
-
-class PorssisahkoFi {
+class PorssisahkoData {
 
   late List<Price> prices = [];
 
-  PorssisahkoFi({
+  PorssisahkoData({
     required this.prices,
   });
 
-  PorssisahkoFi.fromJson(Map<String, dynamic> json){
+  PorssisahkoData.fromJson(Map<String, dynamic> json){
     prices = List.from(json['prices']).map((e)=>Price.fromJson(e)).toList();
     prices.sort((a, b) => a.startDate.compareTo(b.startDate));
   }
@@ -29,10 +24,19 @@ class PorssisahkoFi {
     return prices.isEmpty;
   }
 
-  PorssisahkoFi copyWith({
+  DateTime startingTime() {
+    if (prices.isEmpty) {
+      return DateTime(0);
+    }
+    else {
+      return prices[0].startDate;
+    }
+  }
+
+  PorssisahkoData copyWith({
     List<Price>? prices,
   }) =>
-      PorssisahkoFi(
+      PorssisahkoData(
         prices: prices ?? this.prices,
       );
 }
@@ -89,21 +93,3 @@ class Price {
 
 }
 
-Future <PorssisahkoFi> readPorssisahkoParameters() async {
-  try {
-    final response = await http.get(Uri.parse(_latestPricesCommand));
-    if (response.statusCode == 200) {
-      String responseString = response.body.toString();
-      PorssisahkoFi prices = PorssisahkoFi.fromJson(
-          json.decode(responseString));
-
-      return prices;
-    }
-    log.log('error ${response.statusCode} in Pörssisähkö parameter reading');
-    return PorssisahkoFi(prices: []);
-  }
-  catch (e, st) {
-    log.handle(e, st, 'exception in Pörssisähkö parameter reading');
-    return PorssisahkoFi(prices: []);
-  }
-}

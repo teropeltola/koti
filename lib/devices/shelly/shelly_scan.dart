@@ -33,7 +33,7 @@ class ShellyScan {
   BonsoirService _getServiceData(serviceName) {
     BonsoirService? bs = bonsoirDiscoveryModel.getServiceData(serviceName);
     if (bs == null) {
-      return const BonsoirService(name:'',type: '', port: 0, attributes: {});
+      return const ResolvedBonsoirService(name:'',type: '', port: 0, ip: '', attributes: {});
     }
     return bs;
   }

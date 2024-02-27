@@ -152,7 +152,7 @@ class ShellyDevice extends Device {
     newDevice.name = name;
     newDevice.id = id;
     newDevice.state = state;
-    newDevice.functionality = functionality;
+    connectedFunctionalities.forEach((e){newDevice.connectedFunctionalities.add(e);});
     newDevice.ipAddress = ipAddress;
     newDevice.errorClarification = errorClarification;
     newDevice.port = port;

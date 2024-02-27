@@ -23,7 +23,7 @@ class _HeatingOverviewState extends State<HeatingOverview> {
   void initState() {
     super.initState();
 
-    myOuman = widget.heatingSystem.myOuman;
+    myOuman = widget.heatingSystem.myOuman();
 
     refresh();
   }
@@ -52,23 +52,43 @@ class _HeatingOverviewState extends State<HeatingOverview> {
                 //alignment: AlignmentDirectional.topStart,
                 child: InputDecorator(
                   decoration: const InputDecoration(labelText: 'Ouman EH-800 lämmönsäädin'), //k
-                  child: Row(children:<Widget> [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  child: myOuman.noData()
+                      ? Text('Oumanin tietoa ei ole vielä vastaanotettu')
+                   : Row(children:<Widget> [
+                    Expanded(
+                      flex: 3,
+                      child: Icon(
+                        Icons.water_damage,
+                        size: 60,
+                        color: observationSymbolColor(myOuman.observationLevel()),
+                      ),
+                    ),
+                  Expanded(
+                      flex: 6,
+                      child:
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                                   Text('Ulkolämpötila:'),
                                   Text('Veden lämpötila: '),
                                   Text('Haluttu veden lämpötila: '),
                                   Text('Venttiilin asento:'),
+                                  Text('Aikaleima:')
                         ]),
-                    Column(
+                  ),
+                  Expanded(
+                      flex: 2,
+                      child:
+                      Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
                           Text('${myOuman.outsideTemperature().toStringAsFixed(1)} $celsius'),
-                        Text('${myOuman.measuredWaterTemperature().toStringAsFixed(1)} $celsius'),
-                        Text('${myOuman.requestedWaterTemperature().toStringAsFixed(1)} $celsius'),
-                        Text(' ${myOuman.valve().toStringAsFixed(0)} %'),
+                          Text('${myOuman.measuredWaterTemperature().toStringAsFixed(1)} $celsius'),
+                          Text('${myOuman.requestedWaterTemperature().toStringAsFixed(1)} $celsius'),
+                          Text(' ${myOuman.valve().toStringAsFixed(0)} %'),
+                          Text(' ${myOuman.fetchingTime().hour.toString().padLeft(2,'0')}:${myOuman.fetchingTime().minute.toString().padLeft(2,'0')}'),
                         ])
+                  )
                   ]),
                 ),
               ),

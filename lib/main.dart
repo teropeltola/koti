@@ -10,8 +10,8 @@ import 'devices/shelly/shelly_scan.dart';
 import 'devices/wlan/active_wifi_name.dart';
 import 'estate/estate.dart';
 import 'estate/view/estate_view.dart';
+import 'functionalities/electricity_price/electricity_price.dart';
 import 'look_and_feel.dart';
-import 'network/electricity_price/electricity_price.dart';
 
 Future <bool> getPermissions() async {
 
@@ -28,21 +28,6 @@ Estates myEstates = Estates();
 
 ConnectionStatusListener connectionStatusListener = ConnectionStatusListener(activeWifiName);
 
-/*
-Estates _testEstates() {
-  String wifiName = runningInSimulator ? simulatorWifiName() : '"VK3"';
-
-  Estates e = Estates();
-
-  Estate home = Estate();
-  home.init('koti','e001', wifiName, activeWifiBroadcaster);
-  e.addEstate(home);
-
-  return e;
-}
-
- */
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initMySettings();
@@ -50,9 +35,7 @@ void main() async {
   runningInSimulator = await isSimulator();
   await connectionStatusListener.initialize();
   await shellyScan.init();
-  await myElectricityPrice.init();
-
-  // myEstates = _testEstates();
+  await myEstates.init();
 
   runApp(
     ChangeNotifierProvider<Estate>(
@@ -94,7 +77,7 @@ class _MyHomePageState extends State<MyHomePage> {
     else {
       return Consumer<Estate>(
           builder: (context, estate, child) =>
-              EstateView());
+              EstateView(callback: () {setState(() {});}));
     }
   }
 }

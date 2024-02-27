@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/shelly/shelly_script_code.dart';
+import 'package:koti/main.dart';
 
 import '../devices/ouman/view/ouman_view.dart';
 import '../devices/shelly/shelly.dart';
@@ -7,9 +8,10 @@ import '../devices/shelly/shelly_code_editor_view.dart';
 import '../devices/shelly/shelly_script_analysis.dart';
 import '../devices/wlan/find_devices.dart';
 import '../estate/view/add_new_estate_view.dart';
+import '../functionalities/electricity_price/electricity_price.dart';
+import '../functionalities/electricity_price/view/electricity_price_view.dart';
+import '../functionalities/functionality/functionality.dart';
 import '../look_and_feel.dart';
-import '../network/electricity_price/electricity_price.dart';
-import '../network/electricity_price/view/electricity_price_view.dart';
 import 'my_talker_view.dart';
 
 Drawer myDrawerView( BuildContext context,
@@ -44,6 +46,7 @@ Drawer myDrawerView( BuildContext context,
             Navigator.pop(context);
           },
         ),
+/*
         ListTile(
           leading: const Icon(Icons.electrical_services,
               color: myPrimaryColor, size: 40),
@@ -62,6 +65,8 @@ Drawer myDrawerView( BuildContext context,
             Navigator.pop(context);
           },
         ),
+
+ */
         ListTile(
           leading: const Icon(Icons.network_check,
               color: myPrimaryColor, size: 40),
@@ -142,6 +147,21 @@ Drawer myDrawerView( BuildContext context,
             callback();
             if (!context.mounted) return;
             Navigator.pop(context);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.restart_alt,
+              color: Colors.red, size: 40),
+          title: const Text('Aloita alusta'),
+          onTap: () async {
+            bool ok = await askUserGuidance(context, 'Tämä komento tuhoaa kaikki syötetyt tiedot', 'Oletko varma?');
+            if (ok) {
+              await myEstates.resetAll();
+              allFunctionalities.clear();
+              Navigator.pop(context);
+            }
+            callback();
+            if (!context.mounted) return;
           },
         ),
 

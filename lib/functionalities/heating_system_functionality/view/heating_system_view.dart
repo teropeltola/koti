@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../devices/ouman/ouman_device.dart';
+import '../../../logic/observation.dart';
 import '../../../look_and_feel.dart';
 
+import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import 'heating_overview.dart';
 import '../heating_system.dart';
@@ -14,16 +16,24 @@ class HeatingSystemView extends FunctionalityView {
   HeatingSystemView(dynamic myFunctionality) : super(myFunctionality) {
   }
 
+  ButtonStyle myButtonStyle() {
+    ObservationLevel observationLevel = (myFunctionality as HeatingSystem).myOuman().observationLevel();
+    return (observationLevel == ObservationLevel.alarm) ? buttonStyle(Colors.red, Colors.white) :
+    (observationLevel == ObservationLevel.warning) ? buttonStyle(Colors.yellow, Colors.white) :
+    buttonStyle(Colors.green, Colors.white);
+  }
+
   @override
   Widget gridBlock(BuildContext context, Function callback) {
 
     return ElevatedButton(
-        style:buttonStyle(Colors.red, Colors.white),
+        style:myButtonStyle(),
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              HeatingSystem heatingSystem = myFunctionality as HeatingSystem;
-              return HeatingOverview(heatingSystem:heatingSystem);
+              //HeatingSystem heatingSystem = myFunctionality as HeatingSystem;
+              //return HeatingOverview(heatingSystem:heatingSystem);
+              return HeatingOverview(heatingSystem:myFunctionality);
             },
           ));
           callback();
@@ -46,6 +56,20 @@ class HeatingSystemView extends FunctionalityView {
             ])
     );
   }
+
+/*
+  @override
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    return json;
+  }
+*/
+
+  HeatingSystemView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+    //super.fromJson(json);
+    myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '') as HeatingSystem;
+  }
+
 }
 
 const String networkServiceProblemInfo = 'Emme saa yhteyttä säätietoihin, joten tätä palvelua ei voi käyttää.';

@@ -1,8 +1,9 @@
 
 import 'dart:async';
 
-import '../../look_and_feel.dart';
-import 'json/porssisahko_fi.dart';
+import '../../devices/porssisahko/porssisahko.dart';
+import '../../functionalities/functionality/functionality.dart';
+import '../../devices/porssisahko/json/porssisahko_data.dart';
 
 class ElectricityPriceTable {
   DateTime startingTime = DateTime(0);
@@ -122,39 +123,140 @@ class ElectricityPriceTable {
 
 enum PriceChange {decline, flat, increase}
 
+enum TariffType {constant, spot}
+
+enum DistributionTariffType {timeOfDay, constant}
+
 const vatMultiplier = 1.24;
 
-class FortumTariff {
-  final addOnMargin = 0.4;
+class ElectricityTariff {
+  String _name = '';
+  TariffType _tariffType = TariffType.spot;
+  double _parameterValue = 0.0;
+
+  ElectricityTariff();
+
+  void setValue (String newName, TariffType newType, double newParameter) {
+    _name = newName;
+    _tariffType = newType;
+    _parameterValue = newParameter;
+  }
 
   double price(double stockPrice) {
-    return stockPrice+addOnMargin;
+
+    if (_tariffType == TariffType.spot) {
+      return stockPrice  + _parameterValue;
+    }
+    else {
+      return _parameterValue;
+    }
   }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    json['name'] = _name;
+    json['type'] = _tariffType == TariffType.spot ? 'spot' : 'const';
+    json['par'] = _parameterValue;
+    return json;
+  }
+
+  ElectricityTariff.fromJson(Map<String, dynamic> json) {
+    _name = json['name'] ?? '';
+    _tariffType = (json['type'] == 'spot' ? TariffType.spot : TariffType.constant);
+    _parameterValue = json['par'];
+  }
+
 }
 
-class TransferCost {
-  final dayTimeStartingHour = 7;
-  final dayTimeEndingHour = 21;
-  final dayTransferTariff = 2.59;
-  final nightTransferTariff = 1.35;
-  final electricityTax = 2.79372;
+class ElectricityDistributionPrice {
+  String _name = '';
+  DistributionTariffType _type = DistributionTariffType.timeOfDay;
+  int _dayTimeStartingHour = 0;
+  int _dayTimeEndingHour = 0;
+  double _dayTransferTariff = 0.0;
+  double _nightTransferTariff = 0.0;
+  double _electricityTax = 0.0;
+
+  ElectricityDistributionPrice();
+
+  void setTimeOfDayParameters(String newName,
+                              int dayTimeStarting,
+                              int dayTimeEnding,
+                              double dayTariff,
+                              double nightTariff,
+                              double electricityTax) {
+    _name = newName;
+    _type = DistributionTariffType.timeOfDay;
+    _dayTimeStartingHour = dayTimeStarting;
+    _dayTimeEndingHour = dayTimeEnding;
+    _dayTransferTariff = dayTariff;
+    _nightTransferTariff = nightTariff;
+    _electricityTax = electricityTax;
+  }
+
+  void setConstantParameters(String newName, double tariff, double electricityTax) {
+    _name = newName;
+    _type = DistributionTariffType.constant;
+    _dayTransferTariff = tariff;
+    _electricityTax = electricityTax;
+  }
+
+  bool constantTariff() {
+    return _type == TariffType.constant;
+  }
 
   bool dayTime(int originalHour) {
     int hour = originalHour % 24;
-    return ((hour >= dayTimeStartingHour) && (hour <= dayTimeEndingHour));
+    return ((hour >= _dayTimeStartingHour) && (hour < _dayTimeEndingHour));
   }
+
   double currentTransferTariff(int hour) {
-    return (dayTime(hour) ? dayTransferTariff : nightTransferTariff );
+    if (constantTariff()) {
+      return _dayTransferTariff;
+    }
+    else {
+      return (dayTime(hour) ? _dayTransferTariff : _nightTransferTariff);
+    }
   }
+
   double price(int hour) {
-    return currentTransferTariff(hour) + electricityTax;
+    return currentTransferTariff(hour) + _electricityTax;
   }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    json['name'] = _name;
+    json['type'] = _type == DistributionTariffType.timeOfDay ? 'timeOfDay' : 'const';
+    json['dayTimeStarting'] = _dayTimeStartingHour;
+    json['dayTimeEnding'] = _dayTimeEndingHour;
+    json['dayTariff'] = _dayTransferTariff;
+    json['nightTariff'] = _nightTransferTariff;
+    json['electricityTax'] = _electricityTax;
+    return json;
+  }
+
+  ElectricityDistributionPrice.fromJson(Map<String, dynamic> json) {
+    _name = json['name'] ?? '';
+    _type = (json['type'] == 'timeOfDay' ? DistributionTariffType.timeOfDay : DistributionTariffType.constant);
+    _dayTimeStartingHour = json['dayTimeStarting'];
+    _dayTimeEndingHour = json['dayTimeEnding'];
+    _dayTransferTariff = json['dayTariff'];
+    _nightTransferTariff = json['nightTariff'];
+    _electricityTax = json['electricityTax'];
+  }
+
 }
 
-class ElectricityPrice {
+class ElectricityPrice extends Functionality {
 
   DateTime loadingTime = DateTime(0);
   ElectricityPriceTable data = ElectricityPriceTable();
+  ElectricityTariff tariff = ElectricityTariff();
+  ElectricityDistributionPrice distributionPrice = ElectricityDistributionPrice();
+
+  ElectricityPrice() {
+    allFunctionalities.addFunctionality(this);
+  }
 
   bool isInitialized() {
     return loadingTime.year != 0;
@@ -162,23 +264,18 @@ class ElectricityPrice {
 
   Future <void> init() async {
 
-    PorssisahkoFi stockElectricityPrice = PorssisahkoFi(prices: []);
-
-    stockElectricityPrice = await readPorssisahkoParameters();
-
-    if (stockElectricityPrice.isEmpty()) {
-      return;
-    }
+    PorssisahkoData stockElectricityPrice = (device as Porssisahko).data;
 
     loadingTime = DateTime.now();
 
+    // todo: check if stockEle data is empty
     data.startingTime = data.crop(stockElectricityPrice.prices[0].startDate);
     data.slotPrices.clear();
 
     for (int i=0; i<stockElectricityPrice.prices.length; i++) {
       data.slotPrices.add(
-          FortumTariff().price(stockElectricityPrice.prices[i].price)+
-              TransferCost().price(data.startingTime.hour+i));
+          tariff.price(stockElectricityPrice.prices[i].price)+
+              distributionPrice.price(data.startingTime.hour+i));
     }
   }
 
@@ -202,6 +299,20 @@ class ElectricityPrice {
   double currentPrice() {
     return data.currentPrice();
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    json['electricityTariff'] = tariff.toJson();
+    json['distributionTariff'] = distributionPrice.toJson();
+    return json;
+  }
+
+  @override
+  ElectricityPrice.fromJson(Map<String, dynamic> json)  : super.fromJson(json) {
+    tariff = ElectricityTariff.fromJson(json['electricityTariff']);
+    distributionPrice = ElectricityDistributionPrice.fromJson(json['distributionTariff']);
+  }
 }
 
 const double notAvailablePrice = 999999.0;
@@ -224,72 +335,5 @@ class ElectricityChartData {
   double yAxisMin = 0.0;
 }
 
-ElectricityPrice myElectricityPrice = ElectricityPrice();
 
 
-const int _fetchingStartHour = 14;
-const int _fetchingStartMinutes = 15;
-const int _retryInterval = 15;
-
-class InternetInfoFetcher {
-  late int _fetchingHour;
-  late int _fetchingMinutes;
-  late int _retryInterval;
-
-  late Timer _dailyTimer;
-  late Timer _retryTimer;
-
-  InternetInfoFetcher(int hour, int minutes, int retryInterval) {
-    _fetchingHour = hour;
-    _fetchingMinutes = minutes;
-    _retryInterval = retryInterval;
-
-    _setupDailyTimer();
-  }
-
-  void _setupDailyTimer() {
-    DateTime now = DateTime.now();
-
-    int hours = 0;
-
-    // Calculate the time until the next 14:00
-    if ((now.hour > _fetchingHour) ||
-        ((now.hour == _fetchingHour) && (now.minute >= _fetchingMinutes))) {
-      hours = 24-now.hour + _fetchingHour;
-    }
-    else {
-      hours = _fetchingHour - now.hour;
-    }
-    Duration initialDelay = Duration(
-      hours: hours,
-      minutes: _fetchingMinutes-now.minute,
-      seconds: -now.second,
-    );
-
-    // Schedule the daily task at given time
-    _dailyTimer = Timer(initialDelay, () {
-      _fetchInformation();
-      _setupRetryTimer();
-    });
-  }
-
-  void _setupRetryTimer() {
-    // Retry every set interval
-    _retryTimer = Timer.periodic(Duration(minutes: 15), (timer) {
-      _fetchInformation();
-      _setupRetryTimer();
-    });
-  }
-
-  Future<void> _fetchInformation() async {
-    // Implement your logic to fetch information from the internet
-    // This could involve using HTTP requests, Dio, or any other networking library
-
-    // For example, you might use the http package
-    // import 'package:http/http.dart' as http;
-    // http.get('your_api_endpoint');
-
-    // Replace the above with your actual implementation
-    log.info('fetching information fr');
-  }
-}

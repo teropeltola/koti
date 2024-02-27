@@ -6,18 +6,20 @@ import '../functionality/view/functionality_view.dart';
 
 class WeatherForecast extends Functionality {
 
+
+  late Function _getCurrentTemperatureFunction = _noTemperature;
+
   WeatherForecast() {
-    _getCurrentTemperatureFunction = _noTemperature;
+    allFunctionalities.addFunctionality(this);
   }
 
-  late Function _getCurrentTemperatureFunction;
-
-  String _noTemperature() {
-    return '-';
+  double _noTemperature() {
+    return -99.9;
   }
 
-  void init (Function getCurrentTemperature) async {
-    _getCurrentTemperatureFunction = getCurrentTemperature;
+  @override
+  Future<void> init () async {
+    _getCurrentTemperatureFunction = device.temperatureFunction;
   }
 
   String currentTemperature() {
@@ -28,5 +30,16 @@ class WeatherForecast extends Functionality {
   FunctionalityView myView() {
     return WeatherForecastView(this);
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    return json;
+  }
+
+  @override
+  WeatherForecast.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+  }
+
 
 }

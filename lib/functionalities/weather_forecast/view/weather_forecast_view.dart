@@ -4,6 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../look_and_feel.dart';
 
+import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../weather_forecast.dart';
 
@@ -14,11 +15,16 @@ class WeatherForecastView extends FunctionalityView {
     myForecast = myFunctionality as WeatherForecast;
   }
 
+  WeatherForecastView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+    super.fromJson(json);
+    myForecast = myFunctionality as WeatherForecast;
+  }
+
   @override
   Widget gridBlock(BuildContext context, Function callback) {
 
     return ElevatedButton(
-        style:buttonStyle(Colors.lightGreen, Colors.white),
+        style:buttonStyle(Colors.lightBlue, Colors.white),
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {

@@ -10,7 +10,10 @@ class PlainSwitchFunctionality extends Functionality {
   late ShellyDevice shellyDevice;
   bool _on = false;
 
-  void init () async {
+  PlainSwitchFunctionality();
+
+  @override
+  Future<void> init () async {
     shellyDevice = device as ShellyDevice;
     _on = await shellyDevice.powerOutputOn();
   }
@@ -35,5 +38,16 @@ class PlainSwitchFunctionality extends Functionality {
   FunctionalityView myView() {
     return PlainSwitchFunctionalityView(this);
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    return json;
+  }
+
+  @override
+  PlainSwitchFunctionality.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+  }
+
 
 }

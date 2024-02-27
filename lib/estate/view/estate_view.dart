@@ -8,7 +8,8 @@ import '../estate.dart';
 import '../../look_and_feel.dart';
 
 class EstateView extends StatefulWidget {
-  const EstateView({Key? key}) : super(key: key);
+  final Function callback;
+  const EstateView({Key? key, required this.callback}) : super(key: key);
 
   @override
   _EstateViewState createState() => _EstateViewState();
@@ -33,7 +34,6 @@ class _EstateViewState extends State<EstateView> {
     return allWidgets;
   }
 
-
   @override
   void dispose() {
     super.dispose();
@@ -47,11 +47,11 @@ class _EstateViewState extends State<EstateView> {
         child: Consumer<Estate>(builder: (context, estate, childNotUsed) {
           return Scaffold(
               appBar: AppBar(title: appTitle(estate.name), actions: [
-                estate.isMyWifi(activeWifiName.activeWifiName)
+                estate.myWifiIsActive
                     ? const Icon(Icons.wifi, color: Colors.green)
                     : const Icon(Icons.wifi_off, color: Colors.red)
               ]),
-              drawer: Drawer(child: myDrawerView(context, () {})),
+              drawer: Drawer(child: myDrawerView(context, () {widget.callback();})),
               body: GridView.count(
                 crossAxisCount: 3,
                 crossAxisSpacing: 10,

@@ -23,8 +23,9 @@ List<String> _functionalityDescription = [
 
 class EditDeviceView extends StatefulWidget {
   final Estate estate;
+  final Functionality functionality;
   final Device device;
-  const EditDeviceView({Key? key, required this.estate, required this.device}) : super(key: key);
+  const EditDeviceView({Key? key, required this.estate, required this.functionality,required this.device}) : super(key: key);
 
   @override
   _EditDeviceViewState createState() => _EditDeviceViewState();

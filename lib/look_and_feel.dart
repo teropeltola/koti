@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:talker/talker.dart';
 
+import 'logic/observation.dart';
+
 const appName = 'himatuikku';
 
 const familyDeliminator = '/';
@@ -146,5 +148,17 @@ Future<bool> askUserGuidance(BuildContext context, String titleText, String cont
     },
   );
   return doExit ?? false;
+}
+
+Color observationSymbolColor(ObservationLevel level) {
+  if ((level == ObservationLevel.ok) || (level == ObservationLevel.informatic)) {
+    return Colors.green;
+  }
+  else if (level == ObservationLevel.warning) {
+    return Colors.yellow;
+  }
+  else {
+    return Colors.red;
+  }
 }
 

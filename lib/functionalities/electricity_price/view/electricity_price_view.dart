@@ -4,28 +4,16 @@ import 'package:intl/intl.dart';
 import 'package:koti/look_and_feel.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
+import '../../../functionalities/functionality/functionality.dart';
 import '../../../functionalities/functionality/view/functionality_view.dart';
 import '../electricity_price.dart';
 
 class ElectricityPriceView extends StatefulWidget {
-  const ElectricityPriceView({super.key});
+  final ElectricityPrice electricityPrice;
+  const ElectricityPriceView({super.key, required this.electricityPrice});
 
   @override
   State<ElectricityPriceView> createState() => _ElectricityPriceViewState();
-}
-
-void _testFill(ElectricityPrice e) {
-  DateTime now = DateTime.now();
-  e.data.startingTime = DateTime(now.year, now.month, now.day, 1);
-
-  double fillNumber = 45.0;
-  double delta = 1.5;
-
-  for (int i=0; i<48; i++) {
-    delta = - delta * 1.01;
-    fillNumber = fillNumber * 0.7 + i / 4 + delta;
-    e.data.slotPrices.add(fillNumber);
-  }
 }
 
 class _ElectricityPriceViewState extends State<ElectricityPriceView> {
@@ -68,7 +56,7 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
   }
 
   void regenerateData()  {
-    ElectricityPriceTable prices = myElectricityPrice.get(DateTime.now());
+    ElectricityPriceTable prices = widget.electricityPrice.get(DateTime.now());
 
     electricityChartData = prices.analyse();
     barColor.init(electricityChartData.minPrice, electricityChartData.maxPrice);
@@ -129,27 +117,26 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
               )
           ),
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(5),
             child: Text('- Edullisin tunti: '
                 '${_timePeriodFormat(electricityChartData.minPriceTime, 1)} '
                 '(${electricityChartData.minPrice.toStringAsFixed(2)} c/kWh)',
                 textScaleFactor: 1.2),
           ),
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(5),
             child: Text('- Kaksituntinen: '
                 '${_timePeriodFormat(electricityChartData.min2hourPeriod,2)}'
                 ' (${electricityChartData.min2hourPeriodPrice.toStringAsFixed(2)} c/kWh)',
                 textScaleFactor: 1.2),
           ),
           Padding(
-            padding: const EdgeInsets.all(10),
+            padding: const EdgeInsets.all(5),
             child: Text('- Kolmituntinen: '
                 '${_timePeriodFormat(electricityChartData.min3hourPeriod,3)}'
                 ' (${electricityChartData.min3hourPeriodPrice.toStringAsFixed(2)} c/kWh)',
                 textScaleFactor: 1.2),
           ),
-
         ])
         )
     );
@@ -206,6 +193,11 @@ class ElectricityGridBlock extends FunctionalityView {
     myElectricityPrice = myFunctionality as ElectricityPrice;
   }
 
+  ElectricityGridBlock.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+    super.fromJson(json);
+    myElectricityPrice = myFunctionality as ElectricityPrice;
+  }
+
   @override
   Widget gridBlock(BuildContext context, Function callback) {
     PriceChange priceChange = myElectricityPrice.data.priceChange();
@@ -218,13 +210,10 @@ class ElectricityGridBlock extends FunctionalityView {
     return ElevatedButton(
       style: buttonStyle(backgroundColor, foregroundColor),
       onPressed: () async {
-          // if (!myElectricityPrice.isInitialized()) {
-        // todo: sähkön hinta pitää hakea säännöllisesti joka päivä
-            await myElectricityPrice.init();
-          //}
+
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return const ElectricityPriceView();
+              return ElectricityPriceView(electricityPrice: myElectricityPrice);
             },
           ));
           callback();

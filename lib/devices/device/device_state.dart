@@ -1,15 +1,19 @@
-part of 'device_cubit.dart';
+class DeviceState {
+  StateModel _state = StateModel.notInstalled;
 
-@immutable
-abstract class DeviceState {}
-
-class DeviceInitial extends DeviceState {
-  String name = '';
-  State state = State();
-
-  DeviceInitial();
-
-  DeviceInitial.setState(State newState) {
-    state = newState;
+  DeviceState clone() {
+    DeviceState clone = DeviceState();
+    clone.setState(_state);
+    return clone;
   }
+
+  void setState(StateModel newState) {
+    _state = newState;
+  }
+  StateModel currentState() {
+    return _state;
+  }
+
 }
+
+enum StateModel {notInstalled, notConnected, active }

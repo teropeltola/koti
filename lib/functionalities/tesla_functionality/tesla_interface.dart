@@ -3,6 +3,10 @@ import 'dart:convert';
 import 'dart:math';
 import 'package:http/http.dart' as http;
 
+/*
+Client_Id 909a0d943aec-473f-8727-4d0220f5e96c
+ClientSecret ta-secret.DJx^wcFIaL^S9L4C
+ */
 
 abstract class WebAuthService {
   final String authUrl;

@@ -1,6 +1,7 @@
 
 import 'package:flutter/material.dart';
 
+import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../plain_switch_functionality.dart';
 
@@ -11,6 +12,11 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
   PlainSwitchFunctionalityView(dynamic myFunctionality) : super(myFunctionality) {
     mySwitch = myFunctionality as PlainSwitchFunctionality;
   }
+
+  PlainSwitchFunctionalityView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+    super.fromJson(json);
+  }
+
 
   @override
   Widget gridBlock(BuildContext context, Function callback) {

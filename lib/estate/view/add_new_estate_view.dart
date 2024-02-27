@@ -1,30 +1,27 @@
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
+import 'package:koti/devices/shelly_timer_switch/shelly_timer_switch.dart';
 import 'package:koti/devices/wlan/active_wifi_name.dart';
+import 'package:koti/functionalities/functionality/functionality.dart';
+import 'package:koti/functionalities/plain_switch_functionality/plain_switch_functionality.dart';
 import 'package:provider/provider.dart';
 
+import '../../devices/device/device.dart';
 import '../../devices/device/view/edit_device_view.dart';
+import '../../devices/porssisahko/porssisahko.dart';
 import '../../devices/shelly/shelly.dart';
 import '../../devices/shelly/shelly_scan.dart';
+import '../../functionalities/electricity_price/electricity_price.dart';
+import '../../functionalities/electricity_price/view/electricity_price_view.dart';
 import '../../functionalities/heating_system_functionality/heating_system.dart';
 import '../../functionalities/heating_system_functionality/view/heating_system_view.dart';
 import '../../functionalities/tesla_functionality/view/tesla_functionality_view.dart';
 import '../../functionalities/weather_forecast/view/weather_forecast_view.dart';
 import '../../functionalities/weather_forecast/weather_forecast.dart';
-import '../../logic/dropdown_content.dart';
-import '../../network/electricity_price/electricity_price.dart';
-import '../../network/electricity_price/view/electricity_price_view.dart';
 import '../estate.dart';
 import '../../look_and_feel.dart';
 import '../../main.dart';
-import '../../view/my_dropdown_widget.dart';
-
-DropdownContent _electricityAgreement = DropdownContent(
-    ['', 'Fortum/Tarkka', 'XXX', 'YY', 'ZZZ'], 'electricity/agreement', 0);
-
-DropdownContent _electricityTransferAgreement = DropdownContent(
-    ['', 'Helen', 'XXX', 'YY', 'ZZZ'], 'electricity/transfer', 0);
 
 class AddNewEstateView extends StatefulWidget {
   const AddNewEstateView({Key? key}) : super(key: key);
@@ -38,51 +35,45 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
   final FocusNode _focusNode = FocusNode();
   final FocusNode _focusNodeWifi = FocusNode();
   final myEstateNameController = TextEditingController();
-  List<String> shellyServices = [];
-  List<Icon> serviceIcons = [];
+  _Services services = _Services();
 
   @override
   void initState() {
     super.initState();
 
-    newEstate.init('','e1',activeWifiName.activeWifiName, activeWifiBroadcaster);
+    newEstate.init('','e1',activeWifiName.activeWifiName);
 
-    OumanDevice ouman = OumanDevice();
-    ouman.fetchInformation();
-
-    newEstate.addDevice(ouman);
-    newEstate.addView(ElectricityGridBlock(myElectricityPrice));
-    WeatherForecast myForecast = WeatherForecast();
-    myForecast.init(ouman.outsideTemperature);
-
-    newEstate.addView(WeatherForecastView(myForecast));
-    newEstate.addView(TeslaFunctionalityView(myElectricityPrice));
-
-    HeatingSystem heatingSystem = HeatingSystem();
-    heatingSystem.init(ouman);
-    newEstate.addView(HeatingSystemView(heatingSystem));
+    services.init(newEstate);
+    List <String> shellyServices = shellyScan.listPossibleServices();
+    getShellyServices(shellyServices);
 
     refresh();
   }
 
-  List<Icon> getServiceIcons(List<String> services) {
-    List<Icon> icons = [];
-    for (int i=0; i<services.length; i++) {
-      if (newEstate.deviceExists(services[i])) {
-        icons.add(const Icon(Icons.check,
-            color: Colors.green, size: 40));
-      }
-      else {
-        icons.add(const Icon(
-            Icons.add_home_work,
-            color: Colors.black, size: 40));
-      }
-    }
-    return icons;
+  Icon shellyIcon(bool deviceExists) {
+  if (deviceExists) {
+    return (const Icon(Icons.check,
+                color: Colors.green, size: 40));
   }
+  else {
+    return const Icon(Icons.add_home_work,
+              color: Colors.black, size: 40);
+  }
+  }
+
+  void getShellyServices(List<String> shellyServiceNames) {
+
+    for (int i=0; i<shellyServiceNames.length; i++) {
+      services.add(
+        _ServiceItem(
+          shellyServiceNames[i],
+          newEstate.deviceExists(shellyServiceNames[i]),
+          addPlugIn));
+    }
+  }
+
+
   void refresh() {
-    shellyServices = shellyScan.listPossibleServices();
-    serviceIcons = getServiceIcons(shellyServices);
   }
 
   @override
@@ -151,7 +142,7 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                         textInputAction: TextInputAction.done,
                         maxLines: 1,
                         onChanged: (String newWifi) {
-                          newEstate.changeWifiName(newWifi);
+                          newEstate.myWifiDevice.changeWifiName(newWifi);
                           setState(() { });
                         },
                         onEditingComplete: () {
@@ -164,102 +155,30 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                   margin: myContainerMargin,
                   padding: myContainerPadding,
                   child: InputDecorator(
-                      decoration:
-                      const InputDecoration(labelText: 'Sähkön kustannus'), //k
-                      child: Column(children: <Widget>[
-                        Row(children: <Widget>[
-                          Expanded(
-                            flex: 15,
-                            child: Container(
-                              margin: myContainerMargin,
-                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
-                              child: InputDecorator(
-                                decoration:
-                                const InputDecoration(labelText: 'Sähköyhtiö'),
-                                child: SizedBox(
-                                    height: 30,
-                                    width: 120,
-                                    child: MyDropdownWidget(
-                                        dropdownContent: _electricityAgreement,
-                                        setValue: (newValue) {
-                                          _electricityAgreement
-                                              .setIndex(newValue);
-                                          setState(() {});
-                                        })),
-                              ),
-                            ),
-                          ),
-                          const Spacer(flex: 1),
-                          const Expanded(
-                              flex: 20,
-                              child: Text('Fortum/Tarkka:\n'
-                                  '- pörssisähkö + alv\n'
-                                  '- marginaali: 0.45 c/kWh')),
-                        ]),
-                        Row(children: <Widget>[
-                          Expanded(
-                            flex: 15,
-                            child: Container(
-                              margin: myContainerMargin,
-                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
-                              child: InputDecorator(
-                                decoration:
-                                const InputDecoration(labelText: 'Siirtoyhtiö'),
-                                child: SizedBox(
-                                    height: 30,
-                                    width: 120,
-                                    child: MyDropdownWidget(
-                                        dropdownContent: _electricityTransferAgreement,
-                                        setValue: (newValue) {
-                                          _electricityTransferAgreement
-                                              .setIndex(newValue);
-                                          setState(() {});
-                                        })),
-                              ),
-                            ),
-                          ),
-                          const Spacer(flex: 1),
-                          const Expanded(
-                              flex: 20,
-                              child: Text('Helen:\n'
-                                  '- sähkövero 2,79372 c/kWh\n'
-                                  '- siirto päivä(7-22): 2.59 c/kWh\n'
-                                  '- siirto yö(22-7): 1.35 c/kWh')),
-                        ]),
-                      ]))),
-              Container(
-                  margin: myContainerMargin,
-                  padding: myContainerPadding,
-                  child: InputDecorator(
                       decoration: const InputDecoration(
-                          labelText: 'Automaattisesti liitettävät laitteet'),
-                      child: newEstate.iAmActive
-                        ? shellyServices.isEmpty
-                            ? const Text('Paikallisverkossa ei ole yhtään liitettävää laitetta')
-                            : ListView.builder(
-                                scrollDirection: Axis.vertical,
-                                shrinkWrap: true,
-                                itemCount: shellyServices.length,
+                          labelText: 'Asuntoon liitettävät toiminnot'),
+                      child:
+                        ListView.builder(
+                          scrollDirection: Axis.vertical,
+                          shrinkWrap: true,
+                          itemCount: services.itemCount(),
                                   itemBuilder: (context, index) => Card(
                                     elevation: 6,
                                     margin: const EdgeInsets.all(10),
                                       child: ListTile(
-                                        title: Text(shellyServices[index]),
+                                        title: Text(services.items[index].serviceName),
                                         trailing: IconButton(
-                                          icon: serviceIcons[index],
+                                          icon: services.icon(index),
                                           tooltip: 'Lisää asunnon laitteisiin',
                                           onPressed: () async {
-                                            if (! newEstate.deviceExists(shellyServices[index])) {
-                                              ResolvedBonsoirService bSData = shellyScan.resolveServiceData(shellyServices[index]);
-                                              if (bSData.name != '') {
-                                                ShellyDevice newDevice = ShellyDevice();
-                                                newDevice.initFromScan(bSData);
-                                                await Navigator.push(context, MaterialPageRoute(
-                                                  builder: (context) {
-                                                    return EditDeviceView(estate:newEstate, device: newDevice);
-                                                  },
-                                                ));
-                                              }
+                                            if (services.added(index)) {
+
+                                            }
+                                            else {
+                                              services.setAdded(index);
+                                              Function addingFunction = services.addingFunction(index);
+                                              Functionality functionality = await addingFunction(newEstate,services.items[index].serviceName);
+                                              await functionality.editWidget(context,newEstate, functionality, functionality.device);
                                             }
 
                                             refresh();
@@ -268,7 +187,6 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                                       )
                                   )
                               )
-                        : const Text('Et ole nyt liitettävän asunnon wifi-verkossa')
                   )
               ),
                       Container(
@@ -289,6 +207,7 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                                 onPressed: () async {
                                   myEstates.addEstate(newEstate);
                                   myEstates.pushCurrent(newEstate);
+                                  await myEstates.store();
                                   showSnackbarMessage('kohde lisätty!');
                                   Navigator.pop(context, true);
                                 },
@@ -305,4 +224,148 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
       }
     );
   }
+}
+
+class _ServiceItem {
+  String serviceName = '';
+  late Function addFunction;
+  Icon serviceIcon = Icon(Icons.abc);
+  bool added = false;
+  bool dataEditing = false;
+
+  _ServiceItem(String initServiceName, bool initAdded, Function initAddFunction, {bool editData = false}) {
+    serviceName = initServiceName;
+    added = initAdded;
+    dataEditing = editData;
+    addFunction = initAddFunction;
+  }
+}
+
+class _Services {
+  List <_ServiceItem> items = [];
+
+  void init(Estate estate) {
+    clear();
+    addConstServices(estate);
+  }
+
+  int itemCount() {
+    return items.length;
+  }
+
+  void addConstServices(Estate estate) {
+
+    items.add(_ServiceItem('Sähkön hinta', estate.deviceExists('Sähkön hinta'), addElectricityPrice, editData: true));
+    items.add(_ServiceItem('Säätila', estate.deviceExists('Säätila'), addWeatherForecast));
+    items.add(_ServiceItem('Lämmitys', estate.deviceExists('Lämmitys'), addHeatingSystem));
+    items.add(_ServiceItem('Tesla', estate.deviceExists('Tesla'), addTesla));
+  }
+
+  void clear() {
+    items.clear();
+  }
+
+  void add(_ServiceItem item) {
+    items.add(item);
+  }
+
+  void setAdded(int index) {
+    items[index].added = true;
+  }
+
+  bool added(int index) {
+    return (items[index].added);
+  }
+
+  bool editData(int index) {
+    return (items[index].dataEditing);
+  }
+
+  Function addingFunction(int index) {
+    return (items[index].addFunction);
+  }
+
+  Icon icon(int index) {
+    if (items[index].added) {
+      return (const Icon(Icons.check,
+          color: Colors.green, size: 40));
+    }
+    else {
+      return const Icon(Icons.add_home_work,
+          color: Colors.black, size: 40);
+    }
+  }
+}
+
+Future<PlainSwitchFunctionality> addPlugIn(Estate estate, String serviceName) async {
+  ShellyTimerSwitch newDevice = ShellyTimerSwitch();
+  PlainSwitchFunctionality shellyFunctionality = PlainSwitchFunctionality();
+  shellyFunctionality.pair(newDevice);
+  ResolvedBonsoirService bSData = shellyScan.resolveServiceData(serviceName);
+  if (bSData.name != '') {
+    newDevice.initFromScan(bSData);
+  }
+  return shellyFunctionality;
+}
+
+Future<OumanDevice> getOuman(Estate estate) async {
+
+  //check if I already have one
+  int index = estate.devices.indexWhere((e){return e.runtimeType == OumanDevice;} );
+  if (index >= 0) {
+    return estate.devices[index] as OumanDevice;
+  }
+  else {
+    OumanDevice ouman = OumanDevice();
+    estate.addDevice(ouman);
+    await ouman.init();
+    return ouman;
+  }
+}
+
+Future<ElectricityPrice> addElectricityPrice(Estate estate, String serviceName) async {
+  Porssisahko spot = Porssisahko();
+  spot.name = 'spot';
+  spot.id = 'spot-pörssisähkö';
+  estate.addDevice(spot);
+  await spot.init();
+
+  ElectricityPrice ep = ElectricityPrice();
+  ep.pair(spot);
+  estate.addFunctionality(ep);
+  estate.addView(ElectricityGridBlock(ep));
+  await ep.init();
+
+  return ep;
+}
+
+Future<WeatherForecast> addWeatherForecast(Estate estate, String serviceName) async {
+  OumanDevice ouman = await getOuman(estate);
+  WeatherForecast myForecast = WeatherForecast();
+  myForecast.pair(ouman);
+  estate.addFunctionality(myForecast);
+  await myForecast.init();
+  estate.addView(WeatherForecastView(myForecast));
+  return myForecast;
+}
+
+Future<HeatingSystem> addHeatingSystem(Estate estate, String serviceName) async {
+  OumanDevice ouman = await getOuman(estate);
+  HeatingSystem heatingSystem = createNewHeatingSystem(ouman);
+  estate.addFunctionality(heatingSystem);
+  estate.addView(HeatingSystemView(heatingSystem));
+  await heatingSystem.init();
+  return heatingSystem;
+}
+
+Future<Functionality> addTesla(Estate estate, String serviceName) async {
+  Functionality teslaFunctionality = Functionality();
+  Device teslaDevice = Device();
+  teslaDevice.id = 'Tesla id';
+  teslaDevice.name = 'Tesla';
+  teslaFunctionality.pair(teslaDevice);
+
+  estate.addView(
+      TeslaFunctionalityView(teslaFunctionality));
+  return (teslaFunctionality);
 }

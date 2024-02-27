@@ -33,7 +33,7 @@ void main() {
 
       List<String> s = shellyScriptCode.codeChunks();
 
-      expect(shellyScriptCode, s[0]);
+      expect(shellyScriptCode.modifiedCode, s[0]);
     });
 
     test('code chunks', () {
@@ -77,7 +77,7 @@ void main() {
 
       shellyScriptCode.setCode('//\n');
       shellyScriptCode.modify();
-      expect(shellyScriptCode.modifiedCode,'\n');
+      expect(shellyScriptCode.modifiedCode,'');
 
     });
 

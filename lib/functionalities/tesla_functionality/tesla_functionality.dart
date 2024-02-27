@@ -5,7 +5,10 @@ import '../functionality/view/functionality_view.dart';
 
 class TeslaFunctionality extends Functionality {
 
-  void init () async {
+  TeslaFunctionality();
+
+  @override
+  Future<void> init () async {
   }
 
   bool status() {
@@ -19,5 +22,16 @@ class TeslaFunctionality extends Functionality {
   FunctionalityView myView() {
     return TeslaFunctionalityView(this);
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    return json;
+  }
+
+  @override
+  TeslaFunctionality.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+  }
+
 
 }

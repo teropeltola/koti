@@ -9,10 +9,13 @@ class HeatingSystem extends Functionality {
   HeatingSystem() {
   }
 
-  late OumanDevice myOuman;
+  @override
+  Future<void> init () async {
+  }
 
-  void init (OumanDevice myOumanDevice) async {
-    myOuman = myOumanDevice;
+
+  OumanDevice myOuman() {
+    return device as OumanDevice;
   }
 
   @override
@@ -20,4 +23,23 @@ class HeatingSystem extends Functionality {
     return HeatingSystemView(this);
   }
 
+  @override
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    return json;
+  }
+
+  @override
+  HeatingSystem.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+  }
+
+}
+
+HeatingSystem createNewHeatingSystem(OumanDevice ouman) {
+
+  HeatingSystem heatingSystem = HeatingSystem();
+  allFunctionalities.addFunctionality(heatingSystem);
+  heatingSystem.pair(ouman);
+
+  return heatingSystem;
 }

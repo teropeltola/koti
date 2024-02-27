@@ -6,12 +6,14 @@ import 'package:html/parser.dart' as htmlParser;
 
 import 'dart:convert' show utf8;
 
+import '../../logic/observation.dart';
 import '../device/device.dart';
 import '../../look_and_feel.dart';
 
-const oumanUrl = 'http://192.168.72.99';
-const oumanUsername = 'pannusAAT0';
-const oumanPassword = 'sX4c1WpZ';
+const _oumanIP = '192.168.72.99';
+const _oumanUrl = 'http://$_oumanIP';
+const _oumanUsername = 'pannusAAT0';
+const _oumanPassword = 'sX4c1WpZ';
 
 const _oumanFetchingIntervalInMinutes = 2;
 
@@ -35,11 +37,11 @@ const double noValue = -99.9;
 
 class OumanDevice extends Device {
 
-  String _userName = oumanUsername;
-  String _password = oumanPassword;
+  String _userName = _oumanUsername;
+  String _password = _oumanPassword;
 
-  String ipAddress = oumanUrl;
-  String urlString = oumanUrl;
+  String ipAddress = _oumanUrl;
+  String urlString = _oumanUrl;
 
   late Timer _timer;
 
@@ -50,15 +52,44 @@ class OumanDevice extends Device {
   double _requestedWaterTemperature = noValue;
   double _valve = noValue;
   double _heaterEstimatedTemperature = noValue;
+  DateTime _latestDataFetched = DateTime(0);
 
+  OumanDevice() {
+    id = 'Ouman$_oumanIP';
+    name = 'Ouman';
+  }
 
-  Future<void> fetchInformation() async {
-    if (myEstate.iAmActive) {
+  bool noData() {
+    return _latestDataFetched.year == 0;
+  }
+
+  @override
+  Future<void> init() async {
+    if (myEstate.myWifiIsActive) {
       await login();
       await getData();
       await logout();
     }
     _setupTimer();
+  }
+
+  Future<bool> fetchAndAnalyzeData() async {
+    bool success = true;
+
+    if (myEstate.myWifiIsActive) {
+      if ((await login()) && (await getData()) && (await logout())) {
+        setNormalObservation();
+      }
+      else {
+        observationMonitor.add(ObservationLogItem(DateTime.now(), ObservationLevel.informatic));
+        success = false;
+      }
+    }
+    else {
+      success = true;
+    }
+    _setupTimer();
+    return success;
   }
 
   void _setupTimer() {
@@ -68,7 +99,7 @@ class OumanDevice extends Device {
 
     // Schedule the daily task at given time
     _timer = Timer(delay, () async {
-      await fetchInformation();
+      await init();
     });
   }
 
@@ -78,9 +109,6 @@ class OumanDevice extends Device {
 
   String oumanDataCodes() {
     return 'S_227_85;S_135_85;S_1000_0;S_259_85;S_275_85;S_134_85;S_272_85;S_26_85;S_89_85;S_90_85;S_54_85;S_55_85;S_61_85;S_63_85;S_65_85;S_260_85;S_258_85;S_286_85;S_92_85;S_59_85;S_1004_85;S_330_85;';
-    String codes = '';
-    oumanCodes.values.forEach((v) => codes += "$v;");
-    return codes;
   }
 
   double outsideTemperature() {
@@ -103,6 +131,10 @@ class OumanDevice extends Device {
     return _heaterEstimatedTemperature;
   }
 
+  DateTime fetchingTime() {
+    return _latestDataFetched;
+  }
+
   double getValue(String key) {
     String result = requestResult[oumanCodes[key] ?? ''] ?? '-99.9';
     return double.parse(result);
@@ -114,10 +146,41 @@ class OumanDevice extends Device {
     _requestedWaterTemperature = getValue('L1RequestedWaterTemperature');
     _valve = getValue('L1Valve');
     _heaterEstimatedTemperature = _measuredWaterTemperature * 100 / _valve;
+    _latestDataFetched = DateTime.now();
+  }
+
+  bool _useObservations = false;
+  double _observationAlarmValveLimit = 99.0;
+  double _observationAlarmTempDiff = 0.5;
+  double _observationWarningValveLimit = 95.0;
+  double _observationWarningTempDiff = 0.0;
+  double _observationInfoValveLimit = 90.0;
+
+  double waterTempDiff() => _requestedWaterTemperature - _measuredWaterTemperature;
+
+  ObservationLevel observationLevel() {
+    if ((_valve > _observationAlarmValveLimit) &&
+        (waterTempDiff() > _observationAlarmTempDiff)) {
+      return ObservationLevel.alarm;
+    }
+    else if ((_valve > _observationWarningValveLimit) &&
+        (waterTempDiff() > _observationWarningTempDiff)) {
+      return ObservationLevel.warning;
+    }
+    else if (_valve > _observationInfoValveLimit) {
+      return ObservationLevel.informatic;
+    }
+    else {
+      return ObservationLevel.ok;
+    }
+  }
+
+  void setNormalObservation() {
+    observationMonitor.add(ObservationLogItem(DateTime.now(),observationLevel()));
   }
 
   Future<bool> login() async {
-    String myLoginRequest = '$urlString/login?uid=$oumanUsername;pwd=$oumanPassword;';
+    String myLoginRequest = '$urlString/login?uid=$_oumanUsername;pwd=$_oumanPassword;';
     final url = Uri.parse(myLoginRequest);  // Replace with your server's URL.
     final response = await http.get(url);
 
@@ -171,10 +234,29 @@ class OumanDevice extends Device {
   }
 
   @override
+  double temperatureFunction() {
+    return outsideTemperature();
+  }
+
+  @override
   void dispose() {
     //super.dispose();
     _timer.cancel();
   }
+
+  @override
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    json['ipAddress'] = ipAddress;
+    return json;
+  }
+
+  @override
+  OumanDevice.fromJson(Map<String, dynamic> json) {
+    super.fromJson(json);
+    ipAddress = json['ipAddress'] ?? '';
+  }
+
 }
 
 Map<String, String> parseDeviceData(String deviceData) {
@@ -212,7 +294,7 @@ Map<String, String> parseDeviceData(String deviceData) {
   return result;
 }
 
-
+/*
 Future<String?> scrapeHtmlContent(String url) async {
   final response = await http.get(Uri.parse(url));
   if (response.statusCode == 200) {
@@ -232,8 +314,8 @@ Future<String?> loginOuman2(String url) async {
 
 
     var map = <String, String>{};
-    map['uid'] = oumanUsername;
-    map['pwd'] = oumanPassword;
+    map['uid'] = _oumanUsername;
+    map['pwd'] = _oumanPassword;
     final response2 = await http.post(
       Uri.parse('$url/eh800.html'),
       body: map,
@@ -251,8 +333,8 @@ Future<String?> loginOuman3(String urlString) async {
     final response = await http.post(
       url,
       body: {
-        'uid': oumanUsername,
-        'pwd': oumanPassword,
+        'uid': _oumanUsername,
+        'pwd': _oumanPassword,
       },
     );
 
@@ -266,7 +348,7 @@ Future<String?> loginOuman3(String urlString) async {
 }
 
 Future<bool> loginOuman(String urlString) async {
-  String myLoginRequest = '$urlString/login?uid=$oumanUsername;pwd=$oumanPassword;';
+  String myLoginRequest = '$urlString/login?uid=$_oumanUsername;pwd=$_oumanPassword;';
   final url = Uri.parse(myLoginRequest);  // Replace with your server's URL.
   final response = await http.get(url);
 
@@ -279,30 +361,4 @@ Future<bool> loginOuman(String urlString) async {
 }
 
 
-/*
-    var loginPage = await http.get('https://mypage.com/login');
-    var document = parse(loginPage.body);
-    var username = document.querySelector('#username') as InputElement;
-    var password = document.querySelector('#password') as InputElement;
-    username.value = 'USERNAME';
-    password.value = 'PASSWORD';
-    var submit = document.querySelector('.btn-submit') as ButtonElement;
-    submit.click();
-
-  TOINEN VAIHTOEHTO:
-
-    final uri = 'https://na57.salesforce.com/services/oauth2/token';
-var map = new Map<String, dynamic>();
-map['grant_type'] = 'password';
-map['client_id'] = '3MVG9dZJodJWITSviqdj3EnW.LrZ81MbuGBqgIxxxdD6u7Mru2NOEs8bHFoFyNw_nVKPhlF2EzDbNYI0rphQL';
-map['client_secret'] = '42E131F37E4E05313646E1ED1D3788D76192EBECA7486D15BDDB8408B9726B42';
-map['username'] = 'example@mail.com.us';
-map['password'] = 'ABC1234563Af88jesKxPLVirJRW8wXvj3D';
-
-http.Response response = await http.post(
-    uri,
-    body: map,
-);
  */
-
-

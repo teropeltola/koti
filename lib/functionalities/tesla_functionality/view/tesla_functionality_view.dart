@@ -1,11 +1,16 @@
 
 import 'package:flutter/material.dart';
 
+import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 
 class TeslaFunctionalityView extends FunctionalityView {
 
   TeslaFunctionalityView(dynamic myFunctionality) : super(myFunctionality) {
+  }
+
+  TeslaFunctionalityView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+    super.fromJson(json);
   }
 
   @override

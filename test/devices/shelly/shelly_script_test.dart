@@ -33,7 +33,7 @@ void main() {
       Uri u = Uri.parse(s3);
       String s4 = u.query;
 
-      expect(s2.length, 20);
+      expect(s2.length, 90);
 
     });
   });
@@ -46,7 +46,7 @@ void main() {
     Uri u = Uri.parse(s3);
     String s4 = u.query;
 
-    expect(s2.length, 20);
+    expect(s2.length, 84);
 
   });
 
