@@ -33,8 +33,8 @@ void main() async {
   await initMySettings();
   await getPermissions();
   runningInSimulator = await isSimulator();
-  await connectionStatusListener.initialize();
   await shellyScan.init();
+  await connectionStatusListener.initialize();
   await myEstates.init();
 
   runApp(

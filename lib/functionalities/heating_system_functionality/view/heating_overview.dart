@@ -1,6 +1,7 @@
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
+import 'package:koti/functionalities/air_heat_pump_functionality/view/air_heat_pump_overview.dart';
 import 'package:provider/provider.dart';
 
 import '../../../estate/estate.dart';
@@ -92,9 +93,10 @@ class _HeatingOverviewState extends State<HeatingOverview> {
                   ]),
                 ),
               ),
-                      ])
-              )
-          );
+              airHeatPumpSummary(widget.heatingSystem.myAirPump),
+            ])
+          )
+        );
       }
     );
   }

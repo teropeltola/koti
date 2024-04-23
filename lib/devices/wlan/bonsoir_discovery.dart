@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:bonsoir/bonsoir.dart';
 //import 'package:bonsoir_example/models/app_service.dart';
 import 'package:flutter/material.dart';
+
+import '../../look_and_feel.dart';
 //import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /*
@@ -66,14 +68,18 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
     BonsoirService service = event.service!;
     if (event.type == BonsoirDiscoveryEventType.discoveryServiceFound) {
       _services[service.name] = service;
+      log.info('bonsoir service (${service.name}) discoveryServiceFound');
       _servicesResolver[service.name] = () => _resolveService(service);
       _resolveService(service);
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceResolved) {
       _services[service.name] = service;
+      log.info('bonsoir service (${service.name}) discoveryServiceResolved');
       _servicesResolver.remove(service.name);
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceResolveFailed) {
       _servicesResolver[service.name] = () => _resolveService(service);
+      log.info('bonsoir service (${service.name}) discoveryServiceResolveFailed');
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceLost) {
+      log.info('bonsoir service (${service.name}) discoveryServiceLost');
       _services.remove(service.name);
     }
     notifyListeners();

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koti/functionalities/boiler_heating/boiler_heating_functionality.dart';
 
 import 'package:koti/functionalities/functionality/view/functionality_view.dart';
 import 'package:koti/functionalities/heating_system_functionality/heating_system.dart';
@@ -8,8 +9,10 @@ import 'package:koti/functionalities/weather_forecast/weather_forecast.dart';
 
 import '../../devices/device/device.dart';
 import '../../estate/estate.dart';
+import '../../operation_modes/operation_modes.dart';
 import '../../logic/unique_id.dart';
 import '../../look_and_feel.dart';
+import '../air_heat_pump_functionality/air_heat_pump.dart';
 import '../electricity_price/electricity_price.dart';
 
 FunctionalityList allFunctionalities = FunctionalityList();
@@ -82,6 +85,8 @@ class FunctionalityList {
 class Functionality {
   late Device device;
   late UniqueId _id;
+
+  OperationModes operationModes = OperationModes();
 
   Functionality() {
     _id = UniqueId('f');
@@ -163,6 +168,12 @@ Functionality extendedFunctionalityFromJson(Map<String, dynamic> json) {
         break;
       case 'WeatherForecast':
         myFunctionality = WeatherForecast.fromJson(json);
+        break;
+      case 'AirHeatPump':
+        myFunctionality = AirHeatPump.fromJson(json);
+        break;
+      case 'BoilerHeatingFunctionality':
+        myFunctionality = BoilerHeatingFunctionality.fromJson(json);
         break;
       default:
         log.error('unknown functionality jsonObject($myType) not implemented');

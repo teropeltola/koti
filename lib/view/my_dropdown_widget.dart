@@ -40,8 +40,8 @@ class _MyDropdownWidgetState extends State<MyDropdownWidget> {
       onChanged: (String? newValue) {
         dropdownValue = newValue!;
         int index = widget.dropdownContent.optionIndex(dropdownValue);
+        widget.dropdownContent.setIndex(index);
         widget.setValue(index);
-        widget.dropdownContent.getValue(index);
         setState(() {});
       },
       items: widget.dropdownContent.options()

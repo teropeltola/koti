@@ -1,5 +1,6 @@
 
 import 'dart:async';
+import 'dart:math';
 
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as htmlParser;
@@ -65,7 +66,8 @@ class OumanDevice extends Device {
 
   @override
   Future<void> init() async {
-    if (myEstate.myWifiIsActive) {
+    // todo: clean this
+    if (myEstates[0].myWifiIsActive) {
       await login();
       await getData();
       await logout();
@@ -76,7 +78,8 @@ class OumanDevice extends Device {
   Future<bool> fetchAndAnalyzeData() async {
     bool success = true;
 
-    if (myEstate.myWifiIsActive) {
+    // todo: clean this
+    if (myEstates[0].myWifiIsActive) {
       if ((await login()) && (await getData()) && (await logout())) {
         setNormalObservation();
       }
@@ -265,7 +268,7 @@ Map<String, String> parseDeviceData(String deviceData) {
   // Check if the string has the expected format
   if (!deviceData.startsWith('request?')) {
     // Handle invalid format
-    print('Invalid data format');
+    log.error('Ouman ParseDeviceData - Invalid data format : "${deviceData.substring(0,min(20,deviceData.length))}"');
     return result;
   }
 
@@ -278,87 +281,22 @@ Map<String, String> parseDeviceData(String deviceData) {
   // Iterate over each parameter and extract key-value pairs
   for (String param in params) {
     // Split each parameter by equals sign
-    List<String> keyValue = param.split('=');
+    List<String> keyValue = param.trim().split('=');
 
     // Ensure there are two parts (key and value)
     if (keyValue.length == 2) {
       String key = keyValue[0].trim();
       String value = keyValue[1].trim();
       result[key] = value;
-    } else {
-      // Handle invalid parameter format
-      print('Invalid parameter format: $param');
     }
+    /*
+    else {
+      // Handle invalid parameter format
+      log.error('Ouman ParseDeviceData - Invalid parameter: $param');
+    }
+
+     */
   }
 
   return result;
 }
-
-/*
-Future<String?> scrapeHtmlContent(String url) async {
-  final response = await http.get(Uri.parse(url));
-  if (response.statusCode == 200) {
-    final document = htmlParser.parse(response.body);
-    final elements = document.querySelectorAll('.your-html-element-class'); // Replace with your HTML element class or ID
-    if (elements.isNotEmpty) {
-      return elements[0].text; // Extract text content from the HTML element
-    }
-  }
-  return null;
-}
-
-
-Future<String?> loginOuman2(String url) async {
-  final response = await http.get(Uri.parse(url));
-  if (response.statusCode == 200) {
-
-
-    var map = <String, String>{};
-    map['uid'] = _oumanUsername;
-    map['pwd'] = _oumanPassword;
-    final response2 = await http.post(
-      Uri.parse('$url/eh800.html'),
-      body: map,
-    );
-    if (response2.statusCode == 200) {
-      final response3 = await http.get(Uri.parse(url));
-      final document = htmlParser.parse(response3.body);
-    }
-  }
-  return null;
-}
-
-Future<String?> loginOuman3(String urlString) async {
-    final url = Uri.parse('$urlString');  // Replace with your server's URL.
-    final response = await http.post(
-      url,
-      body: {
-        'uid': _oumanUsername,
-        'pwd': _oumanPassword,
-      },
-    );
-
-    if (response.statusCode == 200) {
-      final response3 = await http.get(url);
-      final document = htmlParser.parse(response3.body);
-    } else {
-      // Handle login errors.
-    }
-    return '1';
-}
-
-Future<bool> loginOuman(String urlString) async {
-  String myLoginRequest = '$urlString/login?uid=$_oumanUsername;pwd=$_oumanPassword;';
-  final url = Uri.parse(myLoginRequest);  // Replace with your server's URL.
-  final response = await http.get(url);
-
-  if (response.statusCode == 200) {
-    return true;
-  } else {
-    log.error('Ouman kirjautuminen epäonnistui. Virhekoodi: ${response.statusCode}');
-    return false;
-  }
-}
-
-
- */

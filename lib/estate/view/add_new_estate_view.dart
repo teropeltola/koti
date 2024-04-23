@@ -1,5 +1,6 @@
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
+import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
 import 'package:koti/devices/shelly_timer_switch/shelly_timer_switch.dart';
 import 'package:koti/devices/wlan/active_wifi_name.dart';
@@ -10,8 +11,11 @@ import 'package:provider/provider.dart';
 import '../../devices/device/device.dart';
 import '../../devices/device/view/edit_device_view.dart';
 import '../../devices/porssisahko/porssisahko.dart';
-import '../../devices/shelly/shelly.dart';
+import '../../devices/shelly/shelly_device.dart';
 import '../../devices/shelly/shelly_scan.dart';
+import '../../devices/shelly/view/edit_shelly_device_view.dart';
+import '../../functionalities/air_heat_pump_functionality/air_heat_pump.dart';
+import '../../functionalities/air_heat_pump_functionality/view/air_heat_pump_view.dart';
 import '../../functionalities/electricity_price/electricity_price.dart';
 import '../../functionalities/electricity_price/view/electricity_price_view.dart';
 import '../../functionalities/heating_system_functionality/heating_system.dart';
@@ -177,8 +181,7 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                                             else {
                                               services.setAdded(index);
                                               Function addingFunction = services.addingFunction(index);
-                                              Functionality functionality = await addingFunction(newEstate,services.items[index].serviceName);
-                                              await functionality.editWidget(context,newEstate, functionality, functionality.device);
+                                              Functionality functionality = await addingFunction(context, newEstate,services.items[index].serviceName);
                                             }
 
                                             refresh();
@@ -258,6 +261,7 @@ class _Services {
     items.add(_ServiceItem('Sähkön hinta', estate.deviceExists('Sähkön hinta'), addElectricityPrice, editData: true));
     items.add(_ServiceItem('Säätila', estate.deviceExists('Säätila'), addWeatherForecast));
     items.add(_ServiceItem('Lämmitys', estate.deviceExists('Lämmitys'), addHeatingSystem));
+    items.add(_ServiceItem('Ilmalämpöpumppu', estate.deviceExists('Ilpo'), addMitsu));
     items.add(_ServiceItem('Tesla', estate.deviceExists('Tesla'), addTesla));
   }
 
@@ -297,14 +301,19 @@ class _Services {
   }
 }
 
-Future<PlainSwitchFunctionality> addPlugIn(Estate estate, String serviceName) async {
-  ShellyTimerSwitch newDevice = ShellyTimerSwitch();
-  PlainSwitchFunctionality shellyFunctionality = PlainSwitchFunctionality();
-  shellyFunctionality.pair(newDevice);
-  ResolvedBonsoirService bSData = shellyScan.resolveServiceData(serviceName);
-  if (bSData.name != '') {
-    newDevice.initFromScan(bSData);
-  }
+Future<Functionality> addPlugIn(BuildContext context, Estate estate, String serviceName) async {
+
+  late Functionality shellyFunctionality;
+  await Navigator.push(
+      context, MaterialPageRoute(
+    builder: (context) {
+      return EditShellyDeviceView(
+          estate: estate,
+          shellyId: serviceName,
+          callback: (newFunctionality) {shellyFunctionality = newFunctionality;});
+    },
+  ));
+
   return shellyFunctionality;
 }
 
@@ -323,7 +332,23 @@ Future<OumanDevice> getOuman(Estate estate) async {
   }
 }
 
-Future<ElectricityPrice> addElectricityPrice(Estate estate, String serviceName) async {
+Future<MitsuHeatPumpDevice> getMitsu(Estate estate) async {
+
+  //check if I already have one
+  int index = estate.devices.indexWhere((e){return e.runtimeType == MitsuHeatPumpDevice;} );
+  if (index >= 0) {
+    return estate.devices[index] as MitsuHeatPumpDevice;
+  }
+  else {
+    MitsuHeatPumpDevice mitsu = MitsuHeatPumpDevice();
+    estate.addDevice(mitsu);
+    await mitsu.init();
+    return mitsu;
+  }
+}
+
+
+Future<ElectricityPrice> addElectricityPrice(BuildContext context, Estate estate, String serviceName) async {
   Porssisahko spot = Porssisahko();
   spot.name = 'spot';
   spot.id = 'spot-pörssisähkö';
@@ -335,30 +360,46 @@ Future<ElectricityPrice> addElectricityPrice(Estate estate, String serviceName) 
   estate.addFunctionality(ep);
   estate.addView(ElectricityGridBlock(ep));
   await ep.init();
+  await ep.editWidget(context, estate, ep, spot);
 
   return ep;
 }
 
-Future<WeatherForecast> addWeatherForecast(Estate estate, String serviceName) async {
+Future<WeatherForecast> addWeatherForecast(BuildContext context, Estate estate, String serviceName) async {
   OumanDevice ouman = await getOuman(estate);
   WeatherForecast myForecast = WeatherForecast();
   myForecast.pair(ouman);
   estate.addFunctionality(myForecast);
   await myForecast.init();
   estate.addView(WeatherForecastView(myForecast));
+  await myForecast.editWidget(context, estate, myForecast, ouman);
+
   return myForecast;
 }
 
-Future<HeatingSystem> addHeatingSystem(Estate estate, String serviceName) async {
+Future<HeatingSystem> addHeatingSystem(BuildContext context, Estate estate, String serviceName) async {
   OumanDevice ouman = await getOuman(estate);
-  HeatingSystem heatingSystem = createNewHeatingSystem(ouman);
+  MitsuHeatPumpDevice mitsu = await getMitsu(estate);
+
+  HeatingSystem heatingSystem = createNewHeatingSystem(ouman, mitsu);
   estate.addFunctionality(heatingSystem);
   estate.addView(HeatingSystemView(heatingSystem));
   await heatingSystem.init();
+  await heatingSystem.editWidget(context, estate, heatingSystem, ouman);
   return heatingSystem;
 }
 
-Future<Functionality> addTesla(Estate estate, String serviceName) async {
+Future<AirHeatPump> addMitsu(BuildContext context, Estate estate, String serviceName) async {
+  MitsuHeatPumpDevice mitsu = await getMitsu(estate);
+  AirHeatPump airHeatPump = createNewAirHeatPump(mitsu);
+  estate.addFunctionality(airHeatPump);
+  estate.addView(AirHeatPumpView(airHeatPump));
+  await airHeatPump.init();
+  await airHeatPump.editWidget(context, estate, airHeatPump, mitsu);
+  return airHeatPump;
+}
+
+Future<Functionality> addTesla(BuildContext context, Estate estate, String serviceName) async {
   Functionality teslaFunctionality = Functionality();
   Device teslaDevice = Device();
   teslaDevice.id = 'Tesla id';
@@ -367,5 +408,6 @@ Future<Functionality> addTesla(Estate estate, String serviceName) async {
 
   estate.addView(
       TeslaFunctionalityView(teslaFunctionality));
+  await teslaFunctionality.editWidget(context, estate, teslaFunctionality, teslaDevice);
   return (teslaFunctionality);
 }

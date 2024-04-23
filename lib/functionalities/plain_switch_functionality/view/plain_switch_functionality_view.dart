@@ -1,6 +1,8 @@
 
 import 'package:flutter/material.dart';
+import 'package:koti/devices/shelly/json/switch_get_status.dart';
 
+import '../../../look_and_feel.dart';
 import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../plain_switch_functionality.dart';
@@ -15,6 +17,7 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
 
   PlainSwitchFunctionalityView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
     super.fromJson(json);
+    mySwitch = myFunctionality as PlainSwitchFunctionality;
   }
 
 
@@ -29,7 +32,8 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
           mySwitch.switchToggle();
           callback();
         },
-        onLongPress: () {
+        onLongPress: () async {
+          await _switchStatistics(context, mySwitch, 0);
 
         },
         child: Column(
@@ -53,5 +57,12 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
             ])
     );
   }
+}
+
+Future <void> _switchStatistics(BuildContext context, PlainSwitchFunctionality mySwitch, int switchNumber) async {
+  ShellySwitchStatus status = await mySwitch.shellyTimerSwitch.switchGetStatus(switchNumber);
+  String header = status.output ? 'Kytkin $switchNumber päällä' : 'Kytkin $switchNumber suljettu';
+  String body = status.id == -1 ? 'ei statusta' : status.toString();
+  await informMatterToUser(context, header, body );
 }
 

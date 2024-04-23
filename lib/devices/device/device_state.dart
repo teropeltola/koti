@@ -10,10 +10,18 @@ class DeviceState {
   void setState(StateModel newState) {
     _state = newState;
   }
+
   StateModel currentState() {
     return _state;
   }
 
+  bool connected() {
+    return _state == StateModel.connected;
+  }
+
+  void setConnected() {
+    _state = StateModel.connected;
+  }
 }
 
-enum StateModel {notInstalled, notConnected, active }
+enum StateModel {notInstalled, notConnected, connected }

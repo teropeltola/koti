@@ -46,6 +46,7 @@ dependencies:
   http: ^1.1.0
   html: ^0.15.4  # For parsing HTML content
   intl: ^0.18.1
+  mockito: ^5.4.4
   network_discovery: ^1.0.0
   network_info_plus: ^4.1.0
   path_provider: ^2.1.2
@@ -53,6 +54,8 @@ dependencies:
   provider: ^6.0.5
   talker: ^3.1.4
   talker_flutter: ^3.5.2
+  thermostat: ^1.1.5
+  time_range_picker: ^2.2.0
   syncfusion_flutter_charts: ^23.1.38
   webview_flutter: ^4.4.1
 

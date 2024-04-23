@@ -1,10 +1,5 @@
-import 'package:flutter/material.dart';
 
-import '../../estate/estate.dart';
-import '../../functionalities/functionality/functionality.dart';
-import '../device/device.dart';
-import '../device/view/edit_device_view.dart';
-import '../shelly/shelly.dart';
+import '../shelly/shelly_device.dart';
 
 class ShellyTimerSwitch extends ShellyDevice {
 
@@ -21,17 +16,11 @@ class ShellyTimerSwitch extends ShellyDevice {
     return _on;
   }
 
+
   @override
-  Future<void> editWidget(BuildContext context, Estate estate, Functionality functionality, Device device) async {
-    await Navigator.push(
-        context, MaterialPageRoute(
-      builder: (context) {
-        return EditDeviceView(
-            estate: estate,
-            functionality: functionality,
-            device: device);
-      },
-    ));
+  Map<String, dynamic> toJson() {
+    var json = super.toJson();
+    return json;
   }
 
   @override

@@ -7,13 +7,35 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:koti/devices/device/device.dart';
+import 'package:koti/estate/estate.dart';
+import 'package:koti/functionalities/functionality/functionality.dart';
 
 import 'package:koti/main.dart';
 
+class TestApp extends StatelessWidget {
+  const TestApp({super.key});
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    Estate estate = Estate();
+    Device device = Device();
+    Functionality functionality = Functionality();
+
+    device.editWidget(context, estate, functionality, device);
+
+    return MaterialApp(
+      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      home: const MyHomePage(),
+    );
+  }
+}
+
 void main() {
-  testWidgets('Counter increments smoke test', (WidgetTester tester) async {
+  testWidgets('test widget templates', (WidgetTester tester) async {
     // Build our app and trigger a frame.
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const TestApp());
 /*
     // Verify that our counter starts at 0.
     expect(find.text('0'), findsOneWidget);

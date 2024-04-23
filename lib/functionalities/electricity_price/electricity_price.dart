@@ -1,6 +1,8 @@
 
 import 'dart:async';
 
+import 'package:provider/provider.dart';
+
 import '../../devices/porssisahko/porssisahko.dart';
 import '../../functionalities/functionality/functionality.dart';
 import '../../devices/porssisahko/json/porssisahko_data.dart';
@@ -76,6 +78,18 @@ class ElectricityPriceTable {
     return e;
   }
 
+  double findPercentile(double percentile) {
+    List <double> sortedList = List.from(slotPrices);
+    sortedList.sort();
+    int index = _countPercentileIndex(percentile);
+    return sortedList[index];
+  }
+
+  int _countPercentileIndex(double percentile) {
+    return (percentile <= 0) ? 0 : (percentile >= 1) ? (slotPrices.length-1) :
+    (percentile * slotPrices.length).ceil()-1;
+  }
+
   double currentPrice() {
     int index = findIndex(DateTime.now());
     if (index == -1) {
@@ -117,6 +131,18 @@ class ElectricityPriceTable {
 
   double minPrice() {
     return 5.0;
+  }
+
+  DateTime slotStartingTime(int index) {
+    return (startingTime.add(Duration(minutes:index*slotSizeInMinutes)));
+  }
+
+  DateTime lastMinuteOfPeriod() {
+    return startingTime.add(Duration(minutes: nbrOfMinutes()- 1));
+  }
+
+  int nbrOfMinutes() {
+    return slotPrices.length*slotSizeInMinutes;
   }
 
 }
@@ -279,8 +305,10 @@ class ElectricityPrice extends Functionality {
     }
   }
 
-  ElectricityPriceTable get(DateTime startingTime) {
+  ElectricityPriceTable get([DateTime? startingTimeParameter]) {
 
+    // either use user given starting time or starting time of the whole data
+    DateTime startingTime = startingTimeParameter ?? data.startingTime;
     ElectricityPriceTable e = ElectricityPriceTable();
     int startingIndex = data.findIndex(startingTime);
 
@@ -333,6 +361,13 @@ class ElectricityChartData {
   double yAxisInterval = 1.0;
   double yAxisMax = 10.0;
   double yAxisMin = 0.0;
+}
+
+class slotAndPrice{
+  int day = -1;
+  int hour = -1;
+  int minute = -1;
+  double slotPrice = -99.9;
 }
 
 

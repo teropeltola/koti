@@ -1,17 +1,26 @@
 import 'dart:convert';
 import'dart:async';
+import 'package:flutter/material.dart';
+
 import 'package:bonsoir/bonsoir.dart';
 import 'package:http/http.dart' as http;
 import 'package:koti/devices/shelly/json/plugs_ui_get_config.dart';
+import 'package:koti/devices/shelly/json/shelly_get_device_info.dart';
+import 'package:koti/devices/shelly/json/shelly_input_config.dart';
 import 'package:koti/devices/shelly/json/switch_get_status.dart';
 
 import 'package:koti/devices/shelly/json/sys_get_config.dart';
+import 'package:koti/devices/shelly/shelly_scan.dart';
 import 'package:koti/devices/shelly/shelly_script.dart';
+import 'package:koti/devices/shelly/view/edit_shelly_device_view.dart';
 
+import '../../estate/estate.dart';
 import '../device/device.dart';
 
 
 import '../../look_and_feel.dart';
+import '../device/device_state.dart';
+import 'json/shelly_switch_config.dart';
 
 const String _http = 'http://';
 const String _rpc = '/rpc/';
@@ -29,11 +38,26 @@ class ShellyDevice extends Device {
   ShellyLocation location = ShellyLocation(tz:'', lat:0.0, lon: 0.0);
   late ShellyScript script;
 
+  ShellyGetDeviceInfo deviceInfo =ShellyGetDeviceInfo.empty();
+  SysGetConfig sysConfig = SysGetConfig.empty();
+
+  @override
+  Future<void> init() async {
+    ResolvedBonsoirService bSData = shellyScan.resolveServiceData(id);
+
+    if (bSData.name != "#not found#") {
+      initFromScan(bSData);
+      state.setConnected();
+    }
+    else {
+      state.setState(StateModel.notConnected);
+    }
+  }
+
   void initScript(ShellyDevice myDevice) {
     script = ShellyScript(myDevice);
   }
   void initFromScan(ResolvedBonsoirService bSData) {
-    id = bSData.name;
     ipAddress = bSData.ip ?? '';
     port = bSData.port;
     shellyType = bSData.type;
@@ -50,6 +74,12 @@ class ShellyDevice extends Device {
   }
 
   Future <String> rpcCall(String commandName) async {
+    if (! state.connected()) {
+      await init();
+      if (! state.connected()) {
+        return '';
+      }
+    }
     try {
       var uri = Uri.parse(_cmd(commandName));
       final response = await http.get(uri,
@@ -75,14 +105,26 @@ class ShellyDevice extends Device {
     }
   }
 
-  Future <void> sysGetConfig() async {
-    String response =  await rpcCall('Sys.GetConfig');
+  Future <void> getDeviceInfo() async {
 
     try {
-      SysGetConfig config = SysGetConfig.fromJson(json.decode(response));
-      configMac = config.device.mac;
-      location = config.location;
-      firmwareId = config.device.fwId;
+      String response =  await rpcCall('Shelly.GetDeviceInfo');
+      deviceInfo = ShellyGetDeviceInfo.fromJson(json.decode(response));
+    }
+    catch (e, st) {
+      log.handle(e, st, 'exception in shelly sysGetConfig');
+      errorClarification = 'fromJson exception: $e';
+    }
+  }
+
+  Future <void> sysGetConfig() async {
+
+    try {
+      String response =  await rpcCall('Sys.GetConfig');
+      sysConfig = SysGetConfig.fromJson(json.decode(response));
+      configMac = sysConfig.device.mac;
+      location = sysConfig.location;
+      firmwareId = sysConfig.device.fwId;
     }
     catch (e, st) {
       log.handle(e, st, 'exception in shelly sysGetConfig');
@@ -91,9 +133,9 @@ class ShellyDevice extends Device {
   }
 
   Future <void> plugsUiGetConfig() async {
-    String response =  await rpcCall('PLUGS_UI.GetConfig');
 
     try {
+      String response =  await rpcCall('PLUGS_UI.GetConfig');
       PlugsUiGetConfig config = PlugsUiGetConfig.fromJson(json.decode(response));
       int i = 0;
     }
@@ -103,23 +145,40 @@ class ShellyDevice extends Device {
     }
   }
 
-  Future <void> switchGetStatus() async {
-    String response =  await rpcCall('Switch.GetStatus?id=0');
+
+  Future <ShellySwitchConfig> switchGetConfig(int index) async {
+    ShellySwitchConfig config = ShellySwitchConfig.empty();
 
     try {
-      SwitchGetStatus config = SwitchGetStatus.fromJson(json.decode(response));
+      String response =  await rpcCall('Switch.GetConfig?id=$index');
+      config = ShellySwitchConfig.fromJson(json.decode(response));
+    }
+    catch (e, st) {
+      log.handle(e, st, 'exception in shelly Switch.GetConfig');
+      errorClarification = 'fromJson exception: $e';
+    }
+    return config;
+  }
+
+  Future <ShellySwitchStatus> switchGetStatus(int index) async {
+    ShellySwitchStatus config = ShellySwitchStatus.empty();
+
+    try {
+      String response =  await rpcCall('Switch.GetStatus?id=$index');
+      config = ShellySwitchStatus.fromJson(json.decode(response));
     }
     catch (e, st) {
       log.handle(e, st, 'exception in shelly Switch.GetStatus');
       errorClarification = 'fromJson exception: $e';
     }
+    return config;
   }
 
-  Future <bool> powerOutputOn() async {
-    String response =  await rpcCall('Switch.GetStatus?id=0');
+  Future <bool> powerOutputOn(int index) async {
 
     try {
-      SwitchGetStatus config = SwitchGetStatus.fromJson(json.decode(response));
+      String response =  await rpcCall('Switch.GetStatus?id=$index');
+      ShellySwitchStatus config = ShellySwitchStatus.fromJson(json.decode(response));
       return config.output;
     }
     catch (e, st) {
@@ -129,15 +188,29 @@ class ShellyDevice extends Device {
     return false;
   }
 
-  Future <void> setSwitchOn(bool turnSwitchOn) async {
+  Future <void> setSwitchOn(int index, bool turnSwitchOn) async {
 
     try {
-      String response =  await rpcCall('Switch.Set?id=0&on=${turnSwitchOn?'true':'false'}');
+      String response =  await rpcCall('Switch.Set?id=$index&on=${turnSwitchOn?'true':'false'}');
     }
     catch (e, st) {
       log.handle(e, st, 'exception in shelly Switch.GetStatus');
       errorClarification = 'fromJson exception: $e';
     }
+  }
+
+  Future <ShellyInputConfig> inputGetConfig(int index) async {
+    ShellyInputConfig config = ShellyInputConfig.empty();
+
+    try {
+      String response =  await rpcCall('Input.GetConfig?id=$index');
+      config = ShellyInputConfig.fromJson(json.decode(response));
+    }
+    catch (e, st) {
+      log.handle(e, st, 'exception in shelly Input.GetConfig');
+      errorClarification = 'fromJson exception: $e';
+    }
+    return config;
   }
 
   @override
@@ -151,7 +224,7 @@ class ShellyDevice extends Device {
     ShellyDevice newDevice = ShellyDevice();
     newDevice.name = name;
     newDevice.id = id;
-    newDevice.state = state;
+    newDevice.state = state.clone();
     connectedFunctionalities.forEach((e){newDevice.connectedFunctionalities.add(e);});
     newDevice.ipAddress = ipAddress;
     newDevice.errorClarification = errorClarification;
@@ -164,4 +237,5 @@ class ShellyDevice extends Device {
 
     return newDevice;
   }
+
 }

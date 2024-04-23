@@ -2,7 +2,7 @@
 
 import 'dart:convert';
 
-import 'package:koti/devices/shelly/shelly.dart';
+import 'package:koti/devices/shelly/shelly_device.dart';
 import 'package:koti/devices/shelly/shelly_script_code.dart';
 
 import '../../look_and_feel.dart';

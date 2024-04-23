@@ -162,3 +162,5 @@ Color observationSymbolColor(ObservationLevel level) {
   }
 }
 
+const bottomNavigatorHeight = 60.0;
+

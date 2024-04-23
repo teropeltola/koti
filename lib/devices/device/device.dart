@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 
 import 'package:koti/functionalities/functionality/functionality.dart';
 
@@ -7,9 +8,12 @@ import '../../logic/observation.dart';
 import '../../look_and_feel.dart';
 import '../ouman/ouman_device.dart';
 import '../porssisahko/porssisahko.dart';
+import '../shelly_pro2/shelly_pro2.dart';
 import '../shelly_timer_switch/shelly_timer_switch.dart';
 import '../wifi/wifi.dart';
 import 'device_state.dart';
+
+const double temperatureNotAvailable = -99.9;
 
 List<Device> _allDevices = [];
 
@@ -19,7 +23,7 @@ class Device {
   String description = '';
   DeviceState state = DeviceState();
   List<Functionality> connectedFunctionalities = [];
-  Estate myEstate = noEstates;
+  List <Estate> myEstates = [];
   ObservationMonitor observationMonitor = ObservationMonitor();
 
   Device() {
@@ -41,7 +45,9 @@ class Device {
     newDevice.description = description;
     newDevice.state = state.clone();
     connectedFunctionalities.forEach((e){newDevice.connectedFunctionalities.add(e);});
-    newDevice.myEstate = myEstate;
+    for (int i=0; i<myEstates.length; i++) {
+      newDevice.myEstates.add(myEstates[i]);
+    }
     newDevice.observationMonitor = observationMonitor;
 
     return newDevice;
@@ -72,8 +78,17 @@ class Device {
   Future<void> init() async {
   }
 
+  bool connected() {
+    return state.connected();
+  }
+
+  ObservationLevel observationLevel() {
+    return ObservationLevel.ok;
+  }
+
+
   double temperatureFunction() {
-    return -88.8;
+    return temperatureNotAvailable;
   }
 
   Future<void> editWidget(BuildContext context, Estate estate, Functionality functionality, Device device) async {
@@ -92,6 +107,11 @@ Device findDevice(String id) {
   }
   return noDevice;
 }
+
+void clearAllDevices() {
+  _allDevices.clear();
+}
+
 final Device noDevice = Device();
 
 Device extendedDeviceFromJson(Map<String, dynamic> json) {
@@ -101,6 +121,8 @@ Device extendedDeviceFromJson(Map<String, dynamic> json) {
     case 'ShellyTimerSwitch': return ShellyTimerSwitch.fromJson(json);
     case 'Wifi': return Wifi.fromJson(json);
     case 'Porssisahko': return Porssisahko.fromJson(json);
+    case 'MitsuHeatPumpDevice' : return MitsuHeatPumpDevice.fromJson(json);
+    case 'ShellyPro2': return ShellyPro2.fromJson(json);
   }
   log.error('unknown jsonObject: ${json['type'] ?? '- not found at all-'}');
   return noDevice;

@@ -8,7 +8,7 @@ class SysGetConfig {
     required this.sntp,
     required this.cfgRev,
   });
-  late final dDevice device;
+  late final ShellySysConfigDevice device;
   late final ShellyLocation location;
   late final Debug debug;
   late final UiData uiData;
@@ -17,7 +17,7 @@ class SysGetConfig {
   late final int cfgRev;
 
   SysGetConfig.fromJson(Map<String, dynamic> json){
-    device = dDevice.fromJson(json['device']);
+    device = ShellySysConfigDevice.fromJson(json['device']);
     location = ShellyLocation.fromJson(json['location']);
     debug = Debug.fromJson(json['debug']);
     uiData = UiData.fromJson(json['ui_data']);
@@ -37,10 +37,20 @@ class SysGetConfig {
     data['cfg_rev'] = cfgRev;
     return data;
   }
+
+  SysGetConfig.empty() {
+    device = ShellySysConfigDevice.empty();
+    location = ShellyLocation.empty();
+    debug = Debug.empty();
+    uiData = UiData();
+    rpcUdp = RpcUdp(dstAddr: '',listenPort: '');
+    sntp = Sntp(server: '');
+    cfgRev = 0;
+  }
 }
 
-class dDevice {
-  dDevice({
+class ShellySysConfigDevice {
+  ShellySysConfigDevice({
     required this.name,
     required this.mac,
     required this.fwId,
@@ -55,13 +65,22 @@ class dDevice {
   late final String profile;
   late final bool discoverable;
 
-  dDevice.fromJson(Map<String, dynamic> json){
+  ShellySysConfigDevice.empty() {
+    name =  '';
+    mac = '';
+    fwId =  '';
+    ecoMode = false;
+    profile =  '';
+    discoverable = false;
+  }
+
+  ShellySysConfigDevice.fromJson(Map<String, dynamic> json){
     name = json['name'] ?? '';
     mac = json['mac'] ?? '';
     fwId = json['fw_id'] ?? '';
-    ecoMode = json['eco_mode'];
+    ecoMode = json['eco_mode'] ?? false;
     profile = json['profile'] ?? '';
-    discoverable = json['discoverable'];
+    discoverable = json['discoverable'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
@@ -85,6 +104,12 @@ class ShellyLocation {
   late final String tz;
   late final double lat;
   late final double lon;
+
+  ShellyLocation.empty() {
+    tz = '';
+    lat = 0.0;
+    lon = 0.0;
+  }
 
   ShellyLocation.fromJson(Map<String, dynamic> json){
     tz = json['tz'];
@@ -110,6 +135,12 @@ class Debug {
   late final Mqtt mqtt;
   late final Websocket websocket;
   late final Udp udp;
+
+  Debug.empty() {
+    mqtt = Mqtt(enable: false);
+    websocket = Websocket(enable: false);
+    udp = Udp(addr:'');
+  }
 
   Debug.fromJson(Map<String, dynamic> json){
     mqtt = Mqtt.fromJson(json['mqtt']);

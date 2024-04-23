@@ -2,7 +2,7 @@
 import 'dart:math';
 
 import 'package:bonsoir/bonsoir.dart';
-import 'package:koti/devices/shelly/shelly.dart';
+import 'package:koti/devices/shelly/shelly_device.dart';
 import 'package:koti/devices/shelly/shelly_scan.dart';
 import 'package:koti/devices/shelly/shelly_script_code.dart';
 
@@ -22,8 +22,9 @@ Future <ShellyDevice> _initTestEnvironment() async {
   ResolvedBonsoirService bSData = shellyScan.resolveServiceData(serviceName);
 
   ShellyDevice newDevice = ShellyDevice();
-  newDevice.initFromScan(bSData);
   newDevice.name = 'testDevice';
+  newDevice.id = bSData.name;
+  newDevice.initFromScan(bSData);
 
   return newDevice;
 }

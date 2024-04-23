@@ -1,24 +1,27 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
-
 import '../devices/device/device.dart';
 import '../devices/wifi/wifi.dart';
-import '../devices/wlan/active_wifi_name.dart';
+import '../functionalities/electricity_price/electricity_price.dart';
 import '../functionalities/functionality/functionality.dart';
 import '../functionalities/functionality/view/functionality_view.dart';
 import '../interfaces/estate_data_storage.dart';
+import '../operation_modes/operation_modes.dart';
 import '../look_and_feel.dart';
+import 'environment.dart';
 
-class Estate extends ChangeNotifier {
-  String name = '';
+class Estate extends Environment {
   String id = '';
-  late Wifi myWifiDevice = Wifi();
+  Wifi myWifiDevice = Wifi();
+
+  Environment env = Environment();
 
   List <Device> devices = [];
   List <Functionality> features = [];
   List <FunctionalityView> views = [];
+
+  OperationModes operationModes = OperationModes();
 
   Estate() {
   }
@@ -36,8 +39,18 @@ class Estate extends ChangeNotifier {
     myWifiDevice.initWifi(initMyWifi);
   }
 
+  ElectricityPrice myDefaultElectricityPrice() {
+    for (int functionalityIndex = 0; functionalityIndex < features.length; functionalityIndex++) {
+      var functionality = features[functionalityIndex];
+      if (functionality is ElectricityPrice) {
+        return features[functionalityIndex] as ElectricityPrice;
+      }
+    }
+    log.error ('Estate myDefaultElectricityPrice: no ElectricityPrice functionality found!');
+    return ElectricityPrice();
+  }
   void addDevice(Device newDevice) {
-    newDevice.myEstate = this;
+    newDevice.myEstates.add(this);
 
     if ( !deviceExists(newDevice.id)) {
       devices.add(newDevice);
@@ -72,9 +85,22 @@ class Estate extends ChangeNotifier {
     // views.add()
   }
 
+  List<String> operationModeNames() {
+    List<String> names = operationModes.operationModeNames();
+    features.forEach((e)=>names += e.operationModes.operationModeNames());
+    names.sort();
+    return names;
+  }
+
+
   Estate.fromJson(Map<String, dynamic> json){
     name = json['name'] ?? '';
     id = json['id'] ?? '';
+
+    operationModes.add('Normi',() async {}); //TODO: POIS TÄMÄ
+    operationModes.add('Poissa',() async {}); //TODO: POIS TÄMÄ
+    operationModes.add('Takka',() async {}); //TODO: POIS TÄMÄ
+    operationModes.select('Normi');
 
     myWifiDevice = Wifi();
     devices.add(myWifiDevice);
@@ -101,7 +127,7 @@ class Estate extends ChangeNotifier {
   }
 }
 
-Estate noEstates = Estate();
+final Estate noEstates = Estate();
 
 class Estates {
   List <Estate> estates = [];
@@ -188,7 +214,7 @@ class Estates {
   Future<void> activateDataStructure() async {
     for (int i=0; i<estates.length; i++) {
       for (int j=0; j<estates[i].devices.length; j++) {
-        estates[i].devices[j].myEstate = estates[i];
+        estates[i].devices[j].myEstates.add(estates[i]);
         await estates[i].devices[j].init();
       }
       for (int k=0; k<estates[i].features.length; k++) {
@@ -201,7 +227,8 @@ class Estates {
     clearDataStructures();
     try {
       var estateData = _estateDataStorage.readObservationData();
-      fromJson(jsonDecode(estateData));
+      var json = jsonDecode(estateData);
+      fromJson(json);
       await activateDataStructure();
     }
     catch (e, st) {
@@ -211,7 +238,8 @@ class Estates {
   }
 
   Future <void> store() async {
-    await _estateDataStorage.storeEstateFile(jsonEncode(this));
+    var json = jsonEncode(this);
+    await _estateDataStorage.storeEstateFile(json);
   }
 
   void fromJson(Map<String, dynamic> json){

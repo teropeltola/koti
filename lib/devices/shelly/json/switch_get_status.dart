@@ -1,5 +1,7 @@
-class SwitchGetStatus {
-  SwitchGetStatus({
+import 'dart:math';
+
+class ShellySwitchStatus {
+  ShellySwitchStatus({
     required this.id,
     required this.source,
     required this.output,
@@ -11,17 +13,28 @@ class SwitchGetStatus {
     required this.temperature,
   });
 
-  late final int id;
-  late final String source;
-  late final bool output; // true if the output channel is currently on, false otherwise
-  late final double apowerInWatts; // Last measured instantaneous active power (in Watts) delivered to the attached load (shown if applicable)
-  late final double voltage;
-  late final double currentInAmperes;
-  late final int freq;
-  late final Aenergy aenergy;
-  late final Temperature temperature;
+  late int id;
+  late String source;
+  late bool output; // true if the output channel is currently on, false otherwise
+  late double apowerInWatts; // Last measured instantaneous active power (in Watts) delivered to the attached load (shown if applicable)
+  late double voltage;
+  late double currentInAmperes;
+  late int freq;
+  late Aenergy aenergy;
+  late Temperature temperature;
 
-  SwitchGetStatus.fromJson(Map<String, dynamic> json)
+  ShellySwitchStatus.empty() {
+    id = -1;
+    source = '';
+    output = false;
+    apowerInWatts = 0.0;
+    voltage = 0.0;
+    currentInAmperes = 0.0;
+    freq = 0;
+    aenergy = Aenergy(totalInWattHours: 0.0, byMinuteInMilliwattHours: [], minuteTs: 0);
+    temperature = Temperature(tC: 0.0, tF:0);
+  }
+  ShellySwitchStatus.fromJson(Map<String, dynamic> json)
       : id = json['id'] ?? 0,
         source = json['source'] ?? '',
         output = json['output'] ?? false,
@@ -45,6 +58,15 @@ class SwitchGetStatus {
     data['temperature'] = temperature.toJson();
     return data;
   }
+
+  String toString() {
+    return 'source: $source\n'
+        'power(W): $apowerInWatts\n'
+        'voltage: $voltage\n'
+        'amperes: $currentInAmperes\n'
+        'freq: $freq\n'
+        '${aenergy.toString()}';
+  }
 }
 
 class Aenergy {
@@ -54,13 +76,13 @@ class Aenergy {
     required this.minuteTs,
   });
 
-  late final double totalInWattHours;
-  late final List<int> byMinuteInMilliwattHours;
-  late final int minuteTs; // Unix timestamp of the first second of the last minute (in UTC)
+  late  double totalInWattHours;
+  late  List<double> byMinuteInMilliwattHours;
+  late  int minuteTs; // Unix timestamp of the first second of the last minute (in UTC)
 
   Aenergy.fromJson(Map<String, dynamic> json)
       : totalInWattHours = json['total'] != null ? json['total'].toDouble() : 0.0,
-        byMinuteInMilliwattHours = List.castFrom<dynamic, int>(json['by_minute'] ?? []),
+        byMinuteInMilliwattHours = List.castFrom<dynamic, double>(json['by_minute'] ?? []),
         minuteTs = json['minute_ts'] ?? 0;
 
   Map<String, dynamic> toJson() {
@@ -70,6 +92,16 @@ class Aenergy {
     data['minute_ts'] = minuteTs;
     return data;
   }
+
+  String toString() {
+    DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(minuteTs*1000);
+    String s = 'Aenergy ${dateTime.day}.${dateTime.month}. ${dateTime.hour}:${dateTime.minute} total(W):$totalInWattHours\n  -last minutes(mW):';
+    int amount = min(byMinuteInMilliwattHours.length,20);
+    for (int i=0; i<amount; i++) {
+      s += '${byMinuteInMilliwattHours[i]},';
+    }
+    return s;
+  }
 }
 
 class Temperature {
@@ -78,8 +110,8 @@ class Temperature {
     required this.tF,
   });
 
-  late final double tC;
-  late final double tF;
+  late double tC;
+  late double tF;
 
   Temperature.fromJson(Map<String, dynamic> json)
       : tC = json['tC'] != null ? json['tC'].toDouble() : 0.0,
@@ -92,102 +124,3 @@ class Temperature {
     return data;
   }
 }
-
-/*
-class SwitchGetStatus {
-  SwitchGetStatus({
-    required this.id,
-    required this.source,
-    required this.output,
-    required this.apowerInWatts,
-    required this.voltage,
-    required this.currentInAmperes,
-    required this.freq,
-    required this.aenergy,
-    required this.temperature,
-  });
-
-  late final int id;
-  late final String source;
-  late final bool output; // true if the output channel is currently on, false otherwise
-  late final double apowerInWatts; // Last measured instantaneous active power (in Watts) delivered to the attached load (shown if applicable)
-  late final double voltage;
-  late final double currentInAmperes;
-  late final int freq;
-  late final Aenergy aenergy;
-  late final Temperature temperature;
-
-  SwitchGetStatus.fromJson(Map<String, dynamic> json)
-      : id = json['id'] ?? 0,
-        source = json['source'] ?? '',
-        output = json['output'] ?? false,
-        apowerInWatts = json['apower'] ?? 0.0,
-        voltage = json['voltage'] ?? 0.0,
-        currentInAmperes = json['current'] ?? 0.0,
-        freq = json['freq'] ?? 0,
-        aenergy = Aenergy.fromJson(json['aenergy'] ?? {}),
-        temperature = Temperature.fromJson(json['temperature'] ?? {});
-
-  Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['source'] = source;
-    _data['output'] = output;
-    _data['apower'] = apowerInWatts;
-    _data['voltage'] = voltage;
-    _data['current'] = currentInAmperes;
-    _data['freq'] = freq;
-    _data['aenergy'] = aenergy.toJson();
-    _data['temperature'] = temperature.toJson();
-    return _data;
-  }
-}
-
-class Aenergy {
-  Aenergy({
-    required this.totalInWattHours,
-    required this.byMinuteInMilliwattHours,
-    required this.minuteTs,
-  });
-
-  late final double totalInWattHours;
-  late final List<int> byMinuteInMilliwattHours;
-  late final int minuteTs; // Unix timestamp of the first second of the last minute (in UTC)
-
-  Aenergy.fromJson(Map<String, dynamic> json)
-      : totalInWattHours = json['total'] ?? 0.0,
-        byMinuteInMilliwattHours = List.castFrom<dynamic, int>(json['by_minute'] ?? []),
-        minuteTs = json['minute_ts'] ?? 0;
-
-  Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['total'] = totalInWattHours;
-    _data['by_minute'] = byMinuteInMilliwattHours;
-    _data['minute_ts'] = minuteTs;
-    return _data;
-  }
-}
-
-class Temperature {
-  Temperature({
-    required this.tC,
-    required this.tF,
-  });
-
-  late final double tC;
-  late final double tF;
-
-  Temperature.fromJson(Map<String, dynamic> json)
-      : tC = json['tC'] ?? 0.0,
-        tF = json['tF'] ?? 0.0;
-
-  Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['tC'] = tC;
-    _data['tF'] = tF;
-    return _data;
-  }
-}
-
-
- */

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:koti/functionalities/boiler_heating/view/boiler_heating_functionality_view.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
 
 import '../../../look_and_feel.dart';
+import '../../air_heat_pump_functionality/view/air_heat_pump_view.dart';
 import '../../electricity_price/view/electricity_price_view.dart';
 import '../../heating_system_functionality/view/heating_system_view.dart';
 import '../../plain_switch_functionality/view/plain_switch_functionality_view.dart';
@@ -53,8 +55,10 @@ FunctionalityView extendedFunctionalityViewFromJson(Map<String, dynamic> json) {
     case 'TeslaFunctionalityView': return TeslaFunctionalityView.fromJson(json);
     case 'WeatherForecastView': return WeatherForecastView.fromJson(json);
     case 'ElectricityGridBlock': return ElectricityGridBlock.fromJson(json);
+    case 'AirHeatPumpView': return AirHeatPumpView.fromJson(json);
+    case 'BoilerHeatingFunctionalityView': return BoilerHeatingFunctionalityView.fromJson(json);
   }
-  log.error('unknown FunctionalityVoew jsonObject: ${json['type'] ?? '- not found at all-'}');
+  log.error('unknown FunctionalityView jsonObject: ${json['type'] ?? '- not found at all-'}');
   return FunctionalityView(allFunctionalities.noFunctionality());
 }
 

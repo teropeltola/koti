@@ -20,7 +20,7 @@ void main() {
       expect(device.id, '');
       expect(device.state, isA<DeviceState>());
       expect(device.connectedFunctionalities.isEmpty, true);
-      expect(device.myEstate, isA<Estate>());
+      expect(device.myEstates.isEmpty, true);
     });
 
     test('Details description should be an empty string', () {
@@ -38,7 +38,7 @@ void main() {
       originalDevice.id = '123';
       originalDevice.state = DeviceState();
       originalDevice.connectedFunctionalities.add(f);
-      originalDevice.myEstate = Estate();
+      originalDevice.myEstates.add(Estate());
 
       Device clonedDevice = originalDevice.clone();
 
@@ -46,7 +46,7 @@ void main() {
       expect(clonedDevice.id, originalDevice.id);
       expect(clonedDevice.state.currentState(), originalDevice.state.currentState());
       expect(clonedDevice.connectedFunctionalities[0], f);
-      expect(clonedDevice.myEstate, originalDevice.myEstate);
+      expect(clonedDevice.myEstates[0], originalDevice.myEstates[0]);
     });
 
     test('Device should be created from JSON correctly', () {
@@ -79,20 +79,20 @@ void main() {
       originalDevice.id = '123';
       originalDevice.state = DeviceState();
       originalDevice.connectedFunctionalities.add(f);
-      originalDevice.myEstate = Estate();
-      originalDevice.myEstate.name = 'TestEstate';
-      originalDevice.state.setState(StateModel.active);
+      originalDevice.myEstates.add(Estate());
+      originalDevice.myEstates[0].name = 'TestEstate';
+      originalDevice.state.setState(StateModel.connected);
 
       Device clonedDevice = originalDevice.clone();
-      originalDevice.myEstate.name = 'TestEstate2';
+      originalDevice.myEstates[0].name = 'TestEstate2';
       originalDevice.state.setState(StateModel.notInstalled);
 
       expect(clonedDevice.name, originalDevice.name);
       expect(clonedDevice.id, originalDevice.id);
       expect(clonedDevice.connectedFunctionalities[0], f);
-      expect(clonedDevice.myEstate, originalDevice.myEstate);
-      expect(clonedDevice.myEstate.name, 'TestEstate2');
-      expect(clonedDevice.state.currentState(), StateModel.active);
+      expect(clonedDevice.myEstates[0], originalDevice.myEstates[0]);
+      expect(clonedDevice.myEstates[0].name, 'TestEstate2');
+      expect(clonedDevice.state.currentState(), StateModel.connected);
 
     });
 
@@ -154,11 +154,12 @@ void main() {
     device.name = 'TestDevice';
     device.id = '123';
     await device.init();
-    expect(device.temperatureFunction(),-88.8);
+    expect(device.temperatureFunction(),-99.9);
 
   });
 
   test('device dispose', () async {
+    clearAllDevices();
     Device device = Device();
     device.name = 'TestDevice';
     device.id = '123';

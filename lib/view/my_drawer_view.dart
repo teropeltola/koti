@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 import 'package:koti/devices/shelly/shelly_script_code.dart';
 import 'package:koti/main.dart';
 
 import '../devices/ouman/view/ouman_view.dart';
-import '../devices/shelly/shelly.dart';
+import '../devices/shelly/shelly_device.dart';
 import '../devices/shelly/shelly_code_editor_view.dart';
 import '../devices/shelly/shelly_script_analysis.dart';
 import '../devices/wlan/find_devices.dart';
@@ -12,6 +13,7 @@ import '../functionalities/electricity_price/electricity_price.dart';
 import '../functionalities/electricity_price/view/electricity_price_view.dart';
 import '../functionalities/functionality/functionality.dart';
 import '../look_and_feel.dart';
+import '../operation_modes/view/conditional_option_list_view.dart';
 import 'my_talker_view.dart';
 
 Drawer myDrawerView( BuildContext context,
@@ -46,27 +48,19 @@ Drawer myDrawerView( BuildContext context,
             Navigator.pop(context);
           },
         ),
-/*
+
         ListTile(
-          leading: const Icon(Icons.electrical_services,
+          leading: const Icon(Icons.list,
               color: myPrimaryColor, size: 40),
-          title: const Text('pörssisähkö'),
+          title: const Text('listan testaus'),
           onTap: () async {
-            if (! myElectricityPrice.isInitialized()) {
-              await myElectricityPrice.init();
-            }
             await Navigator.push(context, MaterialPageRoute(
               builder: (context) {
-                return const ElectricityPriceView();
+                return const ReorderableAppTest();
               },
             ));
-            callback();
-            if (!context.mounted) return;
-            Navigator.pop(context);
-          },
+          }
         ),
-
- */
         ListTile(
           leading: const Icon(Icons.network_check,
               color: myPrimaryColor, size: 40),
@@ -89,7 +83,7 @@ Drawer myDrawerView( BuildContext context,
             device.setIpAddress('192.168.72.79');
             //await device.sysGetConfig();
             //await device.plugsUiGetConfig();
-            await device.switchGetStatus();
+            await device.switchGetStatus(0);
             Navigator.pop(context);
           },
         ),
@@ -137,13 +131,22 @@ Drawer myDrawerView( BuildContext context,
         ListTile(
           leading: const Icon(Icons.gas_meter,
               color: myPrimaryColor, size: 40),
-          title: const Text('Ouman'),
+          title: const Text('Ilpo'),
           onTap: () async {
+            MitsuHeatPumpDevice ilpo = MitsuHeatPumpDevice();
+            bool loginOK = await ilpo.login();
+            if (loginOK) {
+              bool deviceListOK = await ilpo.getDevices();
+            }
+            bool a = false;
+            /*
             await Navigator.push(context, MaterialPageRoute(
               builder: (context) {
                 return  const MyOumanApp();
               },
             ));
+
+             */
             callback();
             if (!context.mounted) return;
             Navigator.pop(context);

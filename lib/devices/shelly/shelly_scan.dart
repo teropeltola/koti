@@ -26,14 +26,17 @@ class ShellyScan {
   }
   
   ResolvedBonsoirService resolveServiceData(String serviceName) {
-    dynamic dyn = _getServiceData(serviceName);
+    BonsoirService dyn = _getServiceData(serviceName);
+    if (dyn.runtimeType != ResolvedBonsoirService) {
+      dyn = const ResolvedBonsoirService(name:'#not found#',type: '', port: 0, ip: '', attributes: {});
+    }
     return dyn as ResolvedBonsoirService;
   }
 
   BonsoirService _getServiceData(serviceName) {
     BonsoirService? bs = bonsoirDiscoveryModel.getServiceData(serviceName);
     if (bs == null) {
-      return const ResolvedBonsoirService(name:'',type: '', port: 0, ip: '', attributes: {});
+      return const ResolvedBonsoirService(name:'#not found#',type: '', port: 0, ip: '', attributes: {});
     }
     return bs;
   }

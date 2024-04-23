@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:bonsoir/bonsoir.dart';
 
-import 'package:koti/devices/shelly/shelly.dart';
+import 'package:koti/devices/shelly/shelly_device.dart';
 import 'package:koti/devices/shelly/shelly_scan.dart';
 import 'package:koti/look_and_feel.dart';
 import 'package:koti/main.dart';

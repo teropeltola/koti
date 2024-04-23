@@ -21,7 +21,7 @@ void main() {
       expect(n.id, '');
       expect(n.state, isA<DeviceState>());
       expect(n.connectedFunctionalities.isEmpty, true);
-      expect(n.myEstate, isA<Estate>());
+      expect(n.myEstates.isEmpty, true);
     });
 
     test('Device should be created from JSON correctly', () {

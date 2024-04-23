@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/wlan/active_wifi_name.dart';
 import 'package:koti/view/my_drawer_view.dart';
+import 'package:koti/operation_modes/view/operation_modes_selection_view.dart';
 import 'package:provider/provider.dart';
 
 import '../../main.dart';
@@ -52,13 +53,21 @@ class _EstateViewState extends State<EstateView> {
                     : const Icon(Icons.wifi_off, color: Colors.red)
               ]),
               drawer: Drawer(child: myDrawerView(context, () {widget.callback();})),
-              body: GridView.count(
-                crossAxisCount: 3,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                padding: const EdgeInsets.all(4.0),
-                children: _getGridViewItems(context, estate),
-              ));
+              body:
+                Column(children: [
+                OperationModesSelectionView(operationModes: estate.operationModes),
+                Container(
+                  height: 300,
+                  child: GridView.count(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 10,
+                    mainAxisSpacing: 10,
+                    padding: const EdgeInsets.all(4.0),
+                    children: _getGridViewItems(context, estate),
+                  )
+              )]
+              )
+          ,);
         }));
   }
 }
