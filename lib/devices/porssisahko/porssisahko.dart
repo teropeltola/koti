@@ -73,14 +73,13 @@ class Porssisahko extends NetworkDevice {
 
   void _setupRetryTimer() {
     // Retry every set interval
-    _retryTimer = Timer.periodic(Duration(minutes: _retryInterval), (timer) async {
+    _retryTimer = Timer(Duration(minutes: _retryInterval), () async {
       await _fetchData();
     });
   }
 
   @override
   Future<void> editWidget(BuildContext context, Estate estate, Functionality functionality, Device device) async {
-    await initElectricityAgreementData(estate);
     await Navigator.push(
         context, MaterialPageRoute(
       builder: (context) {

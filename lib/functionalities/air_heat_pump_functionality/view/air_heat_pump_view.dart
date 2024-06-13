@@ -1,14 +1,18 @@
-
 import 'package:flutter/material.dart';
 
 import '../../../logic/observation.dart';
+import '../../../logic/service_caller.dart';
 import '../../../look_and_feel.dart';
 
+import '../../../main.dart';
 import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 
 import '../air_heat_pump.dart';
 import 'air_heat_pump_overview.dart';
+
+const String airHeatParameterFunction = 'airHeatParameterFunction';
+const String temperatureParameterId = 'temperature';
 
 class AirHeatPumpView extends FunctionalityView {
 
@@ -30,11 +34,9 @@ class AirHeatPumpView extends FunctionalityView {
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return AirHeatPumpOverview(airHeatPump:myFunctionality);
+              return AirHeatPumpOverview(airHeatPump:myFunctionality, callback: callback);
             },
           ));
-          callback();
-
         },
         onLongPress: () {
         },
@@ -45,6 +47,7 @@ class AirHeatPumpView extends FunctionalityView {
                   (myFunctionality as AirHeatPump).myPumpDevice().name,
                   style: const TextStyle(
                       fontSize: 12)),
+              shortOperationModeText(),
               Icon(
                 Icons.heat_pump_rounded,
                 size: 50,
@@ -54,9 +57,25 @@ class AirHeatPumpView extends FunctionalityView {
     );
   }
 
+  @override
+
+
   AirHeatPumpView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
-    //super.fromJson(json);
     myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '') as AirHeatPump;
   }
 
+  @override
+  String viewName() {
+    return 'Ilmalämpöpumppu';
+  }
+
+  @override
+  String subtitle() {
+    Functionality functionality = myFunctionality as Functionality;
+    return functionality.device.name;
+  }
+
 }
+
+
+

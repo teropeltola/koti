@@ -6,7 +6,7 @@ import 'package:talker_flutter/talker_flutter.dart';
 import '../look_and_feel.dart';
 
 TalkerScreenTheme _myTalkerScreenTheme = const TalkerScreenTheme(
-  backgroundColor: Colors.white,
+  backgroundColor: Colors.grey,
   textColor: Colors.blue,
   cardColor: Colors.white
 );
@@ -56,10 +56,26 @@ class _MyTalkerViewState extends State<MyTalkerView> {
       ),
       home: Builder(builder: (context) {
         return Scaffold(
+          appBar: AppBar(
+            leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+        tooltip: 'Palaa takaisin',
+        onPressed: () {
+          Navigator.pop(context);
+        }),
+        title: appTitle('Loki')
+          ),
           body: TalkerScreen(
               talker: widget.talker,
               theme: _myTalkerScreenTheme,
               appBarTitle: 'loki',
+              appBarLeading: IconButton(
+                  icon: const Icon(Icons.arrow_forward),
+                  tooltip: 'Palaa takaisin',
+                  onPressed: ()  {
+                    if (!context.mounted) return;
+                    Navigator.pop(context);
+                  }),
           ),
         );
       }),

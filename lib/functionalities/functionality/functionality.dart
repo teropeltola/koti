@@ -86,10 +86,12 @@ class Functionality {
   late Device device;
   late UniqueId _id;
 
-  OperationModes operationModes = OperationModes();
+  late OperationModes operationModes;
 
   Functionality() {
+    device = noDevice;
     _id = UniqueId('f');
+    operationModes = OperationModes(_id.get());
   }
 
   Functionality.withParameters(Device devicePar, UniqueId idPar) {
@@ -114,6 +116,7 @@ class Functionality {
     this.device.editWidget(context, estate, this, this.device);
   }
 
+
   FunctionalityView myView() {
     return FunctionalityView(this);
   }
@@ -125,6 +128,7 @@ class Functionality {
 
   void fromJson(Map<String, dynamic> json){
     device = findDevice(json['deviceId'] ?? '');
+    operationModes = OperationModes.fromJson(json['operationModes'] ?? {});
   }
 
   Functionality.fromJson(Map<String, dynamic> json){
@@ -138,13 +142,14 @@ class Functionality {
     json['type'] = runtimeType.toString();
     json['id'] = _id.get();
     json['deviceId'] = device.id;
+    json['operationModes'] = operationModes.toJson();
 
     return json;
   }
 
 }
 
-Functionality extendedFunctionalityFromJson(Map<String, dynamic> json) {
+Functionality extendedFunctionalityFromJson(String estateName, Map<String, dynamic> json) {
   String myId = json['id'] ?? '';
   Functionality myFunctionality = allFunctionalities.findFunctionality(myId);
   String myType = json['type'] ?? '';
@@ -187,5 +192,7 @@ Functionality extendedFunctionalityFromJson(Map<String, dynamic> json) {
       log.error('different functionality classes (${myFunctionality.runtimeType}/$myType) with the same id ($myId).');
     }
   }
+  myFunctionality.operationModes.estateName = estateName;
+
   return myFunctionality;
 }

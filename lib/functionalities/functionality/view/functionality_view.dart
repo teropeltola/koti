@@ -30,6 +30,38 @@ class FunctionalityView {
     return emptyWidget();
   }
 
+  Widget shortOperationModeText() {
+    Functionality functionality = myFunctionality as Functionality;
+    if (functionality.operationModes.showCurrent())  {
+      return Container(
+        padding: const EdgeInsets.all(3.0), // Adjust padding as needed
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.white, // Border color
+            width: 1.0, // Border width
+          ),
+          borderRadius: BorderRadius.circular(5.0), // Rounded corners
+        ),
+        child: Text(
+          functionality.operationModes.currentModeName(),
+          style: const TextStyle(
+            fontSize: 10.0, // Adjust font size as needed
+            fontWeight: FontWeight.normal, // Adjust font weight as needed
+            //color: Colors.black, // Text color
+          ),
+        ),
+      );
+    }
+    else {
+      return emptyWidget();
+    }
+  }
+
+  Future<void> setParameters(Map<String, dynamic> parameters) async {
+
+  }
+
+
   void fromJson(Map<String, dynamic> json){
     myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '');
   }
@@ -45,7 +77,18 @@ class FunctionalityView {
     json['myFunctionalityId'] = myFunctionality.id();
     return json;
   }
+
+  String viewName() {
+    return 'puuttuva toimintonäyttö';
+  }
+
+  String subtitle() {
+    return '';
+  }
+
 }
+
+
 
 FunctionalityView extendedFunctionalityViewFromJson(Map<String, dynamic> json) {
   switch (json['type'] ?? '') {

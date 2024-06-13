@@ -55,6 +55,18 @@ class WeatherForecastView extends FunctionalityView {
             ])
     );
   }
+
+  @override
+  String viewName() {
+    return 'Säätila';
+  }
+
+  @override
+  String subtitle() {
+    return 'Tapanila';
+  }
+
+
 }
 
 const String networkServiceProblemInfo = 'Emme saa yhteyttä säätietoihin, joten tätä palvelua ei voi käyttää.';

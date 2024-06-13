@@ -39,7 +39,7 @@ void main() {
 
       var json = f.toJson();
 
-      Functionality f2 = extendedFunctionalityFromJson(json);
+      Functionality f2 = extendedFunctionalityFromJson('',json);
       expect(f2 is Functionality, true);
       expect(f2.device.id, 'device.id');
       expect(f2.id(), f.id());
@@ -51,7 +51,7 @@ void main() {
 
       json = h.toJson();
 
-      Functionality f3 = extendedFunctionalityFromJson(json);
+      Functionality f3 = extendedFunctionalityFromJson('', json);
       expect(f3 is HeatingSystem, true);
       expect(f3.device.name, 'Ouman');
       expect(f3.id(), h.id());
@@ -63,7 +63,7 @@ void main() {
 
       json = p.toJson();
 
-      Functionality f4 = extendedFunctionalityFromJson(json);
+      Functionality f4 = extendedFunctionalityFromJson('', json);
       expect(f4 is PlainSwitchFunctionality, true);
       expect(f4.device.name, '');
       expect(f4.id(), p.id());
@@ -74,7 +74,7 @@ void main() {
 
       json = t.toJson();
 
-      Functionality f5 = extendedFunctionalityFromJson(json);
+      Functionality f5 = extendedFunctionalityFromJson('', json);
       expect(f5 is TeslaFunctionality, true);
       expect(f5.device.name, '');
       expect(f5.id(), t.id());
@@ -85,7 +85,7 @@ void main() {
 
       json = w.toJson();
 
-      Functionality f6 = extendedFunctionalityFromJson(json);
+      Functionality f6 = extendedFunctionalityFromJson('', json);
       expect(f6 is WeatherForecast, true);
       expect(f6.device.name, '');
       expect(f6.id(), w.id());
@@ -100,7 +100,7 @@ void main() {
 
       var json = f.toJson();
 
-      Functionality f2 = extendedFunctionalityFromJson(json);
+      Functionality f2 = extendedFunctionalityFromJson('', json);
       expect(f2 is Functionality, true);
       expect(f2.device.id, 'device.id');
       expect(f2.id(), f.id());
@@ -111,7 +111,7 @@ void main() {
 
       json = h.toJson();
 
-      Functionality f3 = extendedFunctionalityFromJson(json);
+      Functionality f3 = extendedFunctionalityFromJson('', json);
       expect(f3 is HeatingSystem, true);
       expect(f3.device.name, 'Ouman');
 
@@ -121,7 +121,7 @@ void main() {
 
       json = p.toJson();
 
-      Functionality f4 = extendedFunctionalityFromJson(json);
+      Functionality f4 = extendedFunctionalityFromJson('', json);
       expect(f4 is PlainSwitchFunctionality, true);
       expect(f4.device.name, '');
 
@@ -130,7 +130,7 @@ void main() {
 
       json = t.toJson();
 
-      Functionality f5 = extendedFunctionalityFromJson(json);
+      Functionality f5 = extendedFunctionalityFromJson('', json);
       expect(f5 is TeslaFunctionality, true);
       expect(f5.device.name, '');
 
@@ -139,7 +139,7 @@ void main() {
 
       json = w.toJson();
 
-      Functionality f6 = extendedFunctionalityFromJson(json);
+      Functionality f6 = extendedFunctionalityFromJson('', json);
       expect(f6 is WeatherForecast, true);
       expect(f6.device.name, '');
 
@@ -180,7 +180,7 @@ void main() {
         var json = f.toJson();
         json['type'] = 'bb';
 
-        Functionality f2 = extendedFunctionalityFromJson(json);
+        Functionality f2 = extendedFunctionalityFromJson('', json);
         expect(f2 is Functionality, true);
         var x = log.history.last;
         expect(x.message, 'unknown functionality jsonObject(bb) not implemented');
@@ -197,7 +197,7 @@ void main() {
 
         var json = f.toJson();
 
-        Functionality f2 = extendedFunctionalityFromJson(json);
+        Functionality f2 = extendedFunctionalityFromJson('', json);
         expect(f2 is Functionality, true);
         expect(f2.device.id, 'device.id');
         expect(f2.id(), f.id());
@@ -210,7 +210,7 @@ void main() {
         json = h.toJson();
         String earlierId = json['id'];
 
-        Functionality f3 = extendedFunctionalityFromJson(json);
+        Functionality f3 = extendedFunctionalityFromJson('', json);
         expect(f3 is HeatingSystem, true);
         expect(f3.device.name, 'Ouman');
         expect(f3.id(), h.id());
@@ -222,7 +222,7 @@ void main() {
         json = p.toJson();
         json['id'] = earlierId;
 
-        Functionality f4 = extendedFunctionalityFromJson(json);
+        Functionality f4 = extendedFunctionalityFromJson('', json);
 
         var x = log.history.last;
         expect(x.message, 'different functionality classes (HeatingSystem/PlainSwitchFunctionality) with the same id ($earlierId).');

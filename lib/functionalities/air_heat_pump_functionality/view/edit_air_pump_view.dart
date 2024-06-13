@@ -11,7 +11,11 @@ import 'package:provider/provider.dart';
 import '../../../devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 import '../../../estate/estate.dart';
 import '../../../functionalities/functionality/functionality.dart';
+import '../../../logic/service_caller.dart';
 import '../../../look_and_feel.dart';
+import '../../../operation_modes/conditional_operation_modes.dart';
+import '../../../operation_modes/operation_modes.dart';
+import '../../../operation_modes/view/conditional_option_list_view.dart';
 import '../air_heat_pump.dart';
 import 'air_heat_pump_view.dart';
 
@@ -84,8 +88,6 @@ class _EditAirPumpViewState extends State<EditAirPumpView> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<Estate>(
-        builder: (context, estate, childNotUsed) {
           return Scaffold(
               appBar: AppBar(
                 leading: IconButton(
@@ -137,93 +139,13 @@ class _EditAirPumpViewState extends State<EditAirPumpView> {
                         ]),
                       ),
                     ),
-                    Container(
-                      margin: myContainerMargin,
-                      padding: myContainerPadding,
-                      // height: 150,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Toimintatilat'),
-                        child: Column(
-                            mainAxisSize: MainAxisSize.min,
-                            children: <Widget>[
-                              airHeatPump.operationModes.nbrOfModes() == 0
-                                ? Text('Toimintotiloja ei määritelty')
-                                : OperationModesSelectionView(operationModes: airHeatPump.operationModes),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                                children: [
-                                  airHeatPump.operationModes.nbrOfModes() == 0
-                                    ? emptyWidget()
-                                    : OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                      backgroundColor: mySecondaryColor,
-                                      side: const BorderSide(
-                                          width: 2, color: mySecondaryColor),
-                                      shape: const RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.all(Radius.circular(10))),
-                                      elevation: 10),
-                                  onPressed: () async {
-                                    await Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) {
-                                            return EditOperationModeView(
-                                                estate: estate,
-                                                initOperationModeName: airHeatPump.operationModes.currentModeName(),
-                                                operationModes: airHeatPump.operationModes,
-                                                possibleTypes: possibleParameterTypes,
-                                                parameterFunction: _myParameterReading,
-                                                callback: (){});
-                                          },
-                                        )
-                                    );
-                                    setState(() {});
-                                  },
-                                  child: const Text(
-                                    'Muokkaa',
-                                    maxLines: 1,
-                                    style: TextStyle(color: mySecondaryFontColor),
-                                    textScaleFactor: 2.0,
-                                  ),
-                                ),
-                                OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                      backgroundColor: mySecondaryColor,
-                                      side: const BorderSide(
-                                          width: 2, color: mySecondaryColor),
-                                      shape: const RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.all(Radius.circular(10))),
-                                      elevation: 10),
-                                  onPressed: () async {
-                                    await Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) {
-                                          return EditOperationModeView(
-                                            estate: estate,
-                                            initOperationModeName: '',
-                                            operationModes: airHeatPump.operationModes,
-                                            possibleTypes: possibleParameterTypes,
-                                            parameterFunction: _myParameterReading,
-                                            callback: (){});
-                                        },
-                                      )
-                                    );
-                                    setState(() {});
-                                  },
-                                  child: const Text(
-                                    'Luo uusi',
-                                    maxLines: 1,
-                                    style: TextStyle(color: mySecondaryFontColor),
-                                    textScaleFactor: 2.0,
-                                  ),
-                                )
-                              ])
-                            ]),
-                      ),
-                    ),
+                    operationModeHandling(
+                      context,
+                      widget.estate,
+                      airHeatPump.operationModes,
+                      possibleParameterTypes,
+                      _myParameterReading,
+                      (){setState(() {});} ),
                     Container(
                         margin: myContainerMargin,
                         padding: myContainerPadding,
@@ -242,8 +164,8 @@ class _EditAirPumpViewState extends State<EditAirPumpView> {
                               onPressed: () async {
                                 airHeatPump.device.name = deviceName;
                                 await myEstates.store();
-                                log.info('${widget.estate.name}: laite asetettu ...."');
-                                showSnackbarMessage('laitteen tietoja päivitetty!');
+                                log.info('${widget.estate.name}: laitteen "$deviceName" tietoja muokattiin.');
+                                showSnackbarMessage('laitteen $deviceName tietoja päivitetty!');
                                 Navigator.pop(context, true);
                               },
                               child: const Text(
@@ -257,42 +179,55 @@ class _EditAirPumpViewState extends State<EditAirPumpView> {
               )
           );
         }
-    );
-  }
 }
 
-const String constWarming = 'Kiinteä lämmitys';
-const String spotWarming = 'Lämmitys/pörssisähkö';
-
-List<String> possibleParameterTypes = [constWarming, spotWarming];
+List<String> possibleParameterTypes = [constWarming, relativeWarming, dynamicOperationModeText];
 
 Widget _myParameterReading(
     String parameterTypeName,
-    Map<String,dynamic> parameters,
-    Function callback
+    OperationMode operationMode,
+    Estate estate,
+    OperationModes operationModes,
+    Function updateOperationMode
 )
 {
   Widget myWidget;
   switch (parameterTypeName) {
     case constWarming: {
-      myWidget=temperatureSelectionForm('dd', parameters, callback);
-      /*
-          Row(children: [
-        Expanded(flex: 2, child: Text('Haluttu lämpötila:')),
-        Expanded(flex: 2, child: _doubleFormatInput('lämpötila', parameters, callback))
-      ]);
-
-       */
+      ConstantOperationMode cOM = ConstantOperationMode();
+      if (operationMode.runtimeType.toString() == 'ConstantOperationMode') {
+        cOM = operationMode as ConstantOperationMode;
+      }
+      else {
+        ConstantOperationMode cOM = ConstantOperationMode().cloneFrom(
+            operationMode);
+      }
+      updateOperationMode(cOM);
+      myWidget=temperatureSelectionForm(temperatureParameterId, cOM.parameters);
+      break;
+    }
+    case relativeWarming:{
+      myWidget=Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
+      break;
+    }
+    case dynamicOperationModeText: {
+      ConditionalOperationModes conditionalModes = ConditionalOperationModes.fromJsonExtended(
+          operationModes,
+          operationMode.toJson()
+      );
+      updateOperationMode(conditionalModes);
+      myWidget = ConditionalOperationView(
+        conditions: conditionalModes
+      );
+      break;
     }
     default: myWidget = emptyWidget();
   }
   return myWidget;
 }
 
-Widget temperatureSelectionForm(String parameterName, Map <String, dynamic> parameters, Function callback) {
-  double currentValue = parameters[parameterName] ?? 0.0;
-
-  currentValue = 26.0;
+Widget temperatureSelectionForm(String parameterName, Map <String, dynamic> parameters) {
+  double currentValue = parameters[parameterName] ?? 24.0;
 
   return Thermostat(
     formatCurVal: (val) { return 'Lämpötila';},
@@ -308,15 +243,5 @@ Widget temperatureSelectionForm(String parameterName, Map <String, dynamic> para
     onChanged: (val) {currentValue = val; parameters[parameterName] = val; }
   );
 }
-
-/*
-glowColor: theme.glowColor,
-tickColor: theme.tickColor,
-thumbColor: theme.thumbColor,
-dividerColor: theme.dividerColor,
-ringColor: theme.ringColor,
-turnOnColor: theme.turnOnColor,
-
- */
 
 

@@ -38,6 +38,38 @@ class ElectricityPriceParameters {
   bool found() {
     return ((basicElectricityParameters.spotAddress.isNotEmpty) || (electricity.isNotEmpty) || (eDistribution.isNotEmpty));
   }
+
+  void init() {
+    _initiateParameterReading(this);
+  }
+
+  List <String> electricityAgreementNames() {
+    List <String> eAgreementNames = [''];
+    for (int i = 0; i<electricity.length; i++) {
+      eAgreementNames.add(electricity[i].eName);
+    }
+    return eAgreementNames;
+  }
+
+  List <String> eDistributionNames() {
+    List <String> eDistributionNames = [''];
+    for (int i = 0; i<eDistribution.length; i++) {
+      eDistributionNames.add(eDistribution[i].dName);
+    }
+    return eDistributionNames;
+  }
+
+  bool electricityAgreementIsSpot(int nameIndex) {
+    int index = nameIndex-1;
+    if (index < 0) {
+      return false;
+    }
+    else {
+      return electricity[index].eTemplateName == 'eSpot';
+    }
+  }
+
+
 }
 
 class BasicElectricityParameters {
@@ -121,6 +153,7 @@ class EDistribution {
     data['par4'] = par4;
     return data;
   }
+
 }
 
 double _readDouble(Map<String, dynamic> json, String jsonParameterName) {
@@ -135,6 +168,10 @@ double _readDouble(Map<String, dynamic> json, String jsonParameterName) {
   return 0.0;
 }
 
+void _initiateParameterReading(ElectricityPriceParameters e) async {
+  e = await readElectricityPriceParameters();
+}
+
 Future <ElectricityPriceParameters> readElectricityPriceParameters() async {
   try {
     final response = await http.get(Uri.parse(_parameterFileName));
@@ -146,12 +183,14 @@ Future <ElectricityPriceParameters> readElectricityPriceParameters() async {
 
       return priceParameters;
     }
-    log.log('Error ${response.statusCode} in parameter reading.');
+    log.log('Error ${response.statusCode} in electricity price parameter reading.');
   }
   catch (e, st) {
-    log.handle(e, st, 'Exception in parameter reading');
+    log.handle(e, st, 'Exception in electricity price parameter reading');
   }
   return ElectricityPriceParameters.empty();
 }
+
+ElectricityPriceParameters electricityPriceParameters = ElectricityPriceParameters.empty();
 
 

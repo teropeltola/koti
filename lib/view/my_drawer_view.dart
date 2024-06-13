@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 import 'package:koti/devices/shelly/shelly_script_code.dart';
+import 'package:koti/functionalities/electricity_price/view/edit_electricity_view.dart';
 import 'package:koti/main.dart';
+import 'package:talker_flutter/talker_flutter.dart';
 
 import '../devices/ouman/view/ouman_view.dart';
 import '../devices/shelly/shelly_device.dart';
@@ -9,6 +11,7 @@ import '../devices/shelly/shelly_code_editor_view.dart';
 import '../devices/shelly/shelly_script_analysis.dart';
 import '../devices/wlan/find_devices.dart';
 import '../estate/view/add_new_estate_view.dart';
+import '../estate/view/edit_estate_view.dart';
 import '../functionalities/electricity_price/electricity_price.dart';
 import '../functionalities/electricity_price/view/electricity_price_view.dart';
 import '../functionalities/functionality/functionality.dart';
@@ -40,26 +43,13 @@ Drawer myDrawerView( BuildContext context,
           onTap: () async {
             await Navigator.push(context, MaterialPageRoute(
               builder: (context) {
-                return const AddNewEstateView();
+                return EditEstateView(estateName: '');
               },
             ));
             callback();
             if (!context.mounted) return;
             Navigator.pop(context);
           },
-        ),
-
-        ListTile(
-          leading: const Icon(Icons.list,
-              color: myPrimaryColor, size: 40),
-          title: const Text('listan testaus'),
-          onTap: () async {
-            await Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return const ReorderableAppTest();
-              },
-            ));
-          }
         ),
         ListTile(
           leading: const Icon(Icons.network_check,
@@ -91,15 +81,21 @@ Drawer myDrawerView( BuildContext context,
           leading: const Icon(Icons.speaker_notes,
               color: myPrimaryColor, size: 40),
           title: const Text('Lokit'),
-          onTap: () async {
-            await Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return  MyTalkerView(talker: log );
-              },
-            ));
-            callback();
-            if (!context.mounted) return;
-            Navigator.pop(context);
+          onTap: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (context) =>
+                  TalkerScreen(
+                    talker: log,
+                    theme: const TalkerScreenTheme(
+                            backgroundColor: Colors.black12,
+                            textColor: Colors.white,
+                            cardColor: Colors.grey
+                        ),
+                    appBarTitle: 'loki',
+                  ),
+                )
+            );
           },
         ),
         ListTile(

@@ -1,16 +1,16 @@
-import 'package:bonsoir/bonsoir.dart';
+
 import 'package:flutter/material.dart';
+import 'package:koti/functionalities/air_heat_pump_functionality/view/air_heat_pump_view.dart';
 import 'package:koti/main.dart';
-import 'package:koti/operation_modes/view/operation_modes_selection_view.dart';
 import 'package:provider/provider.dart';
 
-import '../../../devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 import '../../../estate/estate.dart';
-import '../../../functionalities/functionality/functionality.dart';
 import '../../../look_and_feel.dart';
 import '../../../view/my_dropdown_widget.dart';
 import '../../logic/dropdown_content.dart';
+import '../conditional_operation_modes.dart';
 import '../operation_modes.dart';
+import 'operation_modes_selection_view.dart';
 
 class EditOperationModeView extends StatefulWidget {
   final Estate estate;
@@ -31,32 +31,32 @@ class EditOperationModeView extends StatefulWidget {
   _EditOperationModeViewState createState() => _EditOperationModeViewState();
 }
 
-List<String> _findUsableNames(String myName, List<String> allNames, List<String> notAllowedNames) {
-  var notAllowedSet = Set.from(notAllowedNames).difference({myName});
-  var usableSet = (Set.from(allNames)).difference(notAllowedSet);
-  return List.from(usableSet);
-}
 
 class _EditOperationModeViewState extends State<EditOperationModeView> {
   final FocusNode _focusNode = FocusNode();
   final FocusNode _focusNodeWifi = FocusNode();
   final myDeviceNameController = TextEditingController();
 
+  late OperationMode editedOperationMode;
   String operationModeName = '';
   List<String> usableNames = [];
   int currentModeIndex = -1;
   late DropdownContent operationNameSelection;
   late DropdownContent alternativeTypes;
-  Map <String, dynamic> myParameters = {};
+
+//  ConditionalOperationModes conditionalMode = ConditionalOperationModes();
 
   @override
   void initState() {
     super.initState();
     operationModeName = widget.initOperationModeName;
-    if (operationModeName != '') {
-      currentModeIndex = widget.operationModes.currentIndex();
-      myParameters = widget.operationModes.current().parameters;
+    if (insertNewOperationMode()) {
+      editedOperationMode = OperationMode();
     }
+    else {
+      editedOperationMode = widget.operationModes.getMode(operationModeName);
+    }
+
     usableNames = _findUsableNames(
         operationModeName,
         widget.estate.operationModes.operationModeNames(),
@@ -66,6 +66,15 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
     alternativeTypes = DropdownContent(widget.possibleTypes, '', 0);
     refresh();
   }
+
+  bool insertNewOperationMode() {
+    return widget.initOperationModeName == '';
+  }
+    List<String> _findUsableNames(String myName, List<String> allNames, List<String> notAllowedNames) {
+      var notAllowedSet = Set.from(notAllowedNames).difference({myName});
+      var usableSet = (Set.from(allNames)).difference(notAllowedSet);
+      return List.from(usableSet);
+    }
 
   void refresh() {
     myDeviceNameController.text = operationModeName;
@@ -81,8 +90,6 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<Estate>(
-        builder: (context, estate, childNotUsed) {
           return Scaffold(
               appBar: AppBar(
                 leading: IconButton(
@@ -98,19 +105,14 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                         Navigator.of(context).pop();
                       }
                     }),
-                title: appTitle('muokkaa toimintotilaa'),
+                title: appTitle(insertNewOperationMode() ? 'luo toimintotila' : 'muokkaa toimintotilaa'),
               ), // new line
               body: SingleChildScrollView(
                   child: Column(children: <Widget>[
                     Container(
                       margin: myContainerMargin,
                       padding: myContainerPadding,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Toimintotilan tiedot'), //k
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            _OperationModeNameForm(
+                      child: _OperationModeNameForm(
                                 modeName: operationModeName,
                                 alternatives: usableNames,
                                 setValue: (val) {
@@ -120,15 +122,22 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                                 setValueOnChanged: (val) {
                                   operationModeName = val;
                                 }),
-                        ]),
-                      ),
                     ),
-                    Container(
+                  (widget.possibleTypes.isEmpty)
+                  ? widget.parameterFunction(
+                      alternativeTypes.currentString(),
+                      editedOperationMode,
+                      widget.estate,
+                      widget.operationModes,
+                      (newEditedOperationMode){
+                            editedOperationMode = newEditedOperationMode;
+                            setState(() {});
+                      }
+                  )
+                  : Container(
                       margin: myContainerMargin,
                       padding: myContainerPadding,
                       // height: 150,
-                      child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'asetukset'),
                         child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
@@ -152,25 +161,14 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                                     ),
                                   ),
                               ),
-                              Container(
-                                margin: myContainerMargin,
-                                padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
-                                child: InputDecorator(
-                                  decoration:
-                                  const InputDecoration(labelText: 'parametrit'),
-                                  child: SizedBox(
-                                      height: 300,
-                                      width: 120,
-                                      child: widget.parameterFunction(
-                                          alternativeTypes.currentString(),
-                                          myParameters,
-                                              (){  setState(() {});}
-                                      )
-                                  ),
-                                ),
-                              ),
+                              widget.parameterFunction(
+                                alternativeTypes.currentString(),
+                                editedOperationMode,
+                                widget.estate,
+                                widget.operationModes,
+                                (updatedOperationMode){ editedOperationMode = updatedOperationMode; setState(() {});}
+                              )
                             ]),
-                      ),
                     ),
                     Container(
                         margin: myContainerMargin,
@@ -188,27 +186,34 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                                       BorderRadius.all(Radius.circular(10))),
                                   elevation: 10),
                               onPressed: () async {
-                                //TODO: check if everything is ok
-                                if (widget.operationModes.newNameOK(operationModeName)) {
-                                  if (widget.initOperationModeName != '') {
-                                    // editing existing operation mode
-                                    OperationMode operationMode = widget
-                                        .operationModes.getMode(
-                                        widget.initOperationModeName);
-                                    operationMode.name = operationModeName;
-                                    operationMode.parameters = myParameters;
-                                    //operationMode.setParameters();
+                                if (insertNewOperationMode()) {
+                                  if (widget.operationModes.newNameOK(operationModeName)) {
+                                    widget.operationModes.add(editedOperationMode);
+                                    editedOperationMode.name = operationModeName;
+                                    // await myEstates.store();
+                                    log.info('${widget.estate.name}: toimintotila "$operationModeName" lisätty');
+                                    showSnackbarMessage('toimintotila lisätty!');
+                                    Navigator.pop(context, true);
+                                  }
+                                  else if ( operationModeName == '') {
+                                    await informMatterToUser(context, 'Toimintotilan nimi ei voi olla tyhjä',
+                                    'Lisää toimintotilan nimi!');
                                   }
                                   else {
-                                    widget.operationModes.add(
-                                        operationModeName, () {});
+                                    await informMatterToUser(context, 'Nimeä ei voi käyttää',
+                                    'Vaihda toimintotilan nimeä!');
                                   }
-                                  await myEstates.store();
+                                }
+                                else if ((operationModeName == widget.initOperationModeName) || widget.operationModes.newNameOK(operationModeName)) {
+                                  editedOperationMode.name = operationModeName;
                                   log.info(
-                                      '${widget.estate.name}: DDDDDD ...."');
-                                  showSnackbarMessage(
-                                      'toimintotila päivitetty!');
+                                      '${widget.estate.name}: toimintotila "$operationModeName" päivitetty');
+                                  showSnackbarMessage('toimintotila päivitetty!');
                                   Navigator.pop(context, true);
+                                }
+                                else if ( operationModeName == '') {
+                                  await informMatterToUser(context, 'Toimintotilan nimi ei voi olla tyhjä',
+                                    'Lisää toimintotilan nimi!');
                                 }
                                 else {
                                   await informMatterToUser(context, 'Nimeä ei voi käyttää',
@@ -226,8 +231,6 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
               )
           );
         }
-    );
-  }
 }
 
 class _OperationModeNameForm extends StatelessWidget {
@@ -263,6 +266,7 @@ class _OperationModeNameForm extends StatelessWidget {
         return TextField(
           controller: fieldTextEditingController,
           focusNode: fieldFocusNode,
+          decoration: const InputDecoration(labelText: 'Toimintotilan nimi') ,
           style: const TextStyle(fontWeight: FontWeight.bold),
           onChanged: (value) {
             setValueOnChanged( fieldTextEditingController.text);
@@ -283,4 +287,69 @@ class _OperationModeNameForm extends StatelessWidget {
       },
     );
   }
+}
+
+Widget operationModeHandling(
+    BuildContext context,
+    Estate estate,
+    OperationModes operationModes,
+    List <String> possibleParameterTypes,
+    Function parameterReadingFunction,
+    Function callback
+  ) {
+  String selectedOpMode = '';
+  return Container(
+    margin: myContainerMargin,
+    padding: myContainerPadding,
+    // height: 150,
+    child: InputDecorator(
+      decoration: const InputDecoration(labelText: 'Toimintatilat'),
+      child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            operationModes.nbrOfModes() == 0
+                ? Text('Toimintotiloja ei määritelty')
+                : OperationModesEditingView(
+                    estate: estate,
+                    possibleParameterTypes: possibleParameterTypes,
+                    operationModes: operationModes,
+                    parameterReadingFunction: parameterReadingFunction,
+                    selectionNameFunction: ()=>selectedOpMode,
+                    returnSelectedModeName: (name){selectedOpMode = name;}),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                        backgroundColor: mySecondaryColor,
+                        side: const BorderSide(
+                            width: 2, color: mySecondaryColor),
+                        shape: const RoundedRectangleBorder(
+                            borderRadius:
+                            BorderRadius.all(Radius.circular(10))),
+                        elevation: 10),
+                    onPressed: () async {
+                      await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return EditOperationModeView(
+                                  estate: estate,
+                                  initOperationModeName: '',
+                                  operationModes: operationModes,
+                                  possibleTypes: possibleParameterTypes,
+                                  parameterFunction: parameterReadingFunction,
+                                  callback: (){});
+                            },
+                          )
+                      );
+                      callback();
+                    },
+                    child: const Text(
+                      'Luo uusi',
+                      maxLines: 1,
+                      style: TextStyle(color: mySecondaryFontColor),
+                      textScaleFactor: 2.0,
+                    ),
+                  ),
+          ]),
+    ),
+  );
 }

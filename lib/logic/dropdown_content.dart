@@ -44,7 +44,7 @@ class DropdownContent {
   }
 
   String currentString() {
-    return _dropdownOptions[_current.value()];
+    return getValue(_current.value());
   }
 
   int currentIndex() {

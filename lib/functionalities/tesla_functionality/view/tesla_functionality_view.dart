@@ -26,17 +26,28 @@ class TeslaFunctionalityView extends FunctionalityView {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-          Text(
-          'Tesla',
-          style: const TextStyle(
-          fontSize: 12)),
-          Icon(
-            Icons.electric_car_outlined,
-            size: 50,
-            color: Colors.white,
+            Text(
+              viewName(),
+              style: const TextStyle(fontSize: 12)),
+            Icon(
+              Icons.electric_car_outlined,
+              size: 50,
+              color: Colors.white,
           )
             ])
     );
   }
+
+  @override
+  String viewName() {
+    return 'Auton lataus';
+  }
+
+  @override
+  String subtitle() {
+    return 'Tesla';
+  }
+
+
 }
 

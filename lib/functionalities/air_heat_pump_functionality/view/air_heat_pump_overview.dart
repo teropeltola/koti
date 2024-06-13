@@ -1,18 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
-import 'package:koti/devices/ouman/ouman_device.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
 import 'package:koti/operation_modes/view/operation_modes_selection_view.dart';
 import 'package:provider/provider.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
+import '../../../main.dart';
 import '../air_heat_pump.dart';
 import 'edit_air_pump_view.dart';
 
 class AirHeatPumpOverview extends StatefulWidget {
   final AirHeatPump airHeatPump;
-  const AirHeatPumpOverview({Key? key, required this.airHeatPump}) : super(key: key);
+  final Function callback;
+  const AirHeatPumpOverview({Key? key, required this.airHeatPump, required this.callback}) : super(key: key);
 
   @override
   _AirHeatPumpState createState() => _AirHeatPumpState();
@@ -40,15 +41,24 @@ class _AirHeatPumpState extends State<AirHeatPumpOverview> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<Estate>(
-      builder: (context, estate, childNotUsed) {
         return Scaffold(
           appBar: AppBar(
+            leading: IconButton(
+                icon: const Icon(Icons.arrow_back),
+                tooltip: 'Palaa takaisin asuntonäytölle',
+                onPressed: () async {
+                  widget.callback();
+                  Navigator.pop(context, true);
+                }),
             title: appTitle(myAirHeatPumpDevice.name),
           ), // new line
           body: SingleChildScrollView(
               child: Column(children: <Widget>[
-                OperationModesSelectionView(operationModes: widget.airHeatPump.operationModes),
+                OperationModesSelectionView(
+                  operationModes: widget.airHeatPump.operationModes,
+                  topHierarchy: false,
+                    callback: () {setState(() {}); }
+                ),
                 airHeatPumpSummary(myAirHeatPumpDevice),
                       ])
               ),
@@ -68,20 +78,18 @@ class _AirHeatPumpState extends State<AirHeatPumpOverview> {
                               context, MaterialPageRoute(
                             builder: (context) {
                               return EditAirPumpView(
-                                  estate: estate,
+                                  estate: myEstates.currentEstate(),
                                   airHeatPumpInput: widget.airHeatPump as Functionality,
-                                  callback: () {});
-                            },
+                                  callback: (){widget.callback(); setState(() {});});
+                            }
                           ));
-
+                          widget.callback();
                           setState(() {});
                         }),
                   ]),
             )
 
         );
-      }
-    );
   }
 }
 

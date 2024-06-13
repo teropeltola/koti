@@ -1,8 +1,7 @@
-import 'package:bonsoir/bonsoir.dart';
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:koti/devices/wlan/active_wifi_name.dart';
-import 'package:koti/functionalities/plain_switch_functionality/plain_switch_functionality.dart';
 import 'package:provider/provider.dart';
 
 import '../../../devices/device/device.dart';
@@ -15,24 +14,6 @@ import '../electricity_price.dart';
 import '../json/electricity_price_parameters.dart';
 
 
-late DropdownContent _electricityAgreement;
-//= DropdownContent([''], 'electricity/agreement', 0);
-
-late DropdownContent _electricityDistributionAgreement;
-// = DropdownContent([''], 'electricity/distribution', 0);
-
-late ElectricityPriceParameters electricityPriceParameters;
-
-bool _spot() {
-  int index = _electricityAgreement.currentIndex()-1;
-  if (index < 0) {
-    return false;
-  }
-  else {
-    return electricityPriceParameters.electricity[index].eTemplateName == 'eSpot';
-  }
-}
-
 String electricityText(Electricity e) {
   if (e.eTemplateName == 'eSpot') {
     return ('${e.eName} (pörssisähkö)\n'
@@ -44,8 +25,9 @@ String electricityText(Electricity e) {
         '  - tuntihinta: ${e.par1.toStringAsFixed(2)} c/kWh\n');
         }
 }
-String eAgreementText() {
-  int index = _electricityAgreement.currentIndex()-1;
+
+String eAgreementText(int nameIndex) {
+  int index = nameIndex-1;
   if (index < 0) {
     return 'Ei määritelty';
   }
@@ -68,8 +50,8 @@ String eDistributionText(EDistribution d, double tax) {
   }
 }
 
-ElectricityTariff _eTariff() {
-  int index = _electricityAgreement.currentIndex() - 1;
+ElectricityTariff _eTariff(int nameIndex) {
+  int index = nameIndex - 1;
   ElectricityTariff e = ElectricityTariff();
   if (index < 0) {
     e.setValue('', TariffType.constant, 0);
@@ -77,14 +59,14 @@ ElectricityTariff _eTariff() {
   else {
     e.setValue(
         electricityPriceParameters.electricity[index].eName,
-        _spot() ? TariffType.spot : TariffType.constant,
+        electricityPriceParameters.electricityAgreementIsSpot(nameIndex) ? TariffType.spot : TariffType.constant,
         electricityPriceParameters.electricity[index].par1);
   }
   return e;
 }
 
-String distributorAgreementText() {
-  int index = _electricityDistributionAgreement.currentIndex()-1;
+String distributorAgreementText(int nameIndex) {
+  int index = nameIndex-1;
   if (index < 0) {
     return 'Ei määritelty';
   }
@@ -95,8 +77,8 @@ String distributorAgreementText() {
   }
 }
 
-ElectricityDistributionPrice _dTariff() {
-  int index = _electricityDistributionAgreement.currentIndex()-1;
+ElectricityDistributionPrice _dTariff(int nameIndex) {
+  int index = nameIndex-1;
   ElectricityDistributionPrice d = ElectricityDistributionPrice();
   if (index < 0) {
     d.setConstantParameters('', 0,0);
@@ -121,24 +103,6 @@ ElectricityDistributionPrice _dTariff() {
   return d;
 }
 
-
-
-Future <void> initElectricityAgreementData(Estate estate) async {
-  electricityPriceParameters = await readElectricityPriceParameters();
-
-  List <String> eAgreementNames = [''];
-  for (int i = 0; i<electricityPriceParameters.electricity.length; i++) {
-    eAgreementNames.add(electricityPriceParameters.electricity[i].eName);
-  }
- _electricityAgreement = DropdownContent(eAgreementNames, 'electricity/a/${estate.name}', 0);
-
-  List <String> eDistributionNames = [''];
-  for (int i = 0; i<electricityPriceParameters.eDistribution.length; i++) {
-    eDistributionNames.add(electricityPriceParameters.eDistribution[i].dName);
-  }
-  _electricityDistributionAgreement = DropdownContent(eDistributionNames, 'electricity/d/${estate.name}', 0);
-}
-
 class EditElectricityView extends StatefulWidget {
   final Estate estate;
   final Functionality functionality;
@@ -153,10 +117,15 @@ class _EditElectricityViewState extends State<EditElectricityView> {
   final FocusNode _focusNode = FocusNode();
   final FocusNode _focusNodeWifi = FocusNode();
   late ElectricityPrice myElectricityPrice;
+  late DropdownContent electricityAgreement; // = DropdownContent([''], '', 0);
+  late DropdownContent electricityDistributionAgreement; // = DropdownContent([''], '', 0);
+
 
   @override
   void initState() {
     super.initState();
+    electricityAgreement = DropdownContent(electricityPriceParameters.electricityAgreementNames(), '', 0);
+    electricityDistributionAgreement = DropdownContent(electricityPriceParameters.eDistributionNames(), '', 0);
     myElectricityPrice = widget.functionality as ElectricityPrice;
     refresh();
   }
@@ -215,9 +184,9 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                                           height: 30,
                                           width: 120,
                                           child: MyDropdownWidget(
-                                              dropdownContent: _electricityAgreement,
+                                              dropdownContent: electricityAgreement,
                                               setValue: (newValue) {
-                                                _electricityAgreement
+                                                electricityAgreement
                                                     .setIndex(newValue);
                                                 setState(() {});
                                               })),
@@ -227,7 +196,7 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                                 const Spacer(flex: 1),
                                 Expanded(
                                     flex: 20,
-                                    child: Text(eAgreementText())),
+                                    child: Text(eAgreementText(electricityAgreement.currentIndex()))),
                               ]),
                               Row(children: <Widget>[
                                 Expanded(
@@ -242,9 +211,9 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                                           height: 30,
                                           width: 120,
                                           child: MyDropdownWidget(
-                                              dropdownContent: _electricityDistributionAgreement,
+                                              dropdownContent: electricityDistributionAgreement,
                                               setValue: (newValue) {
-                                                _electricityDistributionAgreement
+                                                electricityDistributionAgreement
                                                     .setIndex(newValue);
                                                 setState(() {});
                                               })),
@@ -254,10 +223,10 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                                 const Spacer(flex: 1),
                                 Expanded(
                                     flex: 20,
-                                    child: Text(distributorAgreementText())),
+                                    child: Text(distributorAgreementText(electricityDistributionAgreement.currentIndex()))),
                               ]),
                             ]))),
-                    _spot() ? Container(
+                    electricityPriceParameters.electricityAgreementIsSpot(electricityAgreement.currentIndex()) ? Container(
                       margin: myContainerMargin,
                       padding: myContainerPadding,
                       height: 150,
@@ -299,8 +268,8 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                                       BorderRadius.all(Radius.circular(10))),
                                   elevation: 10),
                               onPressed: () async {
-                                  myElectricityPrice.tariff = _eTariff();
-                                  myElectricityPrice.distributionPrice = _dTariff();
+                                  myElectricityPrice.tariff = _eTariff(electricityAgreement.currentIndex());
+                                  myElectricityPrice.distributionPrice = _dTariff(electricityDistributionAgreement.currentIndex());
                                   await myElectricityPrice.init();
                                 /*
                                 if (_functionality.currentIndex() == 0) {
@@ -334,4 +303,107 @@ class _EditElectricityViewState extends State<EditElectricityView> {
         }
     );
   }
+}
+
+class EditElectricityShortView extends StatefulWidget {
+  final Estate estate;
+  const EditElectricityShortView({Key? key, required this.estate}) : super(key: key);
+
+  @override
+  _EditElectricityShortViewState createState() => _EditElectricityShortViewState();
+}
+
+class _EditElectricityShortViewState extends State<EditElectricityShortView> {
+  final FocusNode _focusNode = FocusNode();
+  final FocusNode _focusNodeWifi = FocusNode();
+  late ElectricityPrice myElectricityPrice;
+  late DropdownContent electricityAgreement; // = DropdownContent([''], '', 0);
+  late DropdownContent electricityDistributionAgreement; // = DropdownContent([''], '', 0);
+
+  List <String> eAgreementNames = electricityPriceParameters.electricityAgreementNames();
+  List <String> dAgreementNames = electricityPriceParameters.eDistributionNames();
+
+  @override
+  void initState() {
+    super.initState();
+
+    myElectricityPrice = widget.estate.myDefaultElectricityPrice();
+
+    int eIndex = max(0, eAgreementNames.indexOf(myElectricityPrice.tariff.name));
+    electricityAgreement = DropdownContent(electricityPriceParameters.electricityAgreementNames(), '', eIndex);
+
+    int dIndex = max(0, dAgreementNames.indexOf(myElectricityPrice.distributionPrice.name));
+    electricityDistributionAgreement = DropdownContent(electricityPriceParameters.eDistributionNames(), '', dIndex);
+
+    refresh();
+  }
+
+  void refresh() {
+  }
+
+  @override
+  void dispose() {
+    _focusNode.dispose();
+    _focusNodeWifi.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+                        margin: myContainerMargin,
+                        padding: myContainerPadding,
+                        child: InputDecorator(
+                            decoration:
+                            const InputDecoration(labelText: 'Sähkö- ja siirtosopimus'), //k
+                            child: Row(children: <Widget>[
+                                Expanded(
+                                  flex: 15,
+                                  child: Container(
+                                    margin: myContainerMargin,
+                                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
+                                    child: InputDecorator(
+                                      decoration:
+                                      const InputDecoration(labelText: 'Sähkösopimus'),
+                                      child: SizedBox(
+                                          height: 30,
+                                          width: 120,
+                                          child: MyDropdownWidget(
+                                              dropdownContent: electricityAgreement,
+                                              setValue: (newValue) {
+                                                electricityAgreement
+                                                    .setIndex(newValue);
+
+                                                myElectricityPrice.tariff = _eTariff(newValue);
+                                                setState(() {});
+                                              })),
+                                    ),
+                                  ),
+                                ),
+                                const Spacer(flex: 1),
+                                Expanded(
+                                  flex: 15,
+                                  child: Container(
+                                    margin: myContainerMargin,
+                                    padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
+                                    child: InputDecorator(
+                                      decoration:
+                                      const InputDecoration(labelText: 'Siirtoyhtiö'),
+                                      child: SizedBox(
+                                          height: 30,
+                                          width: 120,
+                                          child: MyDropdownWidget(
+                                              dropdownContent: electricityDistributionAgreement,
+                                              setValue: (newValue) {
+                                                electricityDistributionAgreement
+                                                    .setIndex(newValue);
+                                                myElectricityPrice.distributionPrice = _dTariff(newValue);
+                                                setState(() {});
+                                              })),
+                                    ),
+                                  ),
+                                ),
+                            ])),
+                  );
+        }
 }

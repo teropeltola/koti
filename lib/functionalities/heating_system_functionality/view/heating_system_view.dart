@@ -33,7 +33,7 @@ class HeatingSystemView extends FunctionalityView {
             builder: (context) {
               //HeatingSystem heatingSystem = myFunctionality as HeatingSystem;
               //return HeatingOverview(heatingSystem:heatingSystem);
-              return HeatingOverview(heatingSystem:myFunctionality);
+              return HeatingOverview(heatingSystem:myFunctionality, callback: callback);
             },
           ));
           callback();
@@ -69,6 +69,20 @@ class HeatingSystemView extends FunctionalityView {
     //super.fromJson(json);
     myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '') as HeatingSystem;
   }
+
+  @override
+  String viewName() {
+    return 'Lämmitys';
+  }
+
+  @override
+  String subtitle() {
+    Functionality functionality = myFunctionality as Functionality;
+    return functionality.device.name;
+
+    return 'Tapanila';
+  }
+
 
 }
 

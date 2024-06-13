@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:koti/devices/porssisahko/porssisahko.dart';
+import 'package:koti/estate/estate.dart';
 import 'package:koti/functionalities/electricity_price/electricity_price.dart';
+import 'package:koti/main.dart';
 import 'package:koti/operation_modes/operation_modes.dart';
-
-import 'package:time_range_picker/time_range_picker.dart'; // Make sure to import this package if not already imported in your test file.
+import 'package:koti/look_and_feel.dart';
 
 import 'package:koti/operation_modes/conditional_operation_modes.dart';
 
@@ -13,12 +15,12 @@ void main() {
     test('OperationComparisons text should return correct value', () {
       expect(OperationComparisons.less.text(), 'pienempi kuin');
       expect(OperationComparisons.greater.text(), 'suurempi kuin');
-      expect(OperationComparisons.less.value(0.0,0.0),false);
-      expect(OperationComparisons.greater.value(0.0,0.0),false);
-      expect(OperationComparisons.equal.value(0.0,0.0),true);
-      expect(OperationComparisons.lessOrEqual.value(0.0,0.0),true);
-      expect(OperationComparisons.greaterOrEqual.value(0.0,0.0),true);
-      expect(OperationComparisons.less.value(0.0,0.1),true);
+      expect(OperationComparisons.less.comparisonValue(0.0,0.0),false);
+      expect(OperationComparisons.greater.comparisonValue(0.0,0.0),false);
+      expect(OperationComparisons.equal.comparisonValue(0.0,0.0),true);
+      expect(OperationComparisons.lessOrEqual.comparisonValue(0.0,0.0),true);
+      expect(OperationComparisons.greaterOrEqual.comparisonValue(0.0,0.0),true);
+      expect(OperationComparisons.less.comparisonValue(0.0,0.1),true);
     });
   });
 
@@ -77,8 +79,8 @@ void main() {
       // Add more test cases for other conditions if needed.
     });
 
-    group('ConditionalOperationModes tests', () {
-      test('simulate should return correct modes', () {
+    group('ConditionalOperationModes tests', ()  {
+      test('simulate should return correct modes', () async {
         // Create a mock electricity price table.
         var electricityPriceTable = ElectricityPriceTable();
         electricityPriceTable.startingTime = DateTime(2024, 4, 16, 0, 0); // Adjust as needed.
@@ -86,9 +88,9 @@ void main() {
         electricityPriceTable.slotSizeInMinutes = 60; // Example slot size in minutes.
 
         // Create mock ResultOperationMode instances.
-        var resultMode1 = ResultOperationMode(OperationMode("Mode 1", (){}));
-        var resultMode2 = ResultOperationMode(OperationMode("Mode 2", (){}));
-        var resultMode3 = ResultOperationMode(OperationMode("Mode 3", (){}));
+        var resultMode1 = ResultOperationMode("Mode 1");
+        var resultMode2 = ResultOperationMode("Mode 2");
+        var resultMode3 = ResultOperationMode("Mode 3");
 
         // Create ConditionalOperationMode instances with mock conditions and results.
         var condition1 = OperationCondition();
@@ -110,28 +112,29 @@ void main() {
         var mode3 = ConditionalOperationMode(condition3, resultMode3);
         mode3.draft = false;
 
+        OperationModes op = await _testInitOperationModes(electricityPriceTable);
+
         // Create the ConditionalOperationModes instance and add the modes.
-        var conditionalModes = ConditionalOperationModes();
+        var conditionalModes = ConditionalOperationModes(op);
         conditionalModes.add(mode3);
         conditionalModes.add(mode2);
         conditionalModes.add(mode1);
 
         // Call the simulate method.
-        var modes = conditionalModes.simulate(electricityPriceTable);
+        var modes = conditionalModes.simulate();
 
         // Check if the modes list contains the expected values.
         expect(modes, [
-          '16.4.2024',
-          '0.00-1.59: Mode 3',
-          '2.00-2.59: Mode 1',
-          '3.00-3.59: Mode 3',
-          '4.00-4.59: Mode 2',
-          '5.00-7.59: Mode 3',
+          '16.4.2024 0.00-1.59: Mode 3',
+          '16.4.2024 2.00-2.59: Mode 1',
+          '16.4.2024 3.00-3.59: Mode 3',
+          '16.4.2024 4.00-4.59: Mode 2',
+          '16.4.2024 5.00-7.59: Mode 3',
 
         ]);
       });
 
-      test('simulate should return correct modes - test 2', () {
+      test('simulate should return correct modes - test 2', () async {
         // Create a mock electricity price table.
         var electricityPriceTable = ElectricityPriceTable();
         electricityPriceTable.startingTime = DateTime(2024, 4, 16, 15, 0); // Adjust as needed.
@@ -141,9 +144,9 @@ void main() {
         electricityPriceTable.slotSizeInMinutes = 60; // Example slot size in minutes.
 
         // Create mock ResultOperationMode instances.
-        var resultMode1 = ResultOperationMode(OperationMode("Mode 1", (){}));
-        var resultMode2 = ResultOperationMode(OperationMode("Mode 2", (){}));
-        var resultMode3 = ResultOperationMode(OperationMode("Mode 3", (){}));
+        var resultMode1 = ResultOperationMode("Mode 1");
+        var resultMode2 = ResultOperationMode("Mode 2");
+        var resultMode3 = ResultOperationMode("Mode 3");
 
         // Create ConditionalOperationMode instances with mock conditions and results.
         var condition1 = OperationCondition();
@@ -165,36 +168,32 @@ void main() {
         var mode3 = ConditionalOperationMode(condition3, resultMode3);
         mode3.draft = false;
 
+        OperationModes op = await _testInitOperationModes(electricityPriceTable);
+
         // Create the ConditionalOperationModes instance and add the modes.
-        var conditionalModes = ConditionalOperationModes();
+        var conditionalModes = ConditionalOperationModes(op);
         conditionalModes.add(mode3);
         conditionalModes.add(mode2);
         conditionalModes.add(mode1);
 
         // Call the simulate method.
-        var modes = conditionalModes.simulate(electricityPriceTable);
+        var modes = conditionalModes.simulate();
 
         // Check if the modes list contains the expected values.
         expect(modes, [
-          '16.4.2024',
-          '15.00-1.59: Mode 3',
-          '2.00-2.59: Mode 1',
-          '3.00-3.59: Mode 3',
-          '4.00-4.59: Mode 2',
-          '5.00-7.59: Mode 3',
+          '16.4.2024 15.00-1.59: Mode 3',
+          '17.4.2024 2.00-2.59: Mode 1',
+          '17.4.2024 3.00-3.59: Mode 3',
+          '17.4.2024 4.00-4.59: Mode 2',
+          '17.4.2024 5.00-7.59: Mode 3',
 
         ]);
       });
 
-      test('simulate one condition', () {
-        // Create a mock electricity price table.
-        var electricityPriceTable = ElectricityPriceTable();
-        electricityPriceTable.startingTime = DateTime(2024, 4, 16, 0, 0); // Adjust as needed.
-        electricityPriceTable.slotPrices = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]; // Example slot prices.
-        electricityPriceTable.slotSizeInMinutes = 60; // Example slot size in minutes.
+      test('simulate one condition', () async {
 
         // Create mock ResultOperationMode instances.
-        var resultMode3 = ResultOperationMode(OperationMode("Mode 3", (){}));
+        var resultMode3 = ResultOperationMode("Mode 3");
 
         // Create ConditionalOperationMode instances with mock conditions and results.
         var condition3 = OperationCondition();
@@ -204,17 +203,23 @@ void main() {
         var mode3 = ConditionalOperationMode(condition3, resultMode3);
         mode3.draft = false;
 
+        var electricityPriceTable = ElectricityPriceTable();
+        electricityPriceTable.startingTime = DateTime(2024, 4, 16, 0, 0); // Adjust as needed.
+        electricityPriceTable.slotPrices = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]; // Example slot prices.
+        electricityPriceTable.slotSizeInMinutes = 60; // Example slot size in minutes.
+
+        OperationModes op = await _testInitOperationModes(electricityPriceTable);
+
         // Create the ConditionalOperationModes instance and add the modes.
-        var conditionalModes = ConditionalOperationModes();
+        var conditionalModes = ConditionalOperationModes(op);
         conditionalModes.add(mode3);
 
         // Call the simulate method.
-        var modes = conditionalModes.simulate(electricityPriceTable);
+        var modes = conditionalModes.simulate();
 
         // Check if the modes list contains the expected values.
         expect(modes, [
-          '16.4.2024',
-          '0.00-7.59: Mode 3',
+          '16.4.2024 0.00-7.59: Mode 3',
         ]);
       });
 
@@ -222,46 +227,160 @@ void main() {
   });
   });
 
-  group('ModelAnalysis', () {
+  group('json', () {
 
-      test('add basic items', () {
-        AnalysisOfModes analysis = AnalysisOfModes();
-        analysis.add(DateTime(2024, 4, 23, 9, 0), 30, OperationMode('mode1',(){}));
-        expect(analysis.items.length, 1);
-        analysis.add(DateTime(2024, 4, 23, 9, 30), 30, OperationMode('mode2',(){}));
-        expect(analysis.items.length, 2);
-        analysis.compress();
-        expect(analysis.items.length, 2);
-      });
+    test('OperationComparisons', () {
+      log.cleanHistory();
+      OperationComparisons.values.forEach((e) {expect(e,e.fromJson(e.toJson()));});
+      expect(log.history.length, 0);
+      OperationComparisons o = OperationComparisons.greater;
+      expect(o.fromJson({'comparison': '44'}),OperationComparisons.less);
+      expect(log.history.length, 1);
+      expect(o.fromJson({}),OperationComparisons.less);
+      expect(log.history.length, 2);
 
-      test('add illegal items', () {
-        AnalysisOfModes analysis = AnalysisOfModes();
-        analysis.add(DateTime(2024, 4, 23, 9, 0), 30, OperationMode('mode1',(){}));
-        analysis.add(DateTime(2024, 4, 23, 9, 31), 30, OperationMode('mode2',(){}));
-        expect(analysis.items.length, 1);
-      });
+    });
 
-      test('compress items 1', () {
-        OperationMode myMode = OperationMode('mode1',(){});
-        AnalysisOfModes analysis = AnalysisOfModes();
-        analysis.compress();
-        analysis.add(DateTime(2024, 4, 23, 9, 0), 30, myMode);
-        expect(analysis.items.length, 1);
-        analysis.compress();
-        analysis.add(DateTime(2024, 4, 23, 9, 30), 30, myMode);
-        expect(analysis.items.length, 2);
-        analysis.compress();
-        expect(analysis.items.length, 1);
-      });
+    test('SpotPriceComparisonType', () {
+      log.cleanHistory();
+      SpotPriceComparisonType.values.forEach((e) {expect(e,e.fromJson(e.toJson()));});
+      expect(log.history.length, 0);
+      SpotPriceComparisonType o = SpotPriceComparisonType.constant;
+      expect(o.fromJson({'spotPriceType': '44'}),SpotPriceComparisonType.constant);
+      expect(log.history.length, 1);
+      expect(o.fromJson({}),SpotPriceComparisonType.constant);
+      expect(log.history.length, 2);
 
-      test('compress items 1', () {
-        OperationMode myMode = OperationMode('mode1',(){});
-        AnalysisOfModes analysis = AnalysisOfModes();
-        analysis.add(DateTime(2024, 4, 23, 9, 0), 30, myMode);
-        analysis.add(DateTime(2024, 4, 23, 9, 30), 30, myMode);
-        analysis.compress();
-        expect(analysis.items.length, 1);
-      });
+    });
+
+    test('SpotCondition', () {
+      SpotCondition s = SpotCondition();
+      s.myType = SpotPriceComparisonType.percentile;
+      s.comparison = OperationComparisons.equal;
+      s.parameterValue = 0.7;
+
+      SpotCondition s2 = SpotCondition.fromJson(s.toJson());
+
+      expect(s2.myType, SpotPriceComparisonType.percentile);
+      expect(s2.comparison, OperationComparisons.equal);
+      expect(s2.parameterValue, 0.7);
+
+    });
+
+    test('OperationConditionType', () {
+      log.cleanHistory();
+      OperationConditionType.values.forEach((e) {expect(e,e.fromJson(e.toJson()));});
+      expect(log.history.length, 0);
+      OperationConditionType o = OperationConditionType.spotPrice;
+      expect(o.fromJson({'spotPriceType': '44'}),OperationConditionType.notDefined);
+      expect(log.history.length, 1);
+      expect(o.fromJson({}),OperationConditionType.notDefined);
+      expect(log.history.length, 2);
+
+    });
+
+    test('MyTimeRange', () {
+      MyTimeRange m = MyTimeRange(startTime: TimeOfDay(hour: 1, minute:2), endTime: TimeOfDay(hour:3, minute:4));
+      var j = m.toJson();
+      var m2 = m.fromJson(j);
+      expect(m2.startTime.hour, 1);
+      expect(m2.startTime.minute, 2);
+      expect(m2.endTime.hour, 3);
+      expect(m2.endTime.minute, 4);
+
+    });
+
+    test('OperationCondition', () {
+      OperationCondition o = OperationCondition();
+      OperationCondition o2 = OperationCondition.fromJson(o.toJson());
+      expect(o2.conditionType, OperationConditionType.notDefined);
+      expect(o2.timeRange.endTime.minute, 59);
+      expect(o2.spot.parameterValue, 0.0);
+    });
+
+    test('ResultOperationMode', () {
+      ResultOperationMode r = ResultOperationMode('name');
+      ResultOperationMode r2 = ResultOperationMode.fromJson(r.toJson());
+      expect(r2.operationModeName, 'name');
+    });
+
+    test('ConditionalOperationMode', () {
+      OperationCondition operationCondition = OperationCondition();
+      operationCondition.conditionType = OperationConditionType.timeOfDay;
+      ResultOperationMode r = ResultOperationMode('name');
+
+      ConditionalOperationMode c = ConditionalOperationMode(operationCondition,r);
+      c.draft = false;
+      Map<String, dynamic> json = c.toJson();
+      ConditionalOperationMode c2 =ConditionalOperationMode.fromJson(json);
+      expect(c2.condition.conditionType, OperationConditionType.timeOfDay);
+      expect(c2.result.operationModeName, 'name');
+    });
+
+    test('ConditionalOperationModes', () async {
+      OperationModes op = await _testInitOperationModes(ElectricityPriceTable());
+
+      ConditionalOperationModes c = ConditionalOperationModes(op);
+      ConditionalOperationModes c2 =ConditionalOperationModes.fromJsonExtended(op, c.toJson());
+      expect(c2.conditions.length, 0);
+
+      c.name = 'c';
+      c2 =ConditionalOperationModes.fromJsonExtended(op, c.toJson());
+      expect(c2.conditions.length, 0);
+
+      OperationCondition operationCondition = OperationCondition();
+      operationCondition.conditionType = OperationConditionType.timeOfDay;
+      ResultOperationMode r = ResultOperationMode('op name');
+
+      ConditionalOperationMode cm = ConditionalOperationMode(operationCondition,r);
+      cm.draft = false;
+
+      c.add(cm);
+
+      c2 =ConditionalOperationModes.fromJsonExtended(op, c.toJson());
+      expect(c2.conditions.length, 1);
+
+    });
 
   });
+
 }
+
+OperationMode _operationMode(String n1, String n2) {
+  OperationMode x = OperationMode();
+  x.name = n1;
+  return x;
+}
+
+Future <OperationModes> _testInitOperationModes(ElectricityPriceTable electricityPriceTable) async {
+  myEstates.clearDataStructures();
+  Estate estate = Estate();
+  estate.init('estate name','e1', 'wifinothere');
+  myEstates.addEstate(estate);
+
+  // Create a mock electricity price table.
+  ElectricityPrice ep = await addElectricityPrice(estate, 'fake service');
+
+  ep.data = electricityPriceTable;
+
+  return estate.operationModes;
+}
+
+Future<ElectricityPrice> addElectricityPrice(Estate estate, String serviceName) async {
+  Porssisahko spot = Porssisahko();
+  spot.name = 'spot';
+  spot.id = 'spot-pörssisähkö';
+  estate.addDevice(spot);
+  await spot.init();
+
+  ElectricityPrice ep = ElectricityPrice();
+  ep.pair(spot);
+  estate.addFunctionality(ep);
+  await ep.init();
+
+  return ep;
+}
+
+
+
+

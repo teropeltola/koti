@@ -1,47 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:koti/main.dart';
 import 'package:time_range_picker/time_range_picker.dart';
+import 'package:reorderables/reorderables.dart';
 
-import 'package:koti/operation_modes/operation_modes.dart';
 import 'package:koti/view/my_dropdown_widget.dart';
 
-import '../../functionalities/electricity_price/electricity_price.dart';
 import '../../logic/dropdown_content.dart';
 import '../../look_and_feel.dart';
 import '../conditional_operation_modes.dart';
 
-class ReorderableAppTest extends StatelessWidget {
-  const ReorderableAppTest({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    ConditionalOperationModes modes = ConditionalOperationModes();
-    OperationModes operationModes = OperationModes();
-    operationModes.add('perus', (){});
-    operationModes.add('poissa', (){});
-    operationModes.add('yö', (){});
-    operationModes.add('huippuhinta', (){});
-    ElectricityPriceTable ept = myEstates.estates[0].myDefaultElectricityPrice().get();
-
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('ReorderableListView Sample')),
-        body: ConditionalOperationView(
-          conditions: modes,
-          operationModes: operationModes,
-          electricityPriceTable: ept,),
-      ),
-    );
-  }
-}
-
 class ConditionalOperationView extends StatefulWidget {
-  final OperationModes operationModes;
   final ConditionalOperationModes conditions;
-  final ElectricityPriceTable electricityPriceTable;
-  const ConditionalOperationView({super.key, required this.operationModes,
-    required this.conditions, required this.electricityPriceTable});
+  const ConditionalOperationView({super.key, required this.conditions});
 
   @override
   State<ConditionalOperationView> createState() => ConditionalOperationViewState();
@@ -63,87 +33,84 @@ class ConditionalOperationViewState extends State<ConditionalOperationView> {
     final Color evenItemColor = colorScheme.primary.withOpacity(0.15);
 
     return Column(children: [
-      SizedBox(
-        height: 50,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                  backgroundColor: mySecondaryColor,
-                  side: const BorderSide(
-                      width: 2, color: mySecondaryColor),
-                  shape: const RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(10))),
-                  elevation: 10),
-              onPressed: () async {
-                OperationCondition oC = OperationCondition();
-                oC.conditionType = OperationConditionType.notDefined;
-                widget.conditions.add( ConditionalOperationMode(oC, ResultOperationMode(noOperationMode)));
-                setState(() {});
+      Container(
+        margin: myContainerMargin,
+        padding: myContainerPadding,
+        child: InputDecorator(
+          decoration:
+          const InputDecoration(labelText: 'sääntöjen mukaiset tilat'),
+          child:operationModeAnalysis(widget.conditions)
+        )
+      ),
+      Container(
+        margin: myContainerMargin,
+        padding: myContainerPadding,
+        child: InputDecorator(
+         decoration:
+           const InputDecoration(labelText: 'säännöt'),
+           child: Column(mainAxisSize: MainAxisSize.min,
+               children: [
+             Row(
+               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+               children: [
+                 OutlinedButton(
+                  style: OutlinedButton.styleFrom(
+                      backgroundColor: mySecondaryColor,
+                      side: const BorderSide(
+                          width: 2, color: mySecondaryColor),
+                      shape: const RoundedRectangleBorder(
+                          borderRadius:
+                          BorderRadius.all(Radius.circular(10))),
+                      elevation: 10),
+                  onPressed: () async {
+                    OperationCondition oC = OperationCondition();
+                    oC.conditionType = OperationConditionType.notDefined;
+                    widget.conditions.add( ConditionalOperationMode(oC, ResultOperationMode('')));
+                    setState(() {});
+                  },
+                  child: const Text(
+                    'Lisää uusi sääntö',
+                    maxLines: 1,
+                    style: TextStyle(color: mySecondaryFontColor),
+                    textScaleFactor: 2.0,
+                  ),
+                ),
+          ]),
+          //SizedBox(
+          //  height: 450,
+
+            ReorderableColumn( //ReorderableListView(
+              //padding: const EdgeInsets.symmetric(horizontal: 2),
+
+              children: <Widget>[
+                for (int index = 0; index < widget.conditions.conditions.length; index += 1)
+                  Card(
+                    key: Key('$index'),            //TODO: change to index independed key
+                    elevation: 6,
+                    margin: const EdgeInsets.all(1),
+                    child:
+                      editConditionalOperationMode(
+                        context,
+                        index,
+                        widget.conditions,
+                        () { setState(() {});}),
+                    ),
+              ],
+
+              onReorder: (int oldIndex, int newIndex) {
+                setState(() {
+                  if (oldIndex < newIndex) {
+                    newIndex -= 1;
+                  }
+                  var item = widget.conditions.removeAt(oldIndex);
+                  widget.conditions.conditions.insert(newIndex, item);
+                });
               },
-              child: const Text(
-                'Lisää uusi',
-                maxLines: 1,
-                style: TextStyle(color: mySecondaryFontColor),
-                textScaleFactor: 2.0,
-              ),
+
             ),
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                  backgroundColor: mySecondaryColor,
-                  side: const BorderSide(
-                      width: 2, color: mySecondaryColor),
-                  shape: const RoundedRectangleBorder(
-                      borderRadius:
-                      BorderRadius.all(Radius.circular(10))),
-                  elevation: 10),
-              onPressed: () async {
-
-                setState(() {});
-              },
-              child: const Text(
-                'Simulointi',
-                maxLines: 1,
-                style: TextStyle(color: mySecondaryFontColor),
-                textScaleFactor: 2.0,
+            ],))
               ),
-            )
-      ])),
-    SizedBox(
-    height: 450,
-    child:  ReorderableListView(
-      padding: const EdgeInsets.symmetric(horizontal: 40),
-
-      children: <Widget>[
-        for (int index = 0; index < widget.conditions.conditions.length; index += 1)
-          Card(
-            key: Key('$index'),            //TODO: change to index independed key
-            elevation: 6,
-            margin: const EdgeInsets.all(10),
-            child:
-              editConditionalOperationMode(
-                context,
-                index,
-                widget.conditions,
-                widget.operationModes,
-                () { setState(() {});}),
-            ),
-      ],
-      onReorder: (int oldIndex, int newIndex) {
-        setState(() {
-          if (oldIndex < newIndex) {
-            newIndex -= 1;
-          }
-          var item = widget.conditions.removeAt(oldIndex);
-          widget.conditions.conditions.insert(newIndex, item);
-        });
-      },
-    )),
-    operationModeAnalysis(widget.conditions, widget.electricityPriceTable)
-
-    ],);
+        ]);
   }
 }
 
@@ -220,16 +187,15 @@ ExpansionTile editConditionalOperationMode(
     BuildContext context,
     int index,
     ConditionalOperationModes items,
-    OperationModes operationModes,
     Function callback) {
 
-  String nameOfMode = items.conditions[index].result.result.name;
-  int indexOfMode = operationModes.findName(nameOfMode);
+  String nameOfMode = items.conditions[index].result.operationModeName;
+  int indexOfMode = items.operationModes.findName(nameOfMode);
   if (indexOfMode < 0) {
     indexOfMode = 0;
-    items.conditions[index].result.result = operationModes.getMode(operationModes.modeName(0));
+    items.conditions[index].result.operationModeName = items.operationModes.modeName(0);
   }
-  DropdownContent possibleOperationModes = DropdownContent(operationModes.operationModeNames(),'',indexOfMode);
+  DropdownContent possibleOperationModes = DropdownContent(items.operationModes.operationModeNames(),'',indexOfMode);
   DropdownContent conditionOptions = DropdownContent(OperationConditionType.optionTextList,'',items.conditions[index].condition.conditionType.index);
 
 
@@ -238,7 +204,9 @@ ExpansionTile editConditionalOperationMode(
       title:
         Column(children: [
           Row(children: [
-            Expanded(flex: 1, child: Text('Määrittele ehto:')),
+            Expanded(
+              flex: 1,
+              child: Text('Määrittele ehto:')),
             Expanded(flex: 1, child: MyDropdownWidget(dropdownContent: conditionOptions,
               setValue: (val) {
                 items.conditions[index].condition.conditionType = OperationConditionType.values[val];
@@ -258,7 +226,7 @@ ExpansionTile editConditionalOperationMode(
               child: MyDropdownWidget(dropdownContent: possibleOperationModes,
                 setValue: (val) {
                   var x = val;
-                  items.conditions[index].result.result = operationModes.getMode(possibleOperationModes.currentString());
+                  items.conditions[index].result.operationModeName = possibleOperationModes.currentString();
                   callback();
                 }
               )
@@ -286,7 +254,7 @@ ExpansionTile editConditionalOperationMode(
   else {
     return ExpansionTile(
       title: Text('${index + 1}: ${_conditionText(items.conditions[index].condition)}'),
-      subtitle: Text('=> toimintotila: ${items.conditions[index].result.result.name}'),
+      subtitle: Text('=> toimintotila: ${items.conditions[index].result.operationModeName}'),
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -351,7 +319,7 @@ Widget _timeRange(BuildContext context, OperationCondition operationCondition, F
         disabledColor: Colors.red.withOpacity(0.5),
       );
       if (timeRange != null) {
-        operationCondition.timeRange = timeRange;
+        operationCondition.timeRange = MyTimeRange(startTime: timeRange.startTime, endTime: timeRange.endTime);
       }
       callback();
     },
@@ -364,7 +332,7 @@ Widget _timeRange(BuildContext context, OperationCondition operationCondition, F
   );
 }
 
-String _timeRangeToString(TimeRange range) {
+String _timeRangeToString(MyTimeRange range) {
   return '${_timeToString(range.startTime)}-${_timeToString(range.endTime)}';
 }
 
@@ -391,8 +359,8 @@ String _conditionText(OperationCondition condition) {
 
 
 
-Widget operationModeAnalysis(ConditionalOperationModes operationModes, ElectricityPriceTable electricityPriceTable) {
-  List<String> data = operationModes.simulate(electricityPriceTable);
+Widget operationModeAnalysis(ConditionalOperationModes conditionalOperationModes) {
+  List<String> data = conditionalOperationModes.simulate();
   return Column(
     children: <Widget>[
       for (int index = 0; index < data.length; index += 1)

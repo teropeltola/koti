@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.1.0 <4.0.0'
+  sdk: '>=3.3.0 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -41,7 +41,7 @@ dependencies:
   cupertino_icons: ^1.0.2
   device_info_plus: ^9.1.0
   flutter_bloc: ^8.1.3
-  flutter_settings_screens: ^0.3.3-null-safety+2
+  flutter_settings_screens: ^0.3.4
   google_fonts: ^6.1.0
   http: ^1.1.0
   html: ^0.15.4  # For parsing HTML content
@@ -52,10 +52,11 @@ dependencies:
   path_provider: ^2.1.2
   permission_handler: ^11.0.1
   provider: ^6.0.5
-  talker: ^3.1.4
-  talker_flutter: ^3.5.2
+  reorderables: ^0.6.0
+  talker: ^4.2.3
+  talker_flutter: ^4.2.3
   thermostat: ^1.1.5
-  time_range_picker: ^2.2.0
+  time_range_picker: ^2.3.0
   syncfusion_flutter_charts: ^23.1.38
   webview_flutter: ^4.4.1
 

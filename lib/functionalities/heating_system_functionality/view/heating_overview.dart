@@ -11,7 +11,8 @@ import '../heating_system.dart';
 
 class HeatingOverview extends StatefulWidget {
   final HeatingSystem heatingSystem;
-  const HeatingOverview({Key? key, required this.heatingSystem}) : super(key: key);
+  final Function callback;
+  const HeatingOverview({Key? key, required this.heatingSystem, required this.callback}) : super(key: key);
 
   @override
   _HeatingOverviewState createState() => _HeatingOverviewState();

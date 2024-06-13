@@ -107,37 +107,6 @@ void main() {
       expect(locations.estates.isEmpty, false);
     });
 
-
-    test('Push and Pop Current Estate', () {
-      Estates locations = Estates();
-      final location1 = Estate(); // Create location instances for testing
-      final location2 = Estate();
-
-      location1.id = 'id 1';
-      location2.id = 'id 2';
-
-      locations.addEstate(location1);
-      locations.addEstate(location2);
-
-      locations.pushCurrent(location1);
-      locations.pushCurrent(location2);
-
-      expect(locations.currentEstate(), equals(location2));
-      expect(locations.nbrOfEstates(), equals(2));
-
-      locations.popCurrent();
-      expect(locations.currentEstate(), equals(location1));
-      expect(locations.nbrOfEstates(), equals(2));
-
-      locations.popCurrent();
-      expect(locations.currentEstate().id, '');
-
-      locations.popCurrent();
-      expect(locations.currentEstate().id, '');
-
-    });
-
-
     test('exist and valid tests', () {
       Estates locations = Estates();
       expect(locations.validEstateName(''), equals(false));

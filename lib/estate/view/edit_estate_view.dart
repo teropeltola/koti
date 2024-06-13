@@ -1,11 +1,10 @@
-import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
 import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
-import 'package:koti/devices/shelly_timer_switch/shelly_timer_switch.dart';
 import 'package:koti/devices/wlan/active_wifi_name.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
-import 'package:koti/functionalities/plain_switch_functionality/plain_switch_functionality.dart';
+import 'package:koti/operation_modes/view/edit_operation_mode_view.dart';
+import 'package:koti/operation_modes/view/operation_modes_selection_view.dart';
 import 'package:provider/provider.dart';
 
 import '../../devices/device/device.dart';
@@ -17,41 +16,66 @@ import '../../devices/shelly/view/edit_shelly_device_view.dart';
 import '../../functionalities/air_heat_pump_functionality/air_heat_pump.dart';
 import '../../functionalities/air_heat_pump_functionality/view/air_heat_pump_view.dart';
 import '../../functionalities/electricity_price/electricity_price.dart';
+import '../../functionalities/electricity_price/view/edit_electricity_view.dart';
 import '../../functionalities/electricity_price/view/electricity_price_view.dart';
 import '../../functionalities/heating_system_functionality/heating_system.dart';
 import '../../functionalities/heating_system_functionality/view/heating_system_view.dart';
+import '../../functionalities/tesla_functionality/tesla_functionality.dart';
 import '../../functionalities/tesla_functionality/view/tesla_functionality_view.dart';
 import '../../functionalities/weather_forecast/view/weather_forecast_view.dart';
 import '../../functionalities/weather_forecast/weather_forecast.dart';
+import '../../operation_modes/conditional_operation_modes.dart';
+import '../../operation_modes/hierarcical_operation_mode.dart';
+import '../../operation_modes/operation_modes.dart';
+import '../../operation_modes/view/conditional_option_list_view.dart';
 import '../estate.dart';
 import '../../look_and_feel.dart';
 import '../../main.dart';
-/*
-class AddNewEstateView extends StatefulWidget {
-  const AddNewEstateView({Key? key}) : super(key: key);
+
+class EditEstateView extends StatefulWidget {
+   String estateName;
+   EditEstateView({Key? key, required this.estateName}) : super(key: key);
 
   @override
-  _AddNewEstateViewState createState() => _AddNewEstateViewState();
+  _EditEstateViewState createState() => _EditEstateViewState();
 }
 
-class _AddNewEstateViewState extends State<AddNewEstateView> {
-  Estate newEstate = Estate();
+class _EditEstateViewState extends State<EditEstateView> {
+  Estate editedEstate = Estate();
+
   final FocusNode _focusNode = FocusNode();
   final FocusNode _focusNodeWifi = FocusNode();
   final myEstateNameController = TextEditingController();
-  _Services services = _Services();
+  _Services availableServices = _Services();
+  List<Functionality> existingServices = [];
 
   @override
   void initState() {
     super.initState();
 
-    newEstate.init('','e1',activeWifiName.activeWifiName);
-
-    services.init(newEstate);
+    if (widget.estateName == '') {
+      addElectricityPriceWithoutEditing(editedEstate);
+    }
+    else {
+      editedEstate = myEstates.estate(widget.estateName).clone();
+    }
+    availableServices.init(editedEstate);
     List <String> shellyServices = shellyScan.listPossibleServices();
     getShellyServices(shellyServices);
 
+    myEstateNameController.text = editedEstate.name;
+
     refresh();
+  }
+
+  void updateExistingServices() {
+    existingServices.clear();
+    editedEstate.features.forEach((e) {
+      if (e.runtimeType.toString() != 'ElectricityPrice') {
+        existingServices.add(e);
+      }
+    }
+    );
   }
 
   Icon shellyIcon(bool deviceExists) {
@@ -68,16 +92,16 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
   void getShellyServices(List<String> shellyServiceNames) {
 
     for (int i=0; i<shellyServiceNames.length; i++) {
-      services.add(
+      availableServices.add(
         _ServiceItem(
           shellyServiceNames[i],
-          newEstate.deviceExists(shellyServiceNames[i]),
+          editedEstate.deviceExists(shellyServiceNames[i]),
           addPlugIn));
     }
   }
 
-
   void refresh() {
+    updateExistingServices();
   }
 
   @override
@@ -89,24 +113,22 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<Estate>(
-      builder: (context, estate, childNotUsed) {
-        return Scaffold(
+    return Scaffold(
           appBar: AppBar(
             leading: IconButton(
                 icon: const Icon(Icons.arrow_back),
-                tooltip: 'Palaa takaisin lisäämättä uutta asuntoa',
+                tooltip: 'Palaa takaisin tallentamatta muutoksia',
                 onPressed: () async {
                   // check if the user wants to cancel all the changes
                   bool doExit = await askUserGuidance(context,
-                      'Poistuttaessa uusi kohde ei säily.',
-                      'Haluatko poistua lisäyssivulta ?'
+                      'Poistuttaessa muutokset eivät säily.',
+                      'Haluatko poistua muutossivulta ?'
                       );
                   if (doExit) {
                     Navigator.of(context).pop();
                   }
                 }),
-            title: appTitle('uusi asunto'),
+            title: appTitle('muokkaa asuntoa'),
           ), // new line
           body: SingleChildScrollView(
               child: Column(children: <Widget>[
@@ -128,7 +150,7 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                         controller: myEstateNameController,
                         maxLines: 1,
                         onChanged: (String newText) {
-                          newEstate.name = newText;
+                          editedEstate.name = newText;
                         },
                         onEditingComplete: () {
                           _focusNode.unfocus();
@@ -146,16 +168,56 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                         textInputAction: TextInputAction.done,
                         maxLines: 1,
                         onChanged: (String newWifi) {
-                          newEstate.myWifiDevice.changeWifiName(newWifi);
+                          editedEstate.myWifiDevice.changeWifiName(newWifi);
                           setState(() { });
                         },
                         onEditingComplete: () {
                           _focusNodeWifi.unfocus();
                         }),
-                  ]),
+                    const Text(''),
+                    EditElectricityShortView(
+                      estate: editedEstate
+                    )
+                  ])
                 ),
               ),
-              Container(
+              operationModeHandling(
+                  context,
+                  editedEstate,
+                  editedEstate.operationModes,
+                  [HierarchicalOperationMode().typeName(), dynamicOperationModeText],
+                  _estateOperationModes,
+                  (){setState(() { });}),
+                Container(
+                    margin: myContainerMargin,
+                    padding: myContainerPadding,
+                    child: InputDecorator(
+                        decoration: const InputDecoration(
+                            labelText: 'Asunnon olemassaolevat toiminnot'),
+                        child:
+                        ListView.builder(
+                            scrollDirection: Axis.vertical,
+                            shrinkWrap: true,
+                            itemCount: existingServices.length,
+                            itemBuilder: (context, index) => Card(
+                                elevation: 6,
+                                margin: const EdgeInsets.all(10),
+                                child: ListTile(
+                                    title: Text(existingServices[index].myView().viewName()),
+                                    subtitle: Text(existingServices[index].myView().subtitle()),
+                                    trailing: IconButton(
+                                        icon: Icon(Icons.edit),
+                                        tooltip: 'muokkaa toimintoa',
+                                        onPressed: () async {
+                                          refresh();
+                                          setState(() {});
+                                        })
+                                )
+                            )
+                        )
+                    )
+                ),
+                Container(
                   margin: myContainerMargin,
                   padding: myContainerPadding,
                   child: InputDecorator(
@@ -165,23 +227,23 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                         ListView.builder(
                           scrollDirection: Axis.vertical,
                           shrinkWrap: true,
-                          itemCount: services.itemCount(),
+                          itemCount: availableServices.itemCount(),
                                   itemBuilder: (context, index) => Card(
                                     elevation: 6,
                                     margin: const EdgeInsets.all(10),
                                       child: ListTile(
-                                        title: Text(services.items[index].serviceName),
+                                        title: Text(availableServices.items[index].serviceName),
                                         trailing: IconButton(
-                                          icon: services.icon(index),
+                                          icon: availableServices.icon(index),
                                           tooltip: 'Lisää asunnon laitteisiin',
                                           onPressed: () async {
-                                            if (services.added(index)) {
+                                            if (availableServices.added(index)) {
 
                                             }
                                             else {
-                                              services.setAdded(index);
-                                              Function addingFunction = services.addingFunction(index);
-                                              Functionality functionality = await addingFunction(context, newEstate,services.items[index].serviceName);
+                                              availableServices.setAdded(index);
+                                              Function addingFunction = availableServices.addingFunction(index);
+                                              Functionality functionality = await addingFunction(context, editedEstate,availableServices.items[index].serviceName);
                                             }
 
                                             refresh();
@@ -208,11 +270,24 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                                         BorderRadius.all(Radius.circular(10))),
                                     elevation: 10),
                                 onPressed: () async {
-                                  myEstates.addEstate(newEstate);
-                                  myEstates.pushCurrent(newEstate);
-                                  await myEstates.store();
-                                  showSnackbarMessage('kohde lisätty!');
-                                  Navigator.pop(context, true);
+                                  // todo tee kattava tarkistus parametreistä
+                                  if (editedEstate.name == '') {
+                                    informMatterToUser(context,'Asunnon nimi ei voi olla tyhjä', 'Korjaa nimi!');
+                                  }
+                                  else {
+                                    if (widget.estateName == '') {
+                                      myEstates.addEstate(editedEstate);
+                                      myEstates.setCurrent(editedEstate.id);
+                                    }
+                                    else {
+                                      myEstates.setEstate(
+                                          widget.estateName, editedEstate);
+                                    }
+                                    await myEstates.store();
+                                    showSnackbarMessage(
+                                        'Muutokset talletettu!');
+                                    Navigator.pop(context, true);
+                                  }
                                 },
                                 child: const Text(
                                   'Valmis',
@@ -224,8 +299,6 @@ class _AddNewEstateViewState extends State<AddNewEstateView> {
                       ])
               )
           );
-      }
-    );
   }
 }
 
@@ -258,11 +331,10 @@ class _Services {
 
   void addConstServices(Estate estate) {
 
-    items.add(_ServiceItem('Sähkön hinta', estate.deviceExists('Sähkön hinta'), addElectricityPrice, editData: true));
     items.add(_ServiceItem('Säätila', estate.deviceExists('Säätila'), addWeatherForecast));
     items.add(_ServiceItem('Lämmitys', estate.deviceExists('Lämmitys'), addHeatingSystem));
     items.add(_ServiceItem('Ilmalämpöpumppu', estate.deviceExists('Ilpo'), addMitsu));
-    items.add(_ServiceItem('Tesla', estate.deviceExists('Tesla'), addTesla));
+    items.add(_ServiceItem('Auton lataus', estate.deviceExists('Tesla'), addTesla));
   }
 
   void clear() {
@@ -347,6 +419,23 @@ Future<MitsuHeatPumpDevice> getMitsu(Estate estate) async {
   }
 }
 
+Future <void> addElectricityPriceWithoutEditing(Estate estate) async {
+  estate.init('',activeWifiName.activeWifiName);
+  Porssisahko spot = Porssisahko();
+  spot.name = 'spot';
+  spot.id = 'spot-pörssisähkö';
+  estate.addDevice(spot);
+
+  ElectricityPrice electricityPrice = ElectricityPrice();
+  electricityPrice.pair(spot);
+  estate.addFunctionality(electricityPrice);
+  estate.addView(ElectricityGridBlock(electricityPrice));
+
+  // these are not waited in the initialization:
+  await spot.init();
+  await electricityPrice.init();
+
+}
 
 Future<ElectricityPrice> addElectricityPrice(BuildContext context, Estate estate, String serviceName) async {
   Porssisahko spot = Porssisahko();
@@ -400,10 +489,11 @@ Future<AirHeatPump> addMitsu(BuildContext context, Estate estate, String service
 }
 
 Future<Functionality> addTesla(BuildContext context, Estate estate, String serviceName) async {
-  Functionality teslaFunctionality = Functionality();
+  Functionality teslaFunctionality = TeslaFunctionality();
   Device teslaDevice = Device();
   teslaDevice.id = 'Tesla id';
   teslaDevice.name = 'Tesla';
+  estate.addFunctionality(teslaFunctionality);
   teslaFunctionality.pair(teslaDevice);
 
   estate.addView(
@@ -412,4 +502,73 @@ Future<Functionality> addTesla(BuildContext context, Estate estate, String servi
   return (teslaFunctionality);
 }
 
- */
+Widget _estateOperationModes(
+    String parameterTypeName,
+    OperationMode operationMode,
+    Estate estate,
+    OperationModes operationModes,
+    Function updateOperationMode
+) {
+
+  Widget myWidget;
+  HierarchicalOperationMode hierarchicalOperationMode = HierarchicalOperationMode();
+
+  if (parameterTypeName == hierarchicalOperationMode.typeName()) {
+    if (operationMode.runtimeType.toString() == 'HierarchicalOperationMode') {
+      hierarchicalOperationMode = operationMode as HierarchicalOperationMode;
+    }
+    List<Widget> featureTiles = [];
+    for (int index=0; index<estate.features.length; index++) {
+      if (estate.features[index].operationModes.nbrOfModes() > 0) {
+        featureTiles.add(
+          ListTile(
+            title: Text(estate.features[index].device.name),
+            subtitle: OperationModesSelectionView2(
+              operationModes: estate.features[index].operationModes,
+              initSelectionName: hierarchicalOperationMode.operationCode(estate.features[index].id()),
+              returnSelectedModeName: (opName){
+                  hierarchicalOperationMode.add(estate.features[index].id(), opName );
+                  updateOperationMode(hierarchicalOperationMode);
+                },)
+          ));
+        }
+      }
+      myWidget = Container(
+          margin: myContainerMargin,
+          padding: myContainerPadding,
+          child: InputDecorator(
+              decoration: const InputDecoration(
+                  labelText: 'Asunnon toimintotila määritys'),
+              child: (featureTiles.isEmpty)
+                  ? Text('Asunnon toiminnoille ei ole määritelty toimintotiloja')
+                  : Column(children: [
+                ListView.builder(
+                    scrollDirection: Axis.vertical,
+                    shrinkWrap: true,
+                    itemCount: featureTiles.length,
+                    itemBuilder: (context, index) => Card(
+                        elevation: 6,
+                        margin: const EdgeInsets.all(10),
+                        child: featureTiles[index]
+                    )
+                )
+              ])
+          )
+      );
+    }
+  else if (parameterTypeName == dynamicOperationModeText) {
+    // dynamicOperationModeText:
+      ConditionalOperationModes conditionalModes = ConditionalOperationModes.fromJsonExtended(
+          operationModes,
+          operationMode.toJson()
+      );
+      updateOperationMode(conditionalModes);
+      myWidget = ConditionalOperationView(
+          conditions: conditionalModes
+      );
+    }
+  else {
+    myWidget = emptyWidget();
+  }
+  return myWidget;
+}

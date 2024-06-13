@@ -1,4 +1,6 @@
 
+import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
+import 'package:koti/functionalities/electricity_price/view/edit_electricity_view.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
@@ -9,17 +11,18 @@ import 'devices/my_device_info.dart';
 import 'devices/shelly/shelly_scan.dart';
 import 'devices/wlan/active_wifi_name.dart';
 import 'estate/estate.dart';
+import 'estate/view/edit_estate_view.dart';
 import 'estate/view/estate_view.dart';
 import 'functionalities/electricity_price/electricity_price.dart';
+import 'logic/service_caller.dart';
 import 'look_and_feel.dart';
 
-Future <bool> getPermissions() async {
+Future <void> getPermissions() async {
 
 // You can request multiple permissions at once.
   Map<Permission, PermissionStatus> statuses = await [
     Permission.location,
   ].request();
-  return true;
 }
 
 bool runningInSimulator = false;
@@ -36,7 +39,8 @@ void main() async {
   await shellyScan.init();
   await connectionStatusListener.initialize();
   await myEstates.init();
-
+  //electricityPriceParameters.init();
+  electricityPriceParameters = await readElectricityPriceParameters();
   runApp(
     ChangeNotifierProvider<Estate>(
       create: (_) => myEstates.currentEstate(),
@@ -121,7 +125,7 @@ Widget _firstPage(BuildContext context, Function callback) {
                     onPressed: () async {
                       await Navigator.push(context, MaterialPageRoute(
                         builder: (context) {
-                          return const AddNewEstateView();
+                          return EditEstateView(estateName:'');
                         },
                       ));
                       callback();

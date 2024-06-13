@@ -52,6 +52,12 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
 
     );
   }
+
+  @override
+  String viewName() {
+    return 'Lämmityskattila';
+  }
+
 }
 
 Icon _heaterIcon(ShellyPro2 myShelly) {

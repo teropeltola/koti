@@ -90,7 +90,10 @@ class ObservationMonitor extends ChangeNotifier {
     if (changeHappened) {
       ObservationLevel prev = previousLevel();
       ObservationLevel curr = currentLevel();
-      log.info('observation level of $name changed from ${prev.name} to ${curr.name}');
+      if (prev.name != curr.name) {
+        log.info('observation level of $name changed from ${prev.name} to ${curr
+            .name}');
+      }
       if (prev == ObservationLevel.alarm) {
           removeAlarm();
       }

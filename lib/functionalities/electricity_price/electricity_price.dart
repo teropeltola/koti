@@ -79,6 +79,9 @@ class ElectricityPriceTable {
   }
 
   double findPercentile(double percentile) {
+    if (slotPrices.isEmpty) {
+      return 0.0;
+    }
     List <double> sortedList = List.from(slotPrices);
     sortedList.sort();
     int index = _countPercentileIndex(percentile);
@@ -162,6 +165,10 @@ class ElectricityTariff {
 
   ElectricityTariff();
 
+  String get name => _name;
+  set name(String newName) { this._name = newName; }
+
+
   void setValue (String newName, TariffType newType, double newParameter) {
     _name = newName;
     _tariffType = newType;
@@ -204,6 +211,9 @@ class ElectricityDistributionPrice {
   double _electricityTax = 0.0;
 
   ElectricityDistributionPrice();
+
+  String get name => _name;
+  set name(String newName) { this._name = newName; }
 
   void setTimeOfDayParameters(String newName,
                               int dayTimeStarting,

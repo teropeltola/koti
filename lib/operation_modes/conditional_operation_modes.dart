@@ -1,16 +1,22 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:time_range_picker/time_range_picker.dart';
 
 import '../functionalities/electricity_price/electricity_price.dart';
 import '../look_and_feel.dart';
+import '../main.dart';
+import 'analysis_of_modes.dart';
 import 'operation_modes.dart';
+
+const String dynamicOperationModeText = 'Vaihtuva';
 
 enum OperationComparisons {less, greater, equal, lessOrEqual, greaterOrEqual;
   static const comparisonText = ['pienempi kuin', 'suurempi kuin', 'yhtäsuuri kuin', 'pienempi tai yhtäsuuri kuin', 'suurempi tai yhtäsuuri kuin' ];
-
+  static const jsonText = ['<','>','==','<=','>=' ];
   String text() => comparisonText[this.index];
 
-  bool value(double par1, double par2) {
+  bool comparisonValue(double par1, double par2) {
     switch (this) {
       case OperationComparisons.less: return (par1 < par2);
       case OperationComparisons.greater: return (par1 > par2);
@@ -18,6 +24,25 @@ enum OperationComparisons {less, greater, equal, lessOrEqual, greaterOrEqual;
       case OperationComparisons.lessOrEqual: return (par1 <= par2);
       case OperationComparisons.greaterOrEqual: return (par1 >= par2);
     }
+  }
+
+  OperationComparisons fromJson(Map<String, dynamic> json){
+    int myIndex = jsonText.indexOf(json['comparison'] ?? '');
+    if (myIndex < 0) {
+      log.error('OperationComparison fromJson, invalid json: $json');
+      return OperationComparisons.less;
+    }
+    else {
+      return OperationComparisons.values[myIndex];
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+
+    json['comparison'] = jsonText[this.index];
+
+    return json;
   }
 }
 
@@ -27,8 +52,29 @@ enum SpotPriceComparisonType {
   percentile;
 
   static const typeText = ['vakio','mediaani', '%-piste'];
+  static const jsonText = ['const','median', 'percentile'];
 
   String text() => typeText[this.index];
+
+  SpotPriceComparisonType fromJson(Map<String, dynamic> json){
+    int myIndex = jsonText.indexOf(json['spotPriceType'] ?? '');
+    if (myIndex < 0) {
+      log.error('SpotPriceComparisonType fromJson, invalid json: $json');
+      return SpotPriceComparisonType.constant;
+    }
+    else {
+      return SpotPriceComparisonType.values[myIndex];
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+
+    json['spotPriceType'] = jsonText[this.index];
+
+    return json;
+  }
+
 }
 
 class SpotCondition {
@@ -36,41 +82,122 @@ class SpotCondition {
   OperationComparisons comparison = OperationComparisons.less;
   double parameterValue = 0.0;
 
+  SpotCondition();
+
   bool isTrue(double spotPrice, ElectricityPriceTable eTable) {
     switch (myType) {
-      case SpotPriceComparisonType.constant: return comparison.value(spotPrice, parameterValue);
+      case SpotPriceComparisonType.constant: return comparison.comparisonValue(spotPrice, parameterValue);
       case SpotPriceComparisonType.median: {
         double referenceValue = eTable.findPercentile(0.5);
-        return comparison.value(spotPrice, referenceValue);
+        return comparison.comparisonValue(spotPrice, referenceValue);
       }
       case SpotPriceComparisonType.percentile: {
         double referenceValue = eTable.findPercentile(parameterValue);
-        return comparison.value(spotPrice, referenceValue);
+        return comparison.comparisonValue(spotPrice, referenceValue);
       }
     }
 
   }
+
+  SpotCondition.fromJson(Map<String, dynamic> json){
+    myType = myType.fromJson(json['type'] ?? {});
+    comparison = comparison.fromJson(json['comparison'] ?? {});
+    parameterValue = json['parameterValue'] ?? 0.0;
+  }
+
+  Map<String, dynamic> toJson() {
+
+    final json = <String, dynamic>{};
+
+    json['type'] = myType.toJson();
+    json['comparison'] = comparison.toJson();
+    json['parameterValue'] = parameterValue;
+
+    return json;
+  }
+
 }
 
 enum OperationConditionType {notDefined, timeOfDay, spotPrice, spotDiff;
   static const optionTextList = ['','kellonaika', 'hinta', 'hintamuutos'];
 
-  String text() => optionTextList[this.index];
+  String text() => optionTextList[index];
+  static const jsonText = ['notDefined','time', 'price', 'priceDelta'];
+
+
+  OperationConditionType fromJson(Map<String, dynamic> json){
+    int myIndex = jsonText.indexOf(json['operationConditionType'] ?? '');
+    if (myIndex < 0) {
+      log.error('OperationConditionType fromJson, invalid json: $json');
+      return OperationConditionType.notDefined;
+    }
+    else {
+      return OperationConditionType.values[myIndex];
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+
+    json['operationConditionType'] = jsonText[index];
+
+    return json;
+  }
+
+}
+
+class MyTimeRange extends TimeRange {
+  MyTimeRange({required super.startTime, required super.endTime});
+
+  MyTimeRange fromJson(Map<String, dynamic> json){
+    TimeOfDay startTime = _timeOfDayDecode(json['startTime'] ?? {});
+    TimeOfDay endTime = _timeOfDayDecode(json['endTime'] ?? {});
+    return MyTimeRange(startTime: startTime, endTime: endTime);
+  }
+
+  Map<String, dynamic> toJson() {
+
+    final json = <String, dynamic>{};
+
+    json['startTime'] = _timeOfDayEncode(startTime);
+    json['endTime'] = _timeOfDayEncode(endTime);
+    return json;
+  }
+}
+
+Map<String, dynamic> _timeOfDayEncode(TimeOfDay timeOfDay) {
+  Map<String, dynamic> json = {};
+  json['hour'] = timeOfDay.hour;
+  json['minute'] = timeOfDay.minute;
+  return json;
+}
+
+TimeOfDay _timeOfDayDecode(Map<String, dynamic> json) {
+  TimeOfDay timeOfDay = TimeOfDay(hour: json['hour'] ?? 0, minute: json['minute'] ?? 0);
+  return timeOfDay;
 }
 
 class OperationCondition {
   OperationConditionType conditionType = OperationConditionType.notDefined;
-  TimeRange timeRange = TimeRange(startTime: TimeOfDay(hour: 0, minute: 0),endTime: TimeOfDay(hour: 23,minute: 59));
+  MyTimeRange timeRange = MyTimeRange(startTime: TimeOfDay(hour: 0, minute: 0),
+      endTime: TimeOfDay(hour: 23, minute: 59));
   SpotCondition spot = SpotCondition();
+
+  OperationCondition();
 
   @override
   String toString() {
     switch (conditionType) {
-      case OperationConditionType.notDefined: return 'internal error';
-      case OperationConditionType.timeOfDay: return '${conditionType.text()} ${timeRange.toString()}';
-      case OperationConditionType.spotPrice: return 'spotPrice';
-      case OperationConditionType.spotDiff: return 'increase';
-      default: return 'Not implemented';
+      case OperationConditionType.notDefined:
+        return 'internal error';
+      case OperationConditionType.timeOfDay:
+        return '${conditionType.text()} ${timeRange.toString()}';
+      case OperationConditionType.spotPrice:
+        return 'spotPrice';
+      case OperationConditionType.spotDiff:
+        return 'increase';
+      default:
+        return 'Not implemented';
     }
   }
 
@@ -81,12 +208,55 @@ class OperationCondition {
     return true;
   }
 
+  OperationCondition.fromJson(Map<String, dynamic> json){
+    conditionType = conditionType.fromJson(json['conditionType'] ?? {});
+    timeRange = timeRange.fromJson(json['timeRange'] ?? {});
+    spot = (json['spot'] == null) ? SpotCondition() : SpotCondition.fromJson(
+        json['spot']);
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+
+    json['conditionType'] = conditionType.toJson();
+    json['timeRange'] = timeRange.toJson();
+    json['spot'] = spot.toJson();
+
+    return json;
+  }
 }
 
 class ResultOperationMode {
-  OperationMode result;
+  String operationModeName = '';
 
-  ResultOperationMode(this.result);
+  ResultOperationMode(this.operationModeName);
+
+  /*
+  ResultOperationMode.fromJsonExtended(Map<String, dynamic> json, OperationModes operationModes){
+    String name = json['operationCodeName'] ?? '';
+    OperationMode opMode = operationModes.getMode(name);
+    if (opMode == noOperationMode) {
+      log.error('ResultOperationMode not found: $json from operation modes (${operationModes.operationModeNames()})');
+    }
+    result = opMode;
+  }
+
+   */
+
+  ResultOperationMode.fromJson(Map<String, dynamic> json){
+    operationModeName = json['operationCodeName'] ?? '';
+  }
+
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+
+    json['operationCodeName'] = operationModeName;
+
+    return json;
+  }
+
+
 }
 
 extension TOD on TimeOfDay {
@@ -97,8 +267,8 @@ extension TOD on TimeOfDay {
 
 class ConditionalOperationMode {
   bool draft = true;
-  OperationCondition condition;
-  ResultOperationMode result;
+  late OperationCondition condition;
+  late ResultOperationMode result;
 
   ConditionalOperationMode(this.condition, this.result);
 
@@ -106,13 +276,17 @@ class ConditionalOperationMode {
     return condition.parametersOK();
   }
 
-  bool match(int spotIndex, ElectricityPriceTable electricityPriceTable) {
+  bool matchSpotIndex(int spotIndex, ElectricityPriceTable electricityPriceTable) {
+    return match(electricityPriceTable.slotStartingTime(spotIndex),electricityPriceTable.slotPrices[spotIndex], electricityPriceTable);
+  }
+
+  bool match(DateTime dateTime, double price, ElectricityPriceTable electricityPriceTable) {
     switch (condition.conditionType) {
       case OperationConditionType.notDefined:
         return false;
       case OperationConditionType.timeOfDay:
         {
-          TimeOfDay time = TimeOfDay.fromDateTime(electricityPriceTable.slotStartingTime(spotIndex));
+          TimeOfDay time = TimeOfDay.fromDateTime(dateTime);
           if (condition.timeRange.startTime.isEarlierOrEqualThan(
               condition.timeRange.endTime)) {
             // range is fully in the same day
@@ -126,7 +300,7 @@ class ConditionalOperationMode {
           }
         }
       case OperationConditionType.spotPrice: {
-        return condition.spot.isTrue(electricityPriceTable.slotPrices[spotIndex],electricityPriceTable);
+        return condition.spot.isTrue(price,electricityPriceTable);
       }
 
       case OperationConditionType.spotDiff:
@@ -135,10 +309,29 @@ class ConditionalOperationMode {
         return false;
     }
   }
+
+
+  ConditionalOperationMode.fromJson(Map<String, dynamic> json){
+    condition = OperationCondition.fromJson(json['condition'] ?? {});
+    result = ResultOperationMode.fromJson(json['result'] ?? {});
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+
+    json['condition'] = condition.toJson();
+    json['result'] = result.toJson();
+
+    return json;
+  }
+
 }
 
-class ConditionalOperationModes {
+class ConditionalOperationModes extends OperationMode {
   List<ConditionalOperationMode> conditions = [];
+  final OperationModes operationModes;
+
+  ConditionalOperationModes(this.operationModes);
 
   void add(ConditionalOperationMode newMode) {
     conditions.insert(0, newMode);
@@ -148,14 +341,15 @@ class ConditionalOperationModes {
     return conditions.removeAt(index);
   }
 
-  OperationMode getOperationMode(int spotIndex, ElectricityPriceTable electricityPriceTable) {
+  String getOperationModeName(int spotIndex, ElectricityPriceTable electricityPriceTable) {
     for (int i=0; i<conditions.length; i++) {
-      if (conditions[i].match(spotIndex, electricityPriceTable)) {
-        return conditions[i].result.result;
+      if (conditions[i].matchSpotIndex(spotIndex, electricityPriceTable)) {
+        return conditions[i].result.operationModeName;
       }
     }
-    return noOperationMode;
+    return '';
   }
+
 
   int nbrOfConditions() {
     return conditions.length;
@@ -172,13 +366,10 @@ class ConditionalOperationModes {
   }
 
 
-  List<String> simulate(ElectricityPriceTable electricityPriceTable) {
+  List<String> simulate() {
 
-    List<String> modes = [_dateLine(electricityPriceTable.startingTime)];
-    int deltaMinutes = 0;
-    int startingIndex = 0;
+    ElectricityPriceTable electricityPriceTable = myEstates.estate(operationModes.estateName).myDefaultElectricityPrice().get();
     DateTime startingTime = electricityPriceTable.startingTime;
-    DateTime endingTime = electricityPriceTable.lastMinuteOfPeriod();
 
     AnalysisOfModes analysis = AnalysisOfModes();
 
@@ -187,103 +378,61 @@ class ConditionalOperationModes {
     }
 
     for (int i=0; i<electricityPriceTable.nbrOfMinutes(); i++) {
-      analysis.add(startingTime.add(Duration(minutes: i)),1,getOperationMode(i ~/ electricityPriceTable.slotSizeInMinutes, electricityPriceTable));
+      analysis.add(startingTime.add(Duration(minutes: i)),1,getOperationModeName(i ~/ electricityPriceTable.slotSizeInMinutes, electricityPriceTable));
     }
     analysis.compress();
 
-    for (int i=0; i<analysis.items.length; i++) {
-      modes.add('${_time(analysis.items[i].start)}-${_time(analysis.items[i].end)}: ${analysis.items[i].operationMode.name}');
-    }
+    return analysis.toStringList();
+  }
 
-    return modes;
-    /*
+  @override
+  Future<void> select(Function unUsedFunction, OperationModes? parentModes) async {
+    DateTime dateTime = DateTime.now();
+    ElectricityPrice electricityPrice = myEstates.estate(operationModes.estateName).myDefaultElectricityPrice();
+    double price = electricityPrice.currentPrice();
+    ElectricityPriceTable electricityPriceTable = electricityPrice.get();
 
-    for (int i=conditions.length-1; i>=0; i--) {
-      if (! conditions[i].draft) {
-        if (conditions[i].condition == OperationConditionType.timeOfDay) {
-
-          models.add(conditions[i].condition.timeRange.startTime)
+    for (int i=0; i<conditions.length; i++) {
+      String opModeName = conditions[i].result.operationModeName;
+      if (conditions[i].match(dateTime, price, electricityPriceTable)) {
+        OperationMode opMode = operationModes.getMode(conditions[i].result.operationModeName);
+        if (opMode == noOperationMode) {
+          log.error('ConditionalOperationModes select: $opModeName not found from operation modes');
         }
-        else if (conditions[i].condition == OperationConditionType.spotPrice) {
-
+        else {
+          await opMode.select(operationModes.selectFunction, parentModes);
         }
       }
     }
-    for (int i=0;i<electricityPriceTable.slotPrices.length; i++) {
-      modeNames.add(getOperationMode(i, electricityPriceTable).name);
-    }
-
-    int firstIndex = 0;
-    int nbrOfSameMode = 0;
-    for (int j=1;j<electricityPriceTable.slotPrices.length; j++) {
-      if (modeNames[firstIndex] == modeNames[j]) {
-        nbrOfSameMode++;
-      }
-      else {
-        modes.add('${_time(electricityPriceTable.slotStartingTime(firstIndex))}'
-          '-${_time(electricityPriceTable.slotStartingTime((j-1)).add(Duration(minutes:59)))}: ${modeNames[firstIndex]}');
-
-        firstIndex = j;
-        nbrOfSameMode = 0;
-      }
-    }
-    modes.add('${_time(electricityPriceTable.slotStartingTime(firstIndex))}'
-        '-${_time(electricityPriceTable.slotStartingTime(electricityPriceTable.slotPrices.length-1).add(Duration(minutes:59)))}: ${modeNames[firstIndex]}');
-
-    return modes;
-
-     */
   }
 
-  String _time(DateTime dateTime) {
-    return '${dateTime.hour}.${dateTime.minute.toString().padLeft(2,'0')}';
+  ConditionalOperationModes.fromJsonExtended(
+      this.operationModes,
+      Map<String, dynamic> json) : super.fromJson(json){
+
+    conditions = List.from(json['conditions'] ?? {}).map((e)=>ConditionalOperationMode.fromJson(e)).toList();
   }
-  String _dateLine(DateTime dateTime) {
-    return '${dateTime.day}.${dateTime.month}.${dateTime.year}';
+/*
+  ConditionalOperationModes.fromJson(Map<String, dynamic> json) : super.fromJson(json){
+    conditions = List.from(json['conditions'].map((e)=>ConditionalOperationMode.fromJson(e)).toList());
   }
+
+
+ */
+  @override
+  Map<String, dynamic> toJson() {
+    final json = super.toJson();
+
+    json['conditions'] = conditions.map((e)=>e.toJson()).toList();
+
+    return json;
+  }
+
+  @override
+  String typeName() {
+    return 'Muuttuva';
+  }
+
 }
 
 
-class AnalysislItem {
-  DateTime start;
-  DateTime end;
-  OperationMode operationMode;
-
-  AnalysislItem(this.start, this.end, this.operationMode);
-}
-
-
-class AnalysisOfModes {
-  List <AnalysislItem> items = [];
-
-  int _find(int first, DateTime dateTime ) {
-    for (int i=first; i < items.length;i++) {
-      if (dateTime.isBefore(items[i].end)) {
-        return i;
-      }
-    }
-    return items.length;
-  }
-
-  void compress() {
-    for (int i=items.length-2; i>=0; i--) {
-      if (items[i].operationMode == items[i+1].operationMode) {
-        items[i].end = items[i+1].end;
-        items.removeAt(i+1);
-      }
-    }
-
-  }
-
-  void add(DateTime start, int durationInMinutes, OperationMode operationMode) {
-
-    if (items.isNotEmpty) {
-      if (! items.last.end.add(Duration(minutes: 1)).isAtSameMomentAs(start)) {
-        log.error('AnalysisOfModes illegal addition');
-        return;
-      }
-    }
-    items.add(AnalysislItem(start, start.add(Duration(minutes: durationInMinutes-1)), operationMode));
-
-  }
-}

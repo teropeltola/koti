@@ -11,7 +11,7 @@ void main() {
     // Build our widget and trigger a frame.
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(
-        body: OperationModesSelectionView(operationModes: operationModes),
+        body: OperationModesSelectionView(justSelect: true, operationModes: operationModes, returnSelectedModeName: (val) {},),
       ),
     ));
 
