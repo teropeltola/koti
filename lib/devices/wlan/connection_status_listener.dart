@@ -32,7 +32,8 @@ class ConnectionStatusListener {
         hasWifiConnection = true;
 
         final info = NetworkInfo();
-        wifiName = await info.getWifiName() ?? '';
+        String resultWithQuatationMarks = await info.getWifiName() ?? '';
+        wifiName = resultWithQuatationMarks.replaceAll('"','');
 
       } else {
         hasWifiConnection = false;

@@ -10,6 +10,7 @@ import '../../../functionalities/functionality/functionality.dart';
 import '../../../logic/dropdown_content.dart';
 import '../../../look_and_feel.dart';
 import '../../../view/my_dropdown_widget.dart';
+import '../../../view/ready_widget.dart';
 import '../electricity_price.dart';
 import '../json/electricity_price_parameters.dart';
 
@@ -142,8 +143,6 @@ class _EditElectricityViewState extends State<EditElectricityView> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<Estate>(
-        builder: (context, estate, childNotUsed) {
           return Scaffold(
               appBar: AppBar(
                 leading: IconButton(
@@ -159,7 +158,7 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                         Navigator.of(context).pop();
                       }
                     }),
-                title: appTitle('Sähkösopimukset'),
+                title: appTitleOld('Sähkösopimukset'),
               ), // new line
               body: SingleChildScrollView(
                   child: Column(children: <Widget>[
@@ -184,6 +183,7 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                                           height: 30,
                                           width: 120,
                                           child: MyDropdownWidget(
+                                            keyString: 'electricityAgreement',
                                               dropdownContent: electricityAgreement,
                                               setValue: (newValue) {
                                                 electricityAgreement
@@ -211,6 +211,7 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                                           height: 30,
                                           width: 120,
                                           child: MyDropdownWidget(
+                                            keyString: 'electricityDistributionAgreement',
                                               dropdownContent: electricityDistributionAgreement,
                                               setValue: (newValue) {
                                                 electricityDistributionAgreement
@@ -252,26 +253,11 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                       ),
                     )
                     : emptyWidget(),
-                    Container(
-                        margin: myContainerMargin,
-                        padding: myContainerPadding,
-                        child: Tooltip(
-                            message:
-                            'Paina tästä tallentaaksesi muutokset ja poistuaksesi näytöltä',
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                  backgroundColor: mySecondaryColor,
-                                  side: const BorderSide(
-                                      width: 2, color: mySecondaryColor),
-                                  shape: const RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.all(Radius.circular(10))),
-                                  elevation: 10),
-                              onPressed: () async {
-                                  myElectricityPrice.tariff = _eTariff(electricityAgreement.currentIndex());
-                                  myElectricityPrice.distributionPrice = _dTariff(electricityDistributionAgreement.currentIndex());
-                                  await myElectricityPrice.init();
-                                /*
+                    readyWidget(() async {
+                      myElectricityPrice.tariff = _eTariff(electricityAgreement.currentIndex());
+                      myElectricityPrice.distributionPrice = _dTariff(electricityDistributionAgreement.currentIndex());
+                      await myElectricityPrice.init();
+                      /*
                                 if (_functionality.currentIndex() == 0) {
                                   PlainSwitchFunctionality newFunctionality = PlainSwitchFunctionality();
                                   newFunctionality.pair(newDevice);
@@ -287,21 +273,12 @@ class _EditElectricityViewState extends State<EditElectricityView> {
 
                                 widget.estate.addDevice(newDevice);
                                  */
-                                showSnackbarMessage('Sähkösopimustiedot päivitetty!');
-                                Navigator.pop(context, true);
-                              },
-                              child: const Text(
-                                'Valmis',
-                                maxLines: 1,
-                                style: TextStyle(color: mySecondaryFontColor),
-                                textScaleFactor: 2.2,
-                              ),
-                            ))),
+                      showSnackbarMessage('Sähkösopimustiedot päivitetty!');
+                      Navigator.pop(context, true);
+                    })
                   ])
               )
           );
-        }
-    );
   }
 }
 
@@ -369,6 +346,7 @@ class _EditElectricityShortViewState extends State<EditElectricityShortView> {
                                           height: 30,
                                           width: 120,
                                           child: MyDropdownWidget(
+                                              keyString: 'electricityAgreement',
                                               dropdownContent: electricityAgreement,
                                               setValue: (newValue) {
                                                 electricityAgreement
@@ -393,6 +371,7 @@ class _EditElectricityShortViewState extends State<EditElectricityShortView> {
                                           height: 30,
                                           width: 120,
                                           child: MyDropdownWidget(
+                                              keyString: 'electricityDistributionAgreement',
                                               dropdownContent: electricityDistributionAgreement,
                                               setValue: (newValue) {
                                                 electricityDistributionAgreement

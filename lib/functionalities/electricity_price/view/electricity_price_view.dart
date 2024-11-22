@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:koti/look_and_feel.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
+import '../../../estate/estate.dart';
 import '../../../functionalities/functionality/functionality.dart';
 import '../../../functionalities/functionality/view/functionality_view.dart';
 import '../electricity_price.dart';
@@ -25,12 +26,10 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
 
   late TooltipBehavior _tooltipBehavior;
 
-
   @override
   void initState() {
     super.initState();
-
-    _tooltipBehavior =  TooltipBehavior(
+    _tooltipBehavior = TooltipBehavior(
         enable: true,
         header: 'sähkön hinta',
         builder: (dynamic data, dynamic point, dynamic series,
@@ -77,13 +76,14 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
   Widget build(BuildContext context) {
 
     return Scaffold(
-        appBar: AppBar(title: appTitle('Sähkön hinta')),
+        appBar: AppBar(title: appIconAndTitle(myEstates.currentEstate().name,ElectricityPrice.functionalityName)),
         body: SingleChildScrollView( child:
         Column(children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(20),
             child: Text('Sähkön hinta nyt: ${currentPrice.toStringAsFixed(2)} c/kWh',
-                textScaleFactor: 1.5),
+                textScaler: const TextScaler.linear(1.5),
+            ),
           ),
           Center(
               child: Container(
@@ -121,21 +121,24 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
             child: Text('- Edullisin tunti: '
                 '${_timePeriodFormat(electricityChartData.minPriceTime, 1)} '
                 '(${electricityChartData.minPrice.toStringAsFixed(2)} c/kWh)',
-                textScaleFactor: 1.2),
+                textScaler: const TextScaler.linear(1.2),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(5),
             child: Text('- Kaksituntinen: '
                 '${_timePeriodFormat(electricityChartData.min2hourPeriod,2)}'
                 ' (${electricityChartData.min2hourPeriodPrice.toStringAsFixed(2)} c/kWh)',
-                textScaleFactor: 1.2),
+                textScaler: const TextScaler.linear(1.2),
+            ),
           ),
           Padding(
             padding: const EdgeInsets.all(5),
             child: Text('- Kolmituntinen: '
                 '${_timePeriodFormat(electricityChartData.min3hourPeriod,3)}'
                 ' (${electricityChartData.min3hourPeriodPrice.toStringAsFixed(2)} c/kWh)',
-                textScaleFactor: 1.2),
+                textScaler: const TextScaler.linear(1.2),
+            ),
           ),
         ])
         )
@@ -200,10 +203,13 @@ class ElectricityGridBlock extends FunctionalityView {
 
   @override
   Widget gridBlock(BuildContext context, Function callback) {
-    PriceChange priceChange = myElectricityPrice.data.priceChange();
+    PriceChange priceChange = myElectricityPrice.electricity.data.priceChange();
     double currentPrice = myElectricityPrice.currentPrice();
     _BarColor colorPalette = _BarColor();
-    colorPalette.init(myElectricityPrice.data.minPrice(), myElectricityPrice.data.maxPrice());
+    colorPalette.init(
+        myElectricityPrice.electricity.data.minPrice(),
+        myElectricityPrice.electricity.data.maxPrice()
+    );
     Color backgroundColor = colorPalette.get(currentPrice);
     Color foregroundColor = properTextColor(backgroundColor);
 
@@ -217,19 +223,17 @@ class ElectricityGridBlock extends FunctionalityView {
             },
           ));
           callback();
-//        if (!context.mounted) return;
-//        Navigator.pop(context);
         },
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-              const Text(
-                'sähkön hinta',
-                style: TextStyle(
-                  fontSize: 12)),
               Text(
-                  '${myElectricityPrice.currentPrice().toStringAsFixed(2)} c',
-                  textScaleFactor: 1.4,
+                ElectricityPrice.functionalityName,
+                style: TextStyle(
+                  fontSize: 10)),
+              Text(
+                  '${currencyCentInText(myElectricityPrice.currentPrice())}',
+                  textScaler: const TextScaler.linear(1.2),
                   textAlign: TextAlign.center,
               ),
               Icon(
@@ -238,6 +242,7 @@ class ElectricityGridBlock extends FunctionalityView {
                    : (priceChange == PriceChange.increase)
                      ? Icons.north_east
                      : Icons.east,
+                size: 20
               )
             ])
     );

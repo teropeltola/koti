@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/shelly_pro2/shelly_pro2.dart';
 import 'package:koti/functionalities/boiler_heating/boiler_heating_functionality.dart';
-import 'package:provider/provider.dart';
-
-import '../../../devices/shelly/json/switch_get_status.dart';
+import 'package:koti/functionalities/boiler_heating/view/edit_boiler_heating_view.dart';
+import 'package:koti/functionalities/heating_system_functionality/view/edit_heating_system_view.dart';
+import 'package:koti/logic/services.dart';
 import '../../../estate/estate.dart';
+import '../../../logic/state_broker.dart';
 import '../../../look_and_feel.dart';
+import '../../../operation_modes/view/operation_modes_selection_view.dart';
+import '../../../service_catalog.dart';
 import '../../functionality/view/functionality_view.dart';
 
 class BoilerHeatingOverview extends StatefulWidget {
@@ -17,21 +20,19 @@ class BoilerHeatingOverview extends StatefulWidget {
 }
 
 class _BoilerHeatingState extends State<BoilerHeatingOverview> {
-  late ShellyPro2 myShellyPro;
+
+  StateBroker myStateBroker = myEstates.currentEstate().stateBroker;
+  late BoilerHeatingFunctionality boilerHeating;//boiler heating can be updated with editing
 
   @override
   void initState() {
     super.initState();
-
-    myShellyPro = widget.boilerHeating.shellyPro2;
+    boilerHeating = widget.boilerHeating;
 
     refresh();
   }
 
   void refresh() async {
-    await myShellyPro.getDataFromDevice();
-    await myShellyPro.getDeviceInfo();
-    await myShellyPro.sysGetConfig();
 
     setState(() {});
   }
@@ -41,37 +42,97 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
     super.dispose();
   }
 
+  String _getFormattedValue(String id) {
+    double val = myStateBroker.getDoubleValue(id);
+    if (val == noValueDouble) {
+      return '??';
+    }
+    else {
+      return val.toStringAsFixed(1);
+    }
+  }
+
+  bool _powerOn()  {
+    bool powerOn = myStateBroker.getBoolValue(powerOnOffService, boilerHeating.connectedDevices[0].name);
+    return powerOn;
+  }
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<Estate>(
-      builder: (context, estate, childNotUsed) {
-        return Scaffold(
-          appBar: AppBar(
-            title: appTitle('Lämminvesivaraaja'),
-          ), // new line
-          body: SingleChildScrollView(
-              child: Column(children: <Widget>[
-                Container(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                    _shellyProToggleButton(widget.boilerHeating.myView(), myShellyPro, 0, refresh),
-                    _shellyProToggleButton(widget.boilerHeating.myView(), myShellyPro, 1, refresh),
-                  ]),
+    return Scaffold(
+      appBar: AppBar(
+        title: appIconAndTitle(myEstates.currentEstate().name, BoilerHeatingFunctionality.functionalityName ),
+      ), // new line
+      body: SingleChildScrollView(
+        child:
+          Column(children: <Widget>[
+            OperationModesSelectionView(
+                operationModes: boilerHeating.operationModes,
+                topHierarchy: false,
+                callback: () {setState(() {}); }
+            ),
+            _powerOn()
+            ? Icon(Icons.electric_bolt)
+            : Icon(Icons.flash_off),
+            Container(
+              margin: EdgeInsets.fromLTRB(2,10,2,2),
+              padding: myContainerPadding,
+              //alignment: AlignmentDirectional.topStart,
+              child: InputDecorator(
+                decoration: const InputDecoration(labelText: 'Ouman lämmönsäädin'), //
+        child: Column(children: <Widget>[
+          Container(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text('Pannun lämpötila: ${_getFormattedValue(currentRadiatorWaterTemperatureService)} $celsius'),
+                Text('Venttiilin asento: ${_getFormattedValue(radiatorValvePositionService)} %'),
+                Text('Ohjattu lämpötilatarve: ${_getFormattedValue(requestedRadiatorWaterTemperatureService)} $celsius'),
+                Text('Ulkolämpötila: ${_getFormattedValue(outsideTemperatureService)} $celsius'),
+
+              ]),
                 ),
-                boilerHeatingSummary(myShellyPro),
-                TextButton(
-                  key: const Key('testi virkistys'),
-                  child: const Text('Testivirkistys'),
-                  onPressed: () {
-                    refresh();
-                    setState(() {});
-                  }
-                )
               ])
           )
-          );
-      }
+      )
+    ])
+          ),
+        bottomNavigationBar: Container(
+          height: bottomNavigatorHeight,
+          alignment: AlignmentDirectional.topCenter,
+          color: myPrimaryColor,
+          child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                IconButton(
+                    icon: const Icon(
+                        Icons.edit,
+                        color: myPrimaryFontColor,
+                        size: 40),
+                    tooltip: 'muokkaa lämmitysohjauksen tietoja',
+                    onPressed: () async {
+                      bool successfullyEdited = await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) {
+                              return EditBoilerHeatingView(
+                                  estate: myEstates.currentEstate(),
+                                  createNew: false,
+                                  boilerHeating: boilerHeating
+                              );
+                            },
+                          )
+                      );
+                      if (successfullyEdited) {
+                        storeChanges();
+                      }
+                      setState(() {});
+                    }
+                ),
+
+              ]),
+        )
+
     );
   }
 }

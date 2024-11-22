@@ -16,7 +16,7 @@ class DeviceAttributeControl {
 }
 
 class ControlledDevice {
-  String _deviceId = '';
+  String deviceId = '';
   DeviceAttributeControl attributes = DeviceAttributeControl();
   Function _externalGetValuesFunction = (){};
   Function _externalSetValuesFunction = () {};
@@ -27,7 +27,7 @@ class ControlledDevice {
   Map<String, dynamic> _setParameters = {};
 
   void initStructure( {required String deviceId, required List<DeviceAttributeCapability> deviceAttributes, required Function setFunction, required Function getFunction }) {
-    _deviceId = deviceId;
+    this.deviceId = deviceId;
     deviceAttributes.forEach((e)=>attributes.setCapability(e));
     _externalGetValuesFunction = getFunction;
     _externalSetValuesFunction = setFunction;
@@ -62,9 +62,4 @@ class ControlledDevice {
 
 class ControlledDevices {
   List <DeviceAttributeControl> deviceAttributes = [];
-}
-
-class DeviceX {
-
-
 }

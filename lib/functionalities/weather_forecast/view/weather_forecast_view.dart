@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
 
 import '../../functionality/functionality.dart';
@@ -28,7 +29,7 @@ class WeatherForecastView extends FunctionalityView {
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return const WeatherExplorer();
+              return WeatherPageCollection(weatherForecast: myForecast);
             },
           ));
           callback();
@@ -43,7 +44,7 @@ class WeatherForecastView extends FunctionalityView {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Text(
-                  'Tapanila',
+                  myForecast.locationName,
                   style: const TextStyle(
                       fontSize: 12)),
               Icon(
@@ -63,7 +64,7 @@ class WeatherForecastView extends FunctionalityView {
 
   @override
   String subtitle() {
-    return 'Tapanila';
+    return myForecast.locationName;
   }
 
 
@@ -78,7 +79,12 @@ const weatherUrl3 =
 const weatherUrl = "https://saaennuste.fi/?place=Central%20Helsinki";
 
 class WeatherExplorer extends StatelessWidget {
-  const WeatherExplorer({Key? key,}) : super(key: key);
+  final String title;
+  final String weatherUrl;
+  const WeatherExplorer( {Key? key,
+    required this.title,
+    required this.weatherUrl
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -97,9 +103,32 @@ class WeatherExplorer extends StatelessWidget {
       ..loadRequest(Uri.parse(weatherUrl));
     return Scaffold(
       appBar: AppBar(
-        title: appTitle('Sää'),
+        title: appIconAndTitle(myEstates.currentEstate().name, this.title),
       ),// new line
       body: WebViewWidget( controller: controller ),
     );
   }
 }
+
+class WeatherPageCollection extends StatelessWidget {
+  final WeatherForecast weatherForecast;
+  const WeatherPageCollection( {Key? key, required this.weatherForecast
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = PageController(
+    );
+    List<Widget> widgets = List.generate(weatherForecast.weatherServices.length, (int index) => WeatherExplorer(
+      title: weatherForecast.weatherServices[index].title(),
+      weatherUrl: weatherForecast.weatherServices[index].weatherPage(),
+    ));
+    return PageView(
+      controller: controller,
+      children: widgets
+      ,
+    );
+  }
+}
+
+

@@ -1,19 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:koti/devices/shelly/json/shelly_input_config.dart';
 
-import '../../estate/estate.dart';
-import '../../functionalities/functionality/functionality.dart';
-import '../device/device.dart';
-import '../device/view/edit_device_view.dart';
+import 'package:koti/devices/shelly/json/shelly_input_config.dart';
+import '../../logic/services.dart';
+import '../../service_catalog.dart';
 import '../shelly/json/shelly_switch_config.dart';
 import '../shelly/json/switch_get_status.dart';
 import '../shelly/shelly_device.dart';
+
 
 enum ShellyPro2Id {
   id0,
   id1,
   both;
-  int id() => this.index;
+  int id() => index;
 }
 
 class ShellyPro2 extends ShellyDevice {
@@ -22,7 +21,21 @@ class ShellyPro2 extends ShellyDevice {
   List<ShellySwitchStatus> switchStatusList = [ShellySwitchStatus.empty(), ShellySwitchStatus.empty()];
   List<ShellyInputConfig> inputConfigList = [ShellyInputConfig.empty(),   ShellyInputConfig.empty()];
 
-  ShellyPro2();
+  void _initOfferedServices() {
+    services = Services([
+      RWAsyncDeviceService<bool>(serviceName: powerOnOffAsyncService, setFunction: setFullPower, getFunction: getFullPower),
+      RWDeviceService<bool>(serviceName: powerOnOffService, setFunction: setFullPower, getFunction: getSwitchFullStatus)
+    ]);
+  }
+
+  ShellyPro2() {
+    _initOfferedServices();
+  }
+
+  ShellyPro2.failed() {
+    setFailed();
+
+  }
 
   bool switchToggle(ShellyPro2Id id) {
     if (id == ShellyPro2Id.id0) {
@@ -52,6 +65,18 @@ class ShellyPro2 extends ShellyDevice {
     }
   }
 
+  bool getSwitchFullStatus() {
+    return switchStatus(ShellyPro2Id.both);
+  }
+
+  Future <void> setFullPower(bool value) async {
+    await setPower(ShellyPro2Id.both, value);
+  }
+
+  Future<bool> getFullPower() async {
+    return await switchStatus(ShellyPro2Id.both);
+  }
+
   Future<void> setPower(ShellyPro2Id id, bool on) async {
     if (id == ShellyPro2Id.both) {
       await setPower(ShellyPro2Id.id0, on);
@@ -75,6 +100,31 @@ class ShellyPro2 extends ShellyDevice {
   }
 
   @override
+  Widget dumpData({required Function formatterWidget}) {
+    return formatterWidget(
+        headline: name,
+        textLines: [
+          'tunnus: $id',
+          'IP-osoite: $ipAddress',
+        ],
+        widgets: [
+          dumpDataMyFunctionalities(formatterWidget: formatterWidget),
+        ]
+    );
+  }
+
+  @override
+  IconData icon() {
+    return Icons.electrical_services;
+  }
+
+  @override
+  String shortTypeName() {
+    return 'shelly pro2';
+  }
+
+
+  @override
   Map<String, dynamic> toJson() {
     var json = super.toJson();
     return json;
@@ -83,6 +133,7 @@ class ShellyPro2 extends ShellyDevice {
   @override
   ShellyPro2.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
+    _initOfferedServices();
   }
 
 }

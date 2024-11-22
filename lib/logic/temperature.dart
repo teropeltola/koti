@@ -3,7 +3,7 @@ import '../devices/device/device.dart';
 
 class Temperature {
   double _targetTemperature = temperatureNotAvailable;
-  Device _device = Device();
+  Device _device = noDevice;
 
   Temperature();
 
@@ -42,7 +42,7 @@ class Temperature {
   }
 
   void fromJson(Map<String, dynamic> json){
-    _device = findDevice(json['deviceId'] ?? '');
+    _device = allDevices.findDevice(json['deviceId'] ?? '');
     _targetTemperature = json['target'] ?? temperatureNotAvailable;
   }
 

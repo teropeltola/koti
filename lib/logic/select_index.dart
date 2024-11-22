@@ -6,11 +6,14 @@ SelectIndex notSelected = SelectIndex('not selected');
 
 class SelectIndex {
 
-  late MyPermanentVariable<int> _index;
+
+  MyPermanentVariable<int> _index = MyPermanentVariable<int>('',-1);
   SelectIndex? _setter;
   bool settingIsValid = false;
 
   SelectIndex? get setter => _setter;
+
+  SelectIndex.empty();
 
   SelectIndex(String uniqueName) {
     _index = MyPermanentVariable<int>(uniqueName,_currentIsNotValidIndicator);

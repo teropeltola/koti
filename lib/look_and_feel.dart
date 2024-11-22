@@ -1,13 +1,16 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:talker/talker.dart';
 
+import 'estate/estate.dart';
 import 'logic/observation.dart';
 
-const appName = 'himatuikku';
+const appName = 'Koti';
 
 const familyDeliminator = '/';
 
 const String celsius =  "\u2103";
+const double noValueDouble = -99.9987654;
 
 ThemeData myTheme = ThemeData(
     useMaterial3: true,
@@ -15,8 +18,8 @@ ThemeData myTheme = ThemeData(
       seedColor: Colors.blue //myPrimaryColor,
     ),
   appBarTheme: const AppBarTheme(
-    titleTextStyle: TextStyle(color:Colors.white),
-    color: myPrimaryColor,
+    titleTextStyle: TextStyle(color:myPrimaryColor),
+    color: Colors.white,
   ),
   //primarySwatch: Colors.blueGrey
   textTheme: const TextTheme(
@@ -59,12 +62,14 @@ ThemeData myTheme = ThemeData(
 
 );
 
-const Color myPrimaryColor = Color(0xFFC0D0C6); //Colors.blueGrey;
-const Color mySecondaryColor = Colors.grey;
-const Color myPrimaryFontColor = Colors.white;
-const Color mySecondaryFontColor = Colors.blue;
+const Color myPrimaryColor = Colors.white; //Colors.blueGrey;
+const Color mySecondaryColor = Color(0xFFC0D0C6); // Colors.grey;
+const Color myPrimaryFontColor =  Colors.blue;
+const Color mySecondaryFontColor = Colors.white;
 const Color myDropdownFontColor = Colors.blueGrey;
 const Color myPrimaryButtonColor = Colors.blueGrey;
+
+const Color defaultIconColor = myPrimaryFontColor;
 
 const myAlertDialogTitleScale = 0.6;
 const EdgeInsets myContainerMargin =  EdgeInsets.all(2.0);
@@ -75,10 +80,60 @@ Widget emptyWidget () {
   return const Offstage(offstage: true, child:Text(''),);
 }
 
-Widget appTitle(String titleText) {
+const _presetAppFontSizes = [28.0, 24.0, 20.0, 16.0, 12.0];
+
+Widget appIconAndTitle(String estateName, String titleText) {
+  var myAutoSizeGroup = AutoSizeGroup();
+  return Row(children: [
+    Expanded(
+        flex: 5,
+        child:
+          AutoSizeText(
+            '$estateName',
+            //group: myAutoSizeGroup,
+            maxLines: 1,
+            presetFontSizes: _presetAppFontSizes,
+            style: const TextStyle(
+              color: Colors.blue,
+            ),
+            textAlign: TextAlign.right
+          ),
+    ),
+    Expanded(
+      flex: 1,
+      child: Text(' '),
+    ),
+    Expanded(
+        flex: 3,
+        child: Image.asset(
+            'assets/images/main_image.png',
+            fit: BoxFit.contain)
+    ),
+    Expanded(
+      flex: 1,
+      child: Text(' '),
+    ),
+    Expanded(
+        flex: 12,
+        child:
+          AutoSizeText(
+            '$titleText',
+            //group: myAutoSizeGroup,
+            maxLines: 2,
+            style: const TextStyle(color: Colors.blue),
+            textAlign: TextAlign.left,
+            wrapWords: false,
+            presetFontSizes: _presetAppFontSizes,
+        ),
+    ),
+  ]
+  );
+}
+
+Widget appTitleOld(String titleText) {
   return Text(
            titleText,
-           style: const TextStyle(fontSize:28)
+           style: const TextStyle(fontSize:28, color: Colors.blue)
          );
 }
 
@@ -90,7 +145,8 @@ Future <bool> informMatterToUser(BuildContext context, String titleText, String 
       return AlertDialog(
           title: Text(
               titleText,
-              textScaleFactor: 0.6),
+              textScaler: const TextScaler.linear(1.1),
+          ),
           content: Text(basicText),
           actions: <Widget>[
             TextButton(
@@ -130,7 +186,8 @@ Future<bool> askUserGuidance(BuildContext context, String titleText, String cont
     builder: (BuildContext dialogContext) {
       return AlertDialog(
           title: Text(titleText,
-                      textScaleFactor: myAlertDialogTitleScale),
+              textScaler: const TextScaler.linear(myAlertDialogTitleScale),
+          ),
           content: Text(contentText),
           actions: <Widget>[
             TextButton(
@@ -163,4 +220,28 @@ Color observationSymbolColor(ObservationLevel level) {
 }
 
 const bottomNavigatorHeight = 60.0;
+
+Widget dumpTextLine(String text) {
+  return AutoSizeText(text, maxLines: 1);
+}
+
+String dumpTimeString(DateTime d) {
+  return '${d.day}.${d.month}. ${d.hour.toString().padLeft(2, '0')}.${d.minute.toString().padLeft(2, '0')}';
+}
+
+Future <void> storeChanges() async {
+  await myEstates.store();
+  showSnackbarMessage(
+      'Muutokset talletettu!');
+
+}
+
+String currencyCentInText(double cents) {
+  if (cents == noValueDouble) {
+    return '??';
+  }
+  else {
+    return '${cents.toStringAsFixed(2)} c';
+  }
+}
 

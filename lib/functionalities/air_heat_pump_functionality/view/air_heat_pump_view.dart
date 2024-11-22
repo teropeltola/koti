@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../logic/observation.dart';
-import '../../../logic/service_caller.dart';
-import '../../../look_and_feel.dart';
-
-import '../../../main.dart';
 import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 
@@ -72,7 +68,7 @@ class AirHeatPumpView extends FunctionalityView {
   @override
   String subtitle() {
     Functionality functionality = myFunctionality as Functionality;
-    return functionality.device.name;
+    return functionality.connectedDevices[0].name;
   }
 
 }

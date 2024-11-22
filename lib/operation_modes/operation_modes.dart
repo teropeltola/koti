@@ -1,77 +1,39 @@
+import 'package:auto_size_text/auto_size_text.dart';
+import 'package:flutter/material.dart';
 
+import 'package:koti/estate/estate.dart';
+import 'package:koti/logic/device_attribute_control.dart';
 import 'package:koti/operation_modes/conditional_operation_modes.dart';
 import 'package:koti/operation_modes/hierarcical_operation_mode.dart';
+import '../devices/device/device.dart';
 import '../logic/select_index.dart';
+import '../logic/services.dart';
 import '../look_and_feel.dart';
 
 const String constWarming = 'Kiinteä';
+const String constBoolValue = 'Kiinteä On/Off';
 const String relativeWarming = 'Suhteellinen';
 
 void _noFunction(dynamic dyn) {
   log.error('not existing OperationMode called ${dyn.toString()}');
 }
 
-/*
-class ParameterHandlingFunction {
-  final String _functionName;
-  final Function _selectionFunction;
+class OperationMode {
+  String _name = '';
+  bool preDefined = false;
 
-  String get functionName => _functionName;
+  OperationMode();
 
-  ParameterHandlingFunction(this._functionName, this._selectionFunction);
-
-  Future <void> call(Map<String, dynamic> parameters) async {
-    await _selectionFunction(parameters);
-  }
-}
-
-
-class ParameterHandlingFunctions {
-  List<ParameterHandlingFunction> _functions = [];
-
-  void addFunction(ParameterHandlingFunction function) {
-    int index = _functionIndex(function.functionName);
-    if (index < 0) {
-      _functions.add(function);
-    }
-  }
-
-  int _functionIndex (String name) {
-    for (int i=0; i<_functions.length; i++) {
-      if (name == _functions[i].functionName) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  Function parameterFunction(OperationMode operationMode)  {
-    int i = _functionIndex(operationMode.selectFunctionName);
-
-    if (i<0) {
-      log.error('OperationMode "${operationMode.name}" uses missing function "${operationMode.selectFunctionName}"');
-      return _noFunction;
-    }
-    return _functions[i]._selectionFunction;
+  void init([OperationModes? initOperationModes]) {
   }
 
   void clear() {
-    _functions.clear();
   }
-}
-
-ParameterHandlingFunctions myParameterHandlingFunctions = ParameterHandlingFunctions();
-*/
-
-class OperationMode {
-  String _name = '';
-
-  OperationMode();
 
   String get name => _name;
   set name(String newName) => _name = newName;
 
-  Future<void> select(Function function, OperationModes? operationModes) async {
+  Future<void> select(ControlledDevice controlledDevice, OperationModes? operationModes) async {
     log.error('OperationMode select called: missing subclass implementation');
   }
 
@@ -84,14 +46,20 @@ class OperationMode {
     return (this is HierarchicalOperationMode);
   }
 
+  OperationMode clone() {
+    return OperationMode.fromJson(toJson());
+  }
+
   OperationMode.fromJson(Map<String, dynamic> json){
     _name = json['name'] ?? '';
+    preDefined = json['preDefined'] ?? false;
   }
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
 
     json['name'] = name;
+    json['preDefined'] = preDefined;
     json['type'] = runtimeType.toString();
 
     return json;
@@ -108,19 +76,18 @@ class ConstantOperationMode extends OperationMode {
   ConstantOperationMode();
 
   @override
-  Future<void> select(Function function, OperationModes? operationModes) async {
-    function(parameters);
+  Future<void> select(ControlledDevice controlledDevice, OperationModes? operationModes) async {
+    controlledDevice.setDirectValue(parameters);
   }
 
+  @override
+  OperationMode clone() {
+    return ConstantOperationMode.fromJson(toJson());
+  }
 
   @override
   ConstantOperationMode.fromJson(Map<String, dynamic> json) : super.fromJson(json){
     parameters = json['parameters'] ?? {};
-  }
-
-  ConstantOperationMode cloneFrom(OperationMode sourceMode) {
-    ConstantOperationMode newMode = ConstantOperationMode.fromJson(sourceMode.toJson());
-    return newMode;
   }
 
   @override
@@ -134,7 +101,48 @@ class ConstantOperationMode extends OperationMode {
 
   @override
   String typeName() {
-    return 'Kiinteä';
+    return constWarming;
+  }
+}
+
+class BoolServiceOperationMode extends OperationMode {
+  String serviceName = '';
+  bool value = false;
+
+  BoolServiceOperationMode();
+
+  @override
+  Future<void> select(ControlledDevice controlledDevice, OperationModes? operationModes) async {
+    Device device = allDevices.findDevice(controlledDevice.deviceId);
+    RWDeviceService<bool> deviceService = device.services.getService(serviceName) as RWDeviceService<bool>;
+    deviceService.set(value);
+  }
+
+  @override
+  OperationMode clone() {
+    return BoolServiceOperationMode.fromJson(toJson());
+  }
+
+
+  @override
+  BoolServiceOperationMode.fromJson(Map<String, dynamic> json) : super.fromJson(json){
+    serviceName = json['serviceName'] ?? '';
+    value = json['value'] ?? false;
+  }
+
+  @override
+  Map<String, dynamic> toJson() {
+    final json = super.toJson();
+
+    json['serviceName'] = serviceName;
+    json['value'] = value;
+
+    return json;
+  }
+
+  @override
+  String typeName() {
+    return constBoolValue;
   }
 }
 
@@ -210,13 +218,35 @@ class OperationModes {
   List <OperationMode> _modes = [];
   OperationModeTypes types = OperationModeTypes();
   String estateName = '';
-  Function selectFunction = _noFunction;
+  //Function selectFunction = _noFunction; XX
+  ControlledDevice controlledDevice = ControlledDevice();
 
-  late SelectIndex _currentIndex;
+  SelectIndex _currentIndex = SelectIndex.empty();
 
-  OperationModes(String creatorId) {
-    _currentIndex = SelectIndex(creatorId);
+  OperationModes() {
   }
+
+  void initModeStructure({ required Estate estate,
+              required String parameterSettingFunctionName,
+              required String deviceId,
+              required List<DeviceAttributeCapability> deviceAttributes,
+              required Function setFunction,
+              required Function getFunction }) {
+
+    _currentIndex = SelectIndex('${estate.id}/${deviceId}');
+    estateName = estate.name;
+    controlledDevice.initStructure(
+      deviceId: deviceId,
+      deviceAttributes: deviceAttributes,
+      setFunction: setFunction,
+      getFunction: getFunction
+    );
+
+    for (var operationMode in _modes) {
+      operationMode.init(this);
+    }
+  }
+
 
   int currentIndex() {
     return _currentIndex.get();
@@ -280,7 +310,7 @@ class OperationModes {
   }
 
   Future<void> selectIndex(int index, [OperationModes? parentModes]) async {
-    await _modes[index].select(selectFunction, parentModes);
+    await _modes[index].select(controlledDevice, parentModes);
 
     _currentIndex.setIndex(index);
   }
@@ -351,19 +381,18 @@ class OperationModes {
   void addType(String name) {
       types.add(name);
   }
-/*
-  OperationModes.fromJsonOld(Map<String, dynamic> json){
 
-    _modes = List.from(json['modes']).map((e)=>OperationMode().fromJsonFunction(e)).toList();
-    types = OperationModeTypes.fromJson(json['types']);
+  void clear() {
+    for (var o in _modes) {
+      o.clear();
+    }
+    _modes.clear();
   }
-
- */
 
   OperationModes.fromJson(Map<String, dynamic> json){
 
     _modes = List.from(json['modes']).map((e)=>extendedOperationModeFromJson(this, e)).toList();
-    types = OperationModeTypes.fromJson(json['types']);
+  //  types = OperationModeTypes.fromJson(json['types']);
     _currentIndex = SelectIndex(json['currentIndexId'] ?? '');
   }
 
@@ -372,10 +401,38 @@ class OperationModes {
     final json = <String, dynamic>{};
 
     json['modes'] = _modes.map((e)=>e.toJson()).toList();
-    json['types'] = types.toJson();
+   // json['types'] = types.toJson();
     json['currentIndexId'] = _currentIndex.id();
 
     return json;
+  }
+
+  String searchConditionLoops() {
+    for (var o in _modes) {
+      if (o is ConditionalOperationModes) {
+        String problem = o.recursiveLoopWith();
+        if (problem.isNotEmpty) {
+          return problem;
+        }
+      }
+    }
+    return '';
+  }
+
+  Widget dumpData({required Function formatterWidget}) {
+    return formatterWidget(
+        headline: 'Toimintotilat',
+        textLines: [
+          'Toimintotilojen lukumäärä: ${nbrOfModes()}',
+          'Nykyinen tila: ${currentModeName()}',
+        ],
+        widgets: [Text('')]
+          //for (int i=0; i<nbrOfModes(); i++)
+         //   _dumpOperationMode(getModeAt(i)),
+
+    );
+
+
   }
 
 }
@@ -383,12 +440,44 @@ class OperationModes {
 OperationMode extendedOperationModeFromJson(OperationModes operationModes, Map<String, dynamic> json) {
   switch (json['type'] ?? '') {
     case 'ConstantOperationMode': return ConstantOperationMode.fromJson(json);
-    case 'ConditionalOperationModes': return ConditionalOperationModes.fromJsonExtended(operationModes, json);
+    case 'ConditionalOperationModes': return ConditionalOperationModes.fromJson(json);
     case 'HierarchicalOperationMode': return HierarchicalOperationMode.fromJson(json);
+    case 'BoolServiceOperationMode': return BoolServiceOperationMode.fromJson(json);
     // case '': return
   }
   log.error('unknown OperationMode jsonObject: "${json['type'] ?? '- not found at all-'}"');
   return noOperationMode;
 }
+
+class ObjectRegistry {
+  final Map<String, int> _typeMap = {};
+  List <OperationMode> list = [];
+
+  void register(OperationMode type) {
+    list.add(type);
+    _typeMap[type.typeName()] = list.length-1;
+  }
+
+  OperationMode createObject(String typeText) {
+    final typeIndex = _typeMap[typeText];
+    if (typeIndex == null) {
+      throw ArgumentError('Unknown type text: $typeText');
+    }
+
+    return list[typeIndex].clone();
+  }
+}
+
+final operationModeTypeRegistry = ObjectRegistry();
+
+void registerOperationModeTypes() {
+  operationModeTypeRegistry.register(ConditionalOperationModes());
+  operationModeTypeRegistry.register(HierarchicalOperationMode());
+  operationModeTypeRegistry.register(ConstantOperationMode());
+}
+
+
+
+
 
 

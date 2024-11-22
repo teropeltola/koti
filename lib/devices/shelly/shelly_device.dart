@@ -1,6 +1,6 @@
+import 'package:flutter/material.dart';
 import 'dart:convert';
 import'dart:async';
-import 'package:flutter/material.dart';
 
 import 'package:bonsoir/bonsoir.dart';
 import 'package:http/http.dart' as http;
@@ -42,6 +42,11 @@ class ShellyDevice extends Device {
   SysGetConfig sysConfig = SysGetConfig.empty();
 
   @override
+  String shortTypeName() {
+    return '?Shelly?';
+  }
+
+  @override
   Future<void> init() async {
     ResolvedBonsoirService bSData = shellyScan.resolveServiceData(id);
 
@@ -77,6 +82,7 @@ class ShellyDevice extends Device {
     if (! state.connected()) {
       await init();
       if (! state.connected()) {
+        // todo: what is the right answer here to tell that connection is not available?
         return '';
       }
     }
@@ -178,6 +184,9 @@ class ShellyDevice extends Device {
 
     try {
       String response =  await rpcCall('Switch.GetStatus?id=$index');
+      if (response == ''){
+        return false;
+      }
       ShellySwitchStatus config = ShellySwitchStatus.fromJson(json.decode(response));
       return config.output;
     }
@@ -214,6 +223,18 @@ class ShellyDevice extends Device {
   }
 
   @override
+  Future<bool> editWidget(BuildContext context, Estate estate) async {
+    return await Navigator.push(context, MaterialPageRoute(
+        builder: (context) {
+      return EditShellyDeviceView(
+          estate: estate,
+          shellyDevice: this,
+          callback: (){}
+      );
+    }));
+
+  }
+
   String detailsDescription() {
     return 'IP-osoite: $ipAddress, portti: $port\n'
            'attribuutit: ${attributes.toString()}';

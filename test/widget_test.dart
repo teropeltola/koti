@@ -7,7 +7,11 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:koti/devices/device/device.dart';
+import 'package:koti/devices/my_device_info.dart';
 import 'package:koti/estate/estate.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
 
@@ -22,7 +26,7 @@ class TestApp extends StatelessWidget {
     Device device = Device();
     Functionality functionality = Functionality();
 
-    device.editWidget(context, estate, functionality, device);
+    device.editWidget(context, estate);
 
     return MaterialApp(
       title: 'Flutter Demo',
@@ -33,7 +37,13 @@ class TestApp extends StatelessWidget {
 }
 
 void main() {
+
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await initMySettings();
+  });
   testWidgets('test widget templates', (WidgetTester tester) async {
+
     // Build our app and trigger a frame.
     await tester.pumpWidget(const TestApp());
 /*

@@ -1,10 +1,21 @@
-
+import 'package:flutter/material.dart';
 import '../device/device.dart';
 
 class NetworkDevice extends Device {
   String internetPage = '';
 
   NetworkDevice();
+
+
+  @override
+  IconData icon() {
+    return Icons.web;
+  }
+
+  @override
+  String shortTypeName() {
+    return 'verkko';
+  }
 
   @override
   Map<String, dynamic> toJson() {
@@ -14,9 +25,14 @@ class NetworkDevice extends Device {
   }
 
   @override
-  NetworkDevice.fromJson(Map<String, dynamic> json) {
+  void fromJson(Map<String, dynamic> json){
     super.fromJson(json);
     internetPage = json['internetPage'] ?? '';
+  }
+
+  @override
+  NetworkDevice.fromJson(Map<String, dynamic> json) {
+    fromJson(json);
   }
 
 }

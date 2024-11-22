@@ -1,21 +1,22 @@
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:koti/app_configurator.dart';
 import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
-import 'package:koti/functionalities/electricity_price/view/edit_electricity_view.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 
 import 'package:koti/devices/wlan/connection_status_listener.dart';
-import 'package:koti/estate/view/add_new_estate_view.dart';
+import 'devices/device/device.dart';
 import 'devices/my_device_info.dart';
 import 'devices/shelly/shelly_scan.dart';
 import 'devices/wlan/active_wifi_name.dart';
 import 'estate/estate.dart';
 import 'estate/view/edit_estate_view.dart';
+import 'estate/view/estate_page_view.dart';
 import 'estate/view/estate_view.dart';
-import 'functionalities/electricity_price/electricity_price.dart';
-import 'logic/service_caller.dart';
+import 'functionalities/functionality/functionality.dart';
 import 'look_and_feel.dart';
+import 'operation_modes/operation_modes.dart';
 
 Future <void> getPermissions() async {
 
@@ -27,13 +28,20 @@ Future <void> getPermissions() async {
 
 bool runningInSimulator = false;
 
-Estates myEstates = Estates();
-
 ConnectionStatusListener connectionStatusListener = ConnectionStatusListener(activeWifiName);
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+Future <void> resetAllFatal() async {
+  await myEstates.resetAll();
+  allFunctionalities.clear();
+  //allDevices.clear();
+  log.cleanHistory();
+  FlutterSecureStorage().deleteAll();
+}
+
+Future <void> appInitializationRoutines() async {
   await initMySettings();
+  initConfiguration();
+  registerOperationModeTypes();
   await getPermissions();
   runningInSimulator = await isSimulator();
   await shellyScan.init();
@@ -41,21 +49,22 @@ void main() async {
   await myEstates.init();
   //electricityPriceParameters.init();
   electricityPriceParameters = await readElectricityPriceParameters();
-  runApp(
-    ChangeNotifierProvider<Estate>(
-      create: (_) => myEstates.currentEstate(),
-      child: const MyApp()
-    )
-  );
+
+}
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await appInitializationRoutines();
+  //await resetAllFatal();
+
+  runApp( const MyApp());
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
       theme: myTheme,
       scaffoldMessengerKey: snackbarKey,
       debugShowCheckedModeBanner: false,
@@ -76,69 +85,80 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     if (myEstates.nbrOfEstates() == 0) {
-      return _firstPage( context, () {setState(() {});});
+      return FirstPage( callback: () {setState(() {});});
     }
     else {
-      return Consumer<Estate>(
-          builder: (context, estate, child) =>
-              EstateView(callback: () {setState(() {});}));
+      return EstatePageView(callback: () {setState(() {});});
     }
   }
 }
 
-Widget _firstPage(BuildContext context, Function callback) {
-  return Scaffold(
-      appBar: AppBar(
-        title: appTitle(appName),
-      ),
-      body: SingleChildScrollView(
-        child: Column(children: <Widget>[
-          Container(
-            margin: EdgeInsets.all(5),
-            padding: EdgeInsets.all(5),
-            child: const InputDecorator(
-              decoration: InputDecoration(labelText: 'Tervetuloa!'),
-              child: Column(children: <Widget>[
-                Center(child: Text('Tervetuloa käyttämään $appName-sovellusta!\n'
-                    'Sovelluksella hallitaan esim. oman kodin automaatiota. \n'
-                    'Voit perehtyä tarkemmin sovelluksen toimintaan täältä: xxx\n'
-                    'Ensimmäiseksi sinun pitää määritellä kohde, jonka laitteita haluat '
-                    'hallita sovelluksella. ')),
-              ]),
-            )
-          ),
-          Container(
-              margin: myContainerMargin,
-              padding: myContainerPadding,
-              child: Tooltip(
-                  message:
-                  'Paina tästä määritelläksi ensimmäisen hallittavan asunnon tiedot',
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                        backgroundColor: mySecondaryColor,
-                        side: const BorderSide(
-                            width: 2, color: mySecondaryColor),
-                        shape: const RoundedRectangleBorder(
-                            borderRadius:
-                            BorderRadius.all(Radius.circular(10))),
-                        elevation: 10),
-                    onPressed: () async {
-                      await Navigator.push(context, MaterialPageRoute(
-                        builder: (context) {
-                          return EditEstateView(estateName:'');
-                        },
-                      ));
-                      callback();
-                    },
-                    child: const Text(
-                      'Määrittele hallittava kohde',
-                      maxLines: 1,
-                      style: TextStyle(color: mySecondaryFontColor),
-                      textScaleFactor: 1.5,
-                    )
-                  ))),
-        ])
-      )
-  );
+class FirstPage extends StatefulWidget {
+  final Function callback;
+  const FirstPage({Key? key, required this.callback}) : super(key: key);
+
+  @override
+    _FirstPageState createState() => _FirstPageState();
 }
 
+class _FirstPageState extends State<FirstPage> {
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+          title: appIconAndTitle(appName, 'Tervetuloa'),
+        ),
+        body: SingleChildScrollView(
+            child: Column(children: <Widget>[
+              Container(
+                  margin: EdgeInsets.all(5),
+                  padding: EdgeInsets.all(5),
+                  child: const InputDecorator(
+                    decoration: InputDecoration(labelText: 'Tervetuloa!'),
+                    child: Column(children: <Widget>[
+                      Center(child: Text(
+                          'Tervetuloa käyttämään $appName-sovellusta!\n'
+                              'Sovelluksella hallitaan oman kodin ja mahdollisten muiden asuntojen automaatiota. \n'
+                              'Katso lyhyt esittelyvideo täältä: xxx \n'
+                              'Tai voit perehtyä tarkemmin sovelluksen toimintaan täältä: yyy\n'
+                              'Ensimmäiseksi sinun pitää määritellä asunto, jonka laitteita haluat '
+                              'hallita sovelluksella. ')),
+                    ]),
+                  )
+              ),
+              Container(
+                  margin: myContainerMargin,
+                  padding: myContainerPadding,
+                  child: Tooltip(
+                      message:
+                      'Paina tästä määritelläksi ensimmäisen hallittavan asunnon tiedot',
+                      child: OutlinedButton(
+                          style: OutlinedButton.styleFrom(
+                              backgroundColor: mySecondaryColor,
+                              side: const BorderSide(
+                                  width: 2, color: mySecondaryColor),
+                              shape: const RoundedRectangleBorder(
+                                  borderRadius:
+                                  BorderRadius.all(Radius.circular(10))),
+                              elevation: 10),
+                          onPressed: () async {
+                            await Navigator.push(context, MaterialPageRoute(
+                              builder: (context) {
+                                return EditEstateView(estateName: '');
+                              },
+                            ));
+                            widget.callback();
+                          },
+                          child: const Text(
+                            'Määrittele hallittava kohde',
+                            maxLines: 1,
+                            style: TextStyle(color: mySecondaryFontColor),
+                            textScaler: const TextScaler.linear(1.5),
+                          )
+                      ))),
+            ])
+        )
+    );
+  }
+}

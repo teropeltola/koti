@@ -1,16 +1,7 @@
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:flutter/material.dart';
-
-import 'package:koti/devices/device/device.dart';
 import 'package:koti/devices/device/device_state.dart';
 import 'package:koti/devices/network_device/network_device.dart';
-import 'package:koti/devices/ouman/ouman_device.dart';
-import 'package:koti/devices/shelly_timer_switch/shelly_timer_switch.dart';
-
-import 'package:koti/functionalities/functionality/functionality.dart';
-import 'package:koti/estate/estate.dart';
-import 'package:koti/look_and_feel.dart';
 
 void main() {
   group('NetworkDevice tests', () {
@@ -21,7 +12,7 @@ void main() {
       expect(n.id, '');
       expect(n.state, isA<DeviceState>());
       expect(n.connectedFunctionalities.isEmpty, true);
-      expect(n.myEstates.isEmpty, true);
+      expect(n.myEstateId, '');
     });
 
     test('Device should be created from JSON correctly', () {

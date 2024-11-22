@@ -1,4 +1,4 @@
-package com.example.koti
+package com.mosahybrid.koti
 
 import io.flutter.embedding.android.FlutterActivity
 

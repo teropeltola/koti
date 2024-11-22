@@ -76,19 +76,23 @@ class BasicElectricityParameters {
   BasicElectricityParameters({
     this.electricityTax = 0.0,
     this.spotAddress = '',
+    this.spotSize = 60
   });
-  late final double electricityTax;
-  late final String spotAddress;
+  late double electricityTax;
+  late String spotAddress;
+  late int spotSize;
 
   BasicElectricityParameters.fromJson(Map<String, dynamic> json){
     electricityTax = _readDouble(json, 'electricityTax');
     spotAddress = json['spotAddress'] ?? '';
+    spotSize = json['spotSize'] ?? 60;
   }
 
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{};
     data['electricityTax'] = electricityTax;
     data['spotAddress'] = spotAddress;
+    data['spotSize'] = spotSize;
     return data;
   }
 }

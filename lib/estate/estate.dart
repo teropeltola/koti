@@ -1,5 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter/material.dart';
+
+import 'package:koti/operation_modes/conditional_operation_modes.dart';
+import 'package:koti/operation_modes/hierarcical_operation_mode.dart';
 
 import '../devices/device/device.dart';
 import '../devices/wifi/wifi.dart';
@@ -7,6 +11,7 @@ import '../functionalities/electricity_price/electricity_price.dart';
 import '../functionalities/functionality/functionality.dart';
 import '../functionalities/functionality/view/functionality_view.dart';
 import '../interfaces/estate_data_storage.dart';
+import '../logic/state_broker.dart';
 import '../logic/unique_id.dart';
 import '../operation_modes/operation_modes.dart';
 import '../look_and_feel.dart';
@@ -16,7 +21,6 @@ const String estateOperationParameterSettingFunction = 'estateParameterSetting';
 
 class Estate extends Environment {
   String id = '';
-  Wifi myWifiDevice = Wifi();
 
   // Environment env = Environment();
 
@@ -24,38 +28,92 @@ class Estate extends Environment {
   List <Functionality> features = [];
   List <FunctionalityView> views = [];
 
-  late OperationModes operationModes;
+  OperationModes operationModes = OperationModes();
+
+  StateBroker stateBroker = StateBroker();
 
   Estate() {
     id = UniqueId('e').get();
-    operationModes = OperationModes(id);
-    operationModes.types.add(estateOperationParameterSettingFunction);
-    operationModes.selectFunction = _setOperationModeOn;
   }
 
-  String get myWifi => myWifiDevice.name;
-  set myWifi(String newName) { this.myWifiDevice.name = newName; }
+  Estate.undefined() {
+    name = '#undefined#';
+    id = '#undefined';
+  }
 
-  bool get myWifiIsActive => myWifiDevice.iAmActive;
+  String get myWifi => myWifiDevice().name;
+  set myWifi(String newName) { this.myWifiDevice().name = newName; }
+
+  bool get myWifiIsActive => myWifiDevice().iAmActive.value;
+
+  bool reactiveWifiIsActive(BuildContext context) {
+    return myWifiDevice().iAmActive.reactiveValue(context);
+  }
+
+  Wifi myWifiDevice() {
+    for (var device in devices) {
+      if (device.runtimeType == Wifi) {
+        return device as Wifi;
+      }
+    }
+    log.error('Estate $name myWifiDevice is not found');
+    Wifi failedWifi = Wifi();
+    failedWifi.setFailed();
+    return failedWifi;
+  }
+
+  void initOperationModes() {
+    operationModes.initModeStructure(
+        estate: this,
+        parameterSettingFunctionName: estateOperationParameterSettingFunction,
+        deviceId: '',
+        deviceAttributes: [],
+        setFunction: _setOperationModeOn,
+        getFunction: _getParameters);
+
+    operationModes.addType(HierarchicalOperationMode().typeName());
+    operationModes.addType(ConditionalOperationModes().typeName());
+  }
 
   void init(String initName, String initMyWifi) {
     name = initName;
-    operationModes.estateName = name;
-    myWifiDevice = Wifi();
-    devices.add(myWifiDevice);
-    myWifiDevice.initWifi(initMyWifi);
+    Wifi newWifiDevice = Wifi();
+    addDevice(newWifiDevice);
+    newWifiDevice.initWifi(initMyWifi);
+    initOperationModes();
   }
 
   Estate clone() {
     Estate newEstate = Estate.fromJson(toJson());
-    newEstate.operationModes.estateName = newEstate.name;
+    newEstate.initOperationModes();
+    newEstate.initDevicesAndFunctionalities(); // TODO: no waiting - check the risk?
+
     return newEstate;
   }
+
+  // note: this is called both with and without waiting
+  Future<void> initDevicesAndFunctionalities() async {
+    // first non waiting activities
+    for (var d in devices) {
+      d.myEstateId = id;
+    }
+    for (var f in features) {
+      for (var d2 in f.connectedDevices) {
+        d2.connectedFunctionalities.add(f);
+      }
+    }
+    for (var d in devices) {
+      await d.init();
+    }
+    for (var f in features) {
+      await f.init();
+    }
+  }
+
   ElectricityPrice myDefaultElectricityPrice() {
-    for (int functionalityIndex = 0; functionalityIndex < features.length; functionalityIndex++) {
-      var functionality = features[functionalityIndex];
+    for (var functionality in features) {
       if (functionality is ElectricityPrice) {
-        return features[functionalityIndex] as ElectricityPrice;
+        return functionality;
       }
     }
     log.error ('Estate myDefaultElectricityPrice: no ElectricityPrice functionality found!');
@@ -63,16 +121,26 @@ class Estate extends Environment {
   }
 
   Functionality functionality(String functionalityId) {
-    for (int functionalityIndex = 0; functionalityIndex < features.length; functionalityIndex++) {
-      if (features[functionalityIndex].id() == functionalityId) {
-        return features[functionalityIndex];
+    for (var f in features) {
+      if (f.id == functionalityId) {
+        return f  ;
       }
     }
     return allFunctionalities.noFunctionality();
   }
 
+  Device myDeviceFromName(String deviceName) {
+    int deviceIndex = devices.indexWhere((device) => device.name == deviceName);
+    if (deviceIndex < 0) {
+      return noDevice;
+    }
+    else {
+      return devices[deviceIndex];
+    }
+  }
+
   void addDevice(Device newDevice) {
-    newDevice.myEstates.add(this);
+    newDevice.myEstateId = this.id;
 
     if ( !deviceExists(newDevice.id)) {
       devices.add(newDevice);
@@ -96,15 +164,47 @@ class Estate extends Environment {
 
   void removeDevice(String deviceId) {
     devices.removeWhere((e) => e.id == deviceId);
+    // todo: pitäiskö poistaa myös device linkki?
   }
 
-  void addView(FunctionalityView newFunctionality) {
-    views.add(newFunctionality);
+  int _functionalityIndex(String id) {
+    return features.indexWhere((e)=>e.id == id);
+  }
+
+  void removeFunctionality(Functionality functionality) {
+
+    int index = _functionalityIndex(functionality.id);
+    if (index >= 0) {
+      features.removeAt(index);
+    }
+    else {
+      log.error('estate.removeFunctionality ${functionality.id} not found');
+    }
+  }
+
+  void addView(FunctionalityView newFunctionalityView) {
+    views.add(newFunctionalityView);
+  }
+
+  void removeView(FunctionalityView functionalityView) {
+    views.remove(functionalityView);
+  }
+
+  void removeData(){
+
+    for (var d in devices) {
+      d.remove();
+    }
+
+    for (var f in features) {
+      f.remove();
+    }
+
+    operationModes.clear();
   }
 
   void setViews() {
     views.clear();
-    // views.add()
   }
 
   List<String> operationModeNames() {
@@ -114,22 +214,71 @@ class Estate extends Environment {
     return names;
   }
 
+  List<String> findPossibleDevices({required String deviceService}) {
+    List<String> list = [];
+    for (var device in devices) {
+      if (device.services.offerService(deviceService)) {
+        list.add(device.name);
+      }
+    }
+    return list;
+  }
+
+  bool hasDeviceOfType(Type type) {
+    for (var device in devices) {
+      if (device.runtimeType == type) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+
+  Widget dumpData({required Function formatterWidget}) {
+    return
+      formatterWidget(
+        headline: name,
+        textLines: [
+          'Id: $id',
+          'Wifi: $myWifi',
+        ],
+        widgets: [
+          operationModes.dumpData(formatterWidget: formatterWidget),
+          formatterWidget(
+            headline: 'Laitteet',
+            textLines: [
+                'Laitteiden lukumäärä: ${devices.length}'
+            ],
+            widgets: [
+                for (var device in devices)
+                  device.dumpData(formatterWidget: formatterWidget),
+            ]
+          ) as Widget,
+          formatterWidget(
+              headline: 'Toiminnot',
+              textLines: [
+                'Toimintojen lukumäärä: ${features.length}'
+              ],
+              widgets: [
+                for (var functionality in features)
+                  functionality.dumpData(formatterWidget: formatterWidget),
+              ]
+          ) as Widget,
+          stateBroker.dumpData(formatterWidget: formatterWidget)
+        ]
+      );
+  }
+
 
   Estate.fromJson(Map<String, dynamic> json){
     name = json['name'] ?? '';
     id = json['id'] ?? '';
-
-    myWifiDevice = Wifi();
-    devices.add(myWifiDevice);
-    myWifiDevice.initWifi(json['myWifi'] ?? '');
 
     devices = List.from(json['devices']).map((e)=>extendedDeviceFromJson(e)).toList();
     features = List.from(json['features']).map((e)=>extendedFunctionalityFromJson(this.name, e)).toList();
     views = List.from(json['views']).map((e)=>extendedFunctionalityViewFromJson(e)).toList();
     operationModes = OperationModes.fromJson(json['operationModes'] ?? {});
 
-    operationModes.types.add(estateOperationParameterSettingFunction);
-    operationModes.selectFunction = _setOperationModeOn;
   }
 
   Map<String, dynamic> toJson() {
@@ -139,7 +288,6 @@ class Estate extends Environment {
 
     json['name'] = name;
     json['id'] = id;
-    json['myWifi'] = myWifi;
     json['devices'] = devices.map((e)=>e.toJson()).toList();
     json['features'] = features.map((e)=>e.toJson()).toList();
     json['views'] = views.map((e)=>e.toJson()).toList();
@@ -150,24 +298,36 @@ class Estate extends Environment {
 
 }
 
-Future<void> _setOperationModeOn(Map<String, dynamic> parameters) async {
+void _setOperationModeOn(Map<String, dynamic> parameters) {
   log.info('Estate set operation parameters ${parameters.toString()}');
 }
 
-final Estate noEstates = Estate();
+Map<String, dynamic> _getParameters() {
+  return {};
+}
+
+
+
 
 class Estates {
   List <Estate> estates = [];
   final EstateDataStorage _estateDataStorage =  EstateDataStorage();
-  int _currentIndex = -1;
+  int currentIndex = -1;
+  final Estate noEstates = Estate.undefined();
 
   Estates();
 
-  Estate currentEstate () => ((_currentIndex >= 0) && (_currentIndex < nbrOfEstates()))
-                                ? estates [_currentIndex]
+  Estate currentEstate () => ((currentIndex >= 0) && (currentIndex < nbrOfEstates()))
+                                ? estates [currentIndex]
                                 : noEstates;
 
   int nbrOfEstates() => estates.length;
+
+  Estate _candidateEstate = Estate();
+
+  Estate candidateEstate() {
+    return _candidateEstate;
+  }
 
   Future<void> init() async {
     await _estateDataStorage.init('estates.json');
@@ -182,7 +342,7 @@ class Estates {
 
   void clearDataStructures() {
     estates.clear();
-    _currentIndex = -1;
+    currentIndex = -1;
   }
 
   void addEstate(Estate newLocation) {
@@ -194,15 +354,22 @@ class Estates {
     if (index >= 0) {
       estates[index].dispose();
       estates.removeWhere((e) => e.id == estateId);
-    }
 
-    if (index <= _currentIndex) {
-     _currentIndex--;
+      if (estates.isEmpty) {
+        currentIndex = -1;
+      }
+      else if (index <= currentIndex) {
+        currentIndex--;
+      }
     }
   }
 
+  void setCurrentIndex(int estateIndex) {
+    currentIndex = estateIndex;
+  }
+
   void setCurrent(String estateId) {
-    _currentIndex = estates.indexWhere((e) => e.id == estateId);
+    currentIndex = estates.indexWhere((e) => e.id == estateId);
   }
 
   bool validEstateName(String newName) {
@@ -232,14 +399,18 @@ class Estates {
   }
 
   Future<void> activateDataStructure() async {
-    for (int i=0; i<estates.length; i++) {
-      for (int j=0; j<estates[i].devices.length; j++) {
-        estates[i].devices[j].myEstates.add(estates[i]);
-        await estates[i].devices[j].init();
+    for (var e in estates) {
+      for (var d in e.devices) {
+        d.myEstateId = e.id;
+        await d.init();
       }
-      for (int k=0; k<estates[i].features.length; k++) {
-        await estates[i].features[k].init();
+      for (var f in e.features) {
+        for (var d2 in f.connectedDevices) {
+          d2.connectedFunctionalities.add(f);
+        }
+        await f.init();
       }
+      e.initOperationModes();
     }
   }
 
@@ -258,8 +429,14 @@ class Estates {
   }
 
   Future <void> store() async {
-    var json = jsonEncode(this);
-    await _estateDataStorage.storeEstateFile(json);
+    try {
+      var json = jsonEncode(this);
+      await _estateDataStorage.storeEstateFile(json);
+    }
+    catch (e, st) {
+      log.error('json exception in store', e, st);
+    }
+
   }
 
   void loadFromJson(Map<String, dynamic> json){
@@ -274,11 +451,11 @@ class Estates {
     estates = List.from(json['estates']).map((e)=>Estate.fromJson(e)).toList();
     int storedIndex = json['currentIndex'] ?? -1;
     if (estates.isEmpty) {
-      _currentIndex = -1;
+      currentIndex = -1;
     } else if (estates.length == 1) {
-      _currentIndex = 0;
+      currentIndex = 0;
     } else if (storedIndex < estates.length) {
-      _currentIndex = storedIndex;
+      currentIndex = storedIndex;
     }
   }
 
@@ -287,7 +464,7 @@ class Estates {
     final json = <String, dynamic>{};
 
     json['estates'] = estates.map((e)=>e.toJson()).toList();
-    json['currentIndex'] = _currentIndex;
+    json['currentIndex'] = currentIndex;
 
     return json;
   }
@@ -301,24 +478,44 @@ class Estates {
     return -1;
   }
 
-  void setEstate(String oldName, Estate estate) {
-    int index = _findEstate(oldName);
+  Estate cloneCandidate(String clonedEstateName) {
+    int index = _findFromExistingEstates(clonedEstateName);
     if (index >= 0) {
-      estates[index] = estate;
+      _candidateEstate = estates[index].clone();
     }
+    else {
+      log.error('Estate $clonedEstateName cloneCandidate failed');
+    }
+    return _candidateEstate;
+  }
+
+  void replaceEstateWithCandidate(String oldName) {
+    int index = _findFromExistingEstates(oldName);
+    if (index >= 0) {
+      // estate with old name found
+      estates[index].removeData();
+      estates[index] = _candidateEstate;
+    }
+    else {
+      // this is a new estate
+      estates.add(_candidateEstate);
+    }
+    // set new object for the next possible candidate
+    _candidateEstate = Estate();
   }
 
   Estate estate(String name) {
-    int index = _findEstate(name);
+    if (name == _candidateEstate.name) {
+      return _candidateEstate;
+    }
+    int index = _findFromExistingEstates(name);
     if (index >= 0) {
       return estates[index];
     }
-    else {
-      return noEstates;
-    }
+    return noEstates;
   }
 
-  int _findEstate (String name) {
+  int _findFromExistingEstates (String name) {
     for (int index = 0; index <estates.length; index++) {
       if (estates[index].name == name) {
         return index;
@@ -326,5 +523,20 @@ class Estates {
     }
     return -1;
   }
+
+  Estate estateFromId (String id) {
+    if (id == _candidateEstate.id) {
+      return _candidateEstate;
+    }
+    for (int index = 0; index <estates.length; index++) {
+      if (estates[index].id == id) {
+        return estates[index];
+      }
+    }
+    return noEstates;
+  }
 }
+
+Estates myEstates = Estates();
+
 

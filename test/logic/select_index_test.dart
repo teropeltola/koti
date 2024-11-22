@@ -24,7 +24,7 @@ void main() {
     });
 
     test('setIndex updates the index and invalidates the previous setter', () {
-      selectIndex.setIndex(42, anotherSelectIndex);
+      selectIndex.setIndexAndParentInfo(42, anotherSelectIndex);
 
       expect(selectIndex.get(), 42);
       expect(selectIndex.setter, anotherSelectIndex);
@@ -37,14 +37,14 @@ void main() {
     });
 
     test('getValue returns the correct value', () {
-      selectIndex.setIndex(42, anotherSelectIndex);
+      selectIndex.setIndex(42);
       expect(selectIndex.get(), 42);
     });
 
     test('isValid returns the correct validity status', () {
-      expect(selectIndex.isValid(), isFalse);
-      selectIndex.settingIsValid = true;
       expect(selectIndex.isValid(), isTrue);
+      selectIndex.settingIsValid = false;
+      expect(selectIndex.isValid(), isFalse);
     });
   });
 }

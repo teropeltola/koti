@@ -1,7 +1,5 @@
-import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:koti/devices/wlan/active_wifi_name.dart';
 import 'package:koti/functionalities/plain_switch_functionality/plain_switch_functionality.dart';
 import 'package:provider/provider.dart';
 
@@ -10,6 +8,7 @@ import '../../../functionalities/functionality/functionality.dart';
 import '../../../logic/dropdown_content.dart';
 import '../../../look_and_feel.dart';
 import '../../../view/my_dropdown_widget.dart';
+import '../../../view/ready_widget.dart';
 import '../device.dart';
 
 DropdownContent _functionality = DropdownContent(
@@ -74,7 +73,7 @@ class _EditDeviceViewState extends State<EditDeviceView> {
                         Navigator.of(context).pop();
                       }
                     }),
-                title: appTitle('muokkaa laitteen tietoja'),
+                title: appIconAndTitle(widget.estate.name, 'muokkaa laitteen tietoja'),
               ), // new line
               body: SingleChildScrollView(
                   child: Column(children: <Widget>[
@@ -130,6 +129,7 @@ class _EditDeviceViewState extends State<EditDeviceView> {
                                   height: 30,
                                   width: 120,
                                   child: MyDropdownWidget(
+                                    keyString: 'deviceFunctionality',
                                     dropdownContent: _functionality,
                                     setValue: (newValue) {
                                                 _functionality
@@ -156,44 +156,22 @@ class _EditDeviceViewState extends State<EditDeviceView> {
                             child: Text(widget.device.detailsDescription())
                         )
                     ),
-                    Container(
-                        margin: myContainerMargin,
-                        padding: myContainerPadding,
-                        child: Tooltip(
-                            message:
-                            'Paina tästä tallentaaksesi muutokset ja poistuaksesi näytöltä',
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                  backgroundColor: mySecondaryColor,
-                                  side: const BorderSide(
-                                      width: 2, color: mySecondaryColor),
-                                  shape: const RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.all(Radius.circular(10))),
-                                  elevation: 10),
-                              onPressed: () async {
-                                if (_functionality.currentIndex() == 0) {
-                                  PlainSwitchFunctionality newFunctionality = PlainSwitchFunctionality();
-                                  newFunctionality.pair(newDevice);
-                                  newFunctionality.init();
-                                  widget.estate.addFunctionality(newFunctionality);
-                                  widget.estate.addView(newFunctionality.myView());
-                                  log.info('${widget.estate.name}: laite ${newDevice.name}(${newDevice.id}) asetettu toimintoon "${_functionality.currentString()}"');
-                                }
-                                else {
+                    readyWidget(() async {
+                      if (_functionality.currentIndex() == 0) {
+                        PlainSwitchFunctionality newFunctionality = PlainSwitchFunctionality();
+                        newFunctionality.pair(newDevice);
+                        newFunctionality.init();
+                        widget.estate.addFunctionality(newFunctionality);
+                        widget.estate.addView(newFunctionality.myView());
+                        log.info('${widget.estate.name}: laite ${newDevice.name}(${newDevice.id}) asetettu toimintoon "${_functionality.currentString()}"');
+                      }
+                      else {
 
-                                }
-                                widget.estate.addDevice(newDevice);
-                                showSnackbarMessage('laitteen tietoja päivitetty!');
-                                Navigator.pop(context, true);
-                              },
-                              child: const Text(
-                                'Valmis',
-                                maxLines: 1,
-                                style: TextStyle(color: mySecondaryFontColor),
-                                textScaleFactor: 2.2,
-                              ),
-                            ))),
+                      }
+                      widget.estate.addDevice(newDevice);
+                      showSnackbarMessage('laitteen tietoja päivitetty!');
+                      Navigator.pop(context, true);
+                    }),
                   ])
               )
           );

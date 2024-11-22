@@ -1,13 +1,11 @@
-import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
 import 'package:koti/functionalities/air_heat_pump_functionality/view/air_heat_pump_overview.dart';
-import 'package:provider/provider.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
-import '../../../main.dart';
 import '../heating_system.dart';
+import 'edit_heating_system_view.dart';
 
 class HeatingOverview extends StatefulWidget {
   final HeatingSystem heatingSystem;
@@ -40,11 +38,9 @@ class _HeatingOverviewState extends State<HeatingOverview> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<Estate>(
-      builder: (context, estate, childNotUsed) {
         return Scaffold(
           appBar: AppBar(
-            title: appTitle('lämmitys'),
+            title: appIconAndTitle(myEstates.currentEstate().name,'lämmitys'),
           ), // new line
           body: SingleChildScrollView(
               child: Column(children: <Widget>[
@@ -96,9 +92,38 @@ class _HeatingOverviewState extends State<HeatingOverview> {
               ),
               airHeatPumpSummary(widget.heatingSystem.myAirPump),
             ])
-          )
+          ),
+            bottomNavigationBar: Container(
+              height: bottomNavigatorHeight,
+              alignment: AlignmentDirectional.topCenter,
+              color: myPrimaryColor,
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    IconButton(
+                        icon: const Icon(
+                            Icons.edit,
+                            color: myPrimaryFontColor,
+                            size: 40),
+                        tooltip: 'muokkaa näytön tietoja',
+                        onPressed: () async {
+                          await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) {
+                                  return EditHeatingSystemView(
+                                    estateName: myEstates.currentEstate().name,
+                                    heatingSystem: widget.heatingSystem,
+                                  );
+                                },
+                              )
+                          );
+                          setState(() {});
+                        }
+                    ),
+                  ]),
+            )
+
         );
-      }
-    );
   }
 }

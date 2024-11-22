@@ -4,9 +4,11 @@ import '../logic/dropdown_content.dart';
 import '../look_and_feel.dart';
 
 class MyDropdownWidget extends StatefulWidget {
+  final String keyString;
   final DropdownContent dropdownContent;
   final Function setValue;
   const MyDropdownWidget({Key? key,
+    required this.keyString,
     required this.dropdownContent,
     required this.setValue}) : super(key: key);
 
@@ -26,6 +28,7 @@ class _MyDropdownWidgetState extends State<MyDropdownWidget> {
   @override
   Widget build(BuildContext context) {
     return DropdownButton<String>(
+      key: Key(widget.keyString),
       isExpanded: true,
       value: dropdownValue,
       icon: const Icon(Icons.arrow_downward),
@@ -48,7 +51,7 @@ class _MyDropdownWidgetState extends State<MyDropdownWidget> {
           .map<DropdownMenuItem<String>>((String value) {
         return DropdownMenuItem<String>(
           value: value,
-          child: Text(value, style: const TextStyle(color: mySecondaryFontColor)),
+          child: Text(value, style: const TextStyle(color: myPrimaryFontColor)),
         );
       }).toList(),
     );

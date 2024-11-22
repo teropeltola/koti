@@ -2,23 +2,32 @@
 import 'dart:async';
 import 'dart:math';
 
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:html/parser.dart' as htmlParser;
+import 'package:koti/devices/mitsu_air-source_heat_pump/view/edit_mitsu_view.dart';
 
 import 'dart:convert' show jsonDecode, utf8;
 
+import '../../estate/estate.dart';
+import '../../functionalities/functionality/functionality.dart';
 import '../../logic/observation.dart';
+import '../../logic/services.dart';
+import '../../logic/unique_id.dart';
+import '../../service_catalog.dart';
 import '../device/device.dart';
 import '../../look_and_feel.dart';
+import '../device_with_login/device_with_login.dart';
 import 'mea_data_json.dart';
 
-const _meaCloudUrl = 'https://';
-const _meaCloudUsername = 'tero.peltola@mosahybrid.com';
-const _meaCloudPassword = 'G1bs0n###@Vihtis';
+const _meaCloudUrl = 'https://app.melcloud.com/Mitsubishi.Wifi.Client';
+const _meaId = 'Mitsu';
+const _meaLoginUrlExtension = '/Login/ClientLogin';
+const _meaGetDevicesUrlExtension = '/User/ListDevices';
+const _meaLogoutUrlExtension = '/logout?';
 
-const _meaLoginUrl = 'https://app.melcloud.com/Mitsubishi.Wifi.Client/Login/ClientLogin';
-var _meaLoginData =
-{"Email":"tero.peltola@mosahybrid.com","Password":"G1bs0n###@Vihtis","Language":17,"AppVersion":"1.32.1.0","Persist":false,"CaptchaResponse":null};
+enum LoginResult {notDefined, success, temporaryError, permanentError}
 
 /*
 body = {
@@ -42,13 +51,9 @@ const _mitsuFetchingIntervalInMinutes = 3;
 
 const double noValue = -99.9;
 
-class MitsuHeatPumpDevice extends Device {
+class MitsuHeatPumpDevice extends DeviceWithLogin {
 
-  String _userName = _meaCloudUsername;
-  String _password = _meaCloudPassword;
-
-  String ipAddress = _meaCloudUrl;
-  String urlString = _meaCloudUrl;
+  //String urlString = _meaCloudUrl;
 
   late Timer _timer;
 
@@ -63,49 +68,87 @@ class MitsuHeatPumpDevice extends Device {
   DateTime _latestDataFetched = DateTime(0);
   int _fetchCounter = 0;
 
+
+
+  void _initOfferedServices() {
+    services = Services([
+      RODeviceService<double>(
+          serviceName: outsideTemperatureDeviceService,
+          notWorkingValue: ()=> noValue,
+          getFunction: outsideTemperature),
+      RWDeviceService<bool>(serviceName: powerOnOffService, setFunction: setPower, getFunction: getPower),
+      AttributeDeviceService(attributeName: airHeatPumpService),
+      AttributeDeviceService(attributeName: deviceWithManualCreation)
+    ]);
+  }
+
   MitsuHeatPumpDevice() {
-    id = 'Mitsu/2247619164';
-    name = 'Ilpo';
+    _setUniqueId();
+    webLoginCredentials.url = _meaCloudUrl;
+    _initOfferedServices();
+  }
+
+  @override
+  _setUniqueId() {
+    id = UniqueId(_meaId).get();
+   }
+
+  @override
+  setOk() {
+    _setUniqueId();
+  }
+
+
+  MitsuHeatPumpDevice.failed() {
+    setFailed();
   }
 
   bool noData() {
     return _latestDataFetched.year == 0;
   }
 
+
   @override
   Future<void> init() async {
+    webLoginCredentials.url = _meaCloudUrl;
     await fetchAndAnalyzeData();
   }
 
   Future<bool> fetchAndAnalyzeData() async {
-    bool success = true;
+    LoginResult loginResult = LoginResult.success;
 
     if (! _isConnected) {
       _fetchCounter = 0;
-      success = await login();
-      log.info('MeaCloud yhteys luotu');
+      loginResult = await login();
+      log.info('$name: Internet-yhteys luotu');
     }
 
-    if (success) {
-      success = await getDevices();
-      analyseRequest();
-      _fetchCounter ++;
+    if (loginResult == LoginResult.success) {
+      bool success = await getDevices();
+      if (success) {
+        analyseRequest();
+        _fetchCounter ++;
+        setNormalObservation();
+      }
+      else {
+        observationMonitor.add(ObservationLogItem(DateTime.now(), ObservationLevel.informatic));
+      }
+      _setupTimer();
+      return success;
     }
-
-    if (success) {
-      setNormalObservation();
+    else if (loginResult == LoginResult.temporaryError) {
+      _setupTimer();
+      return false;
     }
     else {
-      observationMonitor.add(ObservationLogItem(DateTime.now(), ObservationLevel.informatic));
-      success = false;
+      // error permanent and thus needs contribution from the user
+      observationMonitor.add(ObservationLogItem(DateTime.now(), ObservationLevel.alarm));
+      return false;
     }
-
-    _setupTimer();
-    return success;
   }
 
   void _setupTimer() {
-    Duration delay = Duration(
+    Duration delay = const Duration(
       minutes: _mitsuFetchingIntervalInMinutes,
     );
 
@@ -181,9 +224,9 @@ class MitsuHeatPumpDevice extends Device {
     observationMonitor.add(ObservationLogItem(DateTime.now(),observationLevel()));
   }
 
-  Future<bool> login() async {
+  Future<LoginResult> login() async {
     _isConnected = false;
-    String myLoginRequest = '$_meaLoginUrl';
+    String myLoginRequest = '${webLoginCredentials.url}$_meaLoginUrlExtension';
     final url = Uri.parse(myLoginRequest);  // Replace with your server's URL.
     final response = await http.post(url,
             headers: {
@@ -197,8 +240,8 @@ class MitsuHeatPumpDevice extends Device {
         "X-Requested-With": "XMLHttpRequest"
             },
             body: {
-                "Email":_meaCloudUsername,
-                "Password": _meaCloudPassword,
+                "Email": await webLoginCredentials.username(),
+                "Password": await webLoginCredentials.password(),
                 "Language":"0", // was 17
                 "AppVersion":"1.32.1.0",
                 "Persist":"true",
@@ -213,38 +256,40 @@ class MitsuHeatPumpDevice extends Device {
         if (errorCode == 1) {
           // incorrect username and/or password
           log.error('melCloud login error: invalid username/password');
+          return LoginResult.permanentError;
         } else if (errorCode == 6) {
           // too many failed attempts
           log.error('melCloud login error: too many failed attempts');
+          return LoginResult.permanentError;
         }
-        return false;
+        return LoginResult.temporaryError;
       }
       else {
         _meaContextKey = loginData['ContextKey'] ?? 0;
         _isConnected = true;
+        return LoginResult.success;
       }
-      return true;
     } else {
       log.error('Mitsu kirjautuminen epäonnistui. Virhekoodi: ${response.statusCode}');
-      return false;
+      return LoginResult.temporaryError;
     }
   }
 
   Future<bool> logout() async {
-    String myLoginRequest = '$urlString/logout?';
+    String myLoginRequest = '${webLoginCredentials.url}$_meaLogoutUrlExtension';
     final url = Uri.parse(myLoginRequest);
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       return true;
     } else {
-      log.error('Ouman uloskirjautuminen epäonnistui. Virhekoodi: ${response.statusCode}');
+      log.error('Mitsu uloskirjautuminen epäonnistui. Virhekoodi: ${response.statusCode}');
       return false;
     }
   }
 
   Future<bool> getDevices() async {
-    String getDevicesUrl = 'https://app.melcloud.com/Mitsubishi.Wifi.Client/User/ListDevices';
+    String getDevicesUrl = '${webLoginCredentials.url}$_meaGetDevicesUrlExtension';
 
     final htmlResponse = await http.get(Uri.parse(getDevicesUrl),
         headers: {
@@ -252,10 +297,7 @@ class MitsuHeatPumpDevice extends Device {
           "X-MitsContextKey": _meaContextKey
         });
 
-    if (htmlResponse == null) {
-      log.error('Mitsu getDevices datan haku epäonnistui.');
-      return false;
-    } else if (htmlResponse.statusCode != 200) {
+    if (htmlResponse.statusCode != 200) {
       log.error('Mitsu getDevices datan haku epäonnistui. Virhekoodi: ${htmlResponse.statusCode}');
       return false;
     }
@@ -277,17 +319,77 @@ class MitsuHeatPumpDevice extends Device {
     _timer.cancel();
   }
 
+  void setPower(bool value) {
+    // TODO: how to switch Mitsu on?
+  }
+
+  bool getPower()  {
+    //TODO: how to read the value from Mitsu
+    return false;
+  }
+
+
+  @override
+  Future<bool> editWidget(BuildContext context, Estate estate) async {
+    return await Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return EditMitsuView(
+          estate: estate,
+          initMitsu: this,
+          callback: () {}
+        );
+      },
+    ));
+
+  }
+
+  @override
+  Widget dumpData({required Function formatterWidget}) {
+    return formatterWidget(
+        headline: name,
+        textLines: [
+          'tunnus: $id',
+          _timer.isActive ? 'Ajastin aktiivinen' : 'Ajastin pois päältä',
+          'datan hakuaika: ${dumpTimeString(fetchingTime())}',
+          'osoite: ${webLoginCredentials.url}',
+        ],
+        widgets: [
+          dumpDataMyFunctionalities(formatterWidget: formatterWidget),
+        ]
+    );
+  }
+
+  @override
+  bool isReusableForFunctionalities() {
+    return true;
+  }
+
+  @override
+  IconData icon() {
+    return Icons.heat_pump;
+  }
+
+  @override
+  String shortTypeName() {
+    return 'ilmalämpö-pumppu';
+  }
+
   @override
   Map<String, dynamic> toJson() {
     var json = super.toJson();
-    json['ipAddress'] = ipAddress;
     return json;
   }
 
   @override
   MitsuHeatPumpDevice.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
-    ipAddress = json['ipAddress'] ?? '';
+    _initOfferedServices();
+    webLoginCredentials.url = _meaCloudUrl;
+  }
+
+  @override
+  MitsuHeatPumpDevice clone() {
+    return MitsuHeatPumpDevice.fromJson(toJson());
   }
 
 }
@@ -298,7 +400,7 @@ Map<String, String> parseDeviceData(String deviceData) {
   // Check if the string has the expected format
   if (!deviceData.startsWith('request?')) {
     // Handle invalid format
-    log.error('Ouman ParseDeviceData - Invalid data format : "${deviceData.substring(0,min(20,deviceData.length))}"');
+    log.error('Mitsu ParseDeviceData - Invalid data format : "${deviceData.substring(0,min(20,deviceData.length))}"');
     return result;
   }
 
@@ -320,7 +422,7 @@ Map<String, String> parseDeviceData(String deviceData) {
       result[key] = value;
     } else {
       // Handle invalid parameter format
-      log.error('Ouman ParseDeviceData - Invalid parameter: $param');
+      log.error('Mitsu ParseDeviceData - Invalid parameter: $param');
     }
   }
 

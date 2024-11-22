@@ -1,5 +1,7 @@
 import 'package:koti/functionalities/functionality/functionality.dart';
 
+import '../estate/estate.dart';
+import '../logic/device_attribute_control.dart';
 import '../main.dart';
 import 'operation_modes.dart';
 import '../../../look_and_feel.dart';
@@ -59,7 +61,7 @@ class HierarchicalOperationMode extends OperationMode {
 
   }
 
-  @override select(Function function, OperationModes? parentOperationModes) async {
+  @override select(ControlledDevice controlledDevice, OperationModes? parentOperationModes) async {
     log.info('Koostevalinta "$name"');
     for (int i=0; i<items.length; i++) {
       var functionality = myEstates.currentEstate().functionality(items[i].functionalityId);
@@ -70,6 +72,11 @@ class HierarchicalOperationMode extends OperationMode {
         functionality.operationModes.selectNameAndSetParentInfo(items[i].operationName, parentOperationModes!);
       }
     }
+  }
+
+  @override
+  OperationMode clone() {
+    return HierarchicalOperationMode.fromJson(toJson());
   }
 
   @override

@@ -1,29 +1,82 @@
 
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:koti/functionalities/air_heat_pump_functionality/view/air_heat_pump_view.dart';
-import 'package:koti/main.dart';
-import 'package:provider/provider.dart';
+import 'package:thermostat/thermostat.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
 import '../../../view/my_dropdown_widget.dart';
 import '../../logic/dropdown_content.dart';
+import '../../view/ready_widget.dart';
 import '../conditional_operation_modes.dart';
 import '../operation_modes.dart';
+import 'conditional_option_list_view.dart';
 import 'operation_modes_selection_view.dart';
+
+class _opModeStructure {
+  String name;
+  OperationMode? operationMode;
+  bool autoCreated = true;
+
+  _opModeStructure(this.name);
+}
+
+class _PossibleOpModes {
+  List <_opModeStructure> list = [];
+  OperationModes _operationModes;
+
+  _PossibleOpModes(List<String> possibleTypes, this._operationModes) {
+    possibleTypes.forEach((e)=>list.add(_opModeStructure(e)));
+  }
+
+  void addOpMode(String name, OperationMode opMode ) {
+    int index = list.indexWhere((e)=>e.name == name);
+    if (index >= 0) {
+      list[index].autoCreated = false;
+      list[index].operationMode = opMode;
+    }
+    else {
+      log.error('EditOperationModeView: addOpMode("$name") failed');
+    }
+  }
+
+  int indexOf(String name) {
+    int index = list.indexWhere((e)=>e.name == name);
+
+    return max(0, index);
+  }
+
+  OperationMode operationMode(int index) {
+    if (list[index].operationMode == null) {
+      list[index].autoCreated = true;
+      list[index].operationMode =
+          operationModeTypeRegistry.createObject(list[index].name);
+      list[index].operationMode!.init(_operationModes);
+    }
+    return list[index].operationMode!;
+  }
+
+  void dispose({required String excluding}) {
+    for (var o in list) {
+      if ((o.autoCreated) && (o.name != excluding) &&(o.operationMode != null)) {
+        o.operationMode!.clear();
+      }
+    }
+  }
+}
 
 class EditOperationModeView extends StatefulWidget {
   final Estate estate;
   final String initOperationModeName;
   final OperationModes operationModes;
-  final List<String> possibleTypes;
   final Function parameterFunction;
   final Function callback;
   const EditOperationModeView({Key? key,
     required this.estate,
     required this.initOperationModeName,
     required this.operationModes,
-    required this.possibleTypes,
     required this.parameterFunction,
     required this.callback}) : super(key: key);
 
@@ -37,24 +90,32 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
   final FocusNode _focusNodeWifi = FocusNode();
   final myDeviceNameController = TextEditingController();
 
-  late OperationMode editedOperationMode;
+//  late OperationMode editedOperationMode;
   String operationModeName = '';
   List<String> usableNames = [];
   int currentModeIndex = -1;
   late DropdownContent operationNameSelection;
   late DropdownContent alternativeTypes;
+  int opIndex = 0;
+  late _PossibleOpModes opModePool;
 
 //  ConditionalOperationModes conditionalMode = ConditionalOperationModes();
 
   @override
   void initState() {
     super.initState();
+
+    var possibleTypeNames = widget.operationModes.types.alternatives();
     operationModeName = widget.initOperationModeName;
-    if (insertNewOperationMode()) {
-      editedOperationMode = OperationMode();
+    opModePool = _PossibleOpModes(possibleTypeNames, widget.operationModes);
+
+    if (insertingNewOperationMode()) {
+      opIndex = 0;
     }
     else {
-      editedOperationMode = widget.operationModes.getMode(operationModeName);
+      OperationMode opMode = widget.operationModes.getMode(operationModeName);
+      opModePool.addOpMode(opMode.typeName(), widget.operationModes.getMode(operationModeName));
+      opIndex = opModePool.indexOf(opMode.typeName());
     }
 
     usableNames = _findUsableNames(
@@ -63,14 +124,15 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
         widget.operationModes.operationModeNames());
 
     operationNameSelection = DropdownContent(usableNames, '', usableNames.indexOf(operationModeName));
-    alternativeTypes = DropdownContent(widget.possibleTypes, '', 0);
+    alternativeTypes = DropdownContent(widget.operationModes.types.alternatives(), '', opIndex);
     refresh();
   }
 
-  bool insertNewOperationMode() {
+  bool insertingNewOperationMode() {
     return widget.initOperationModeName == '';
   }
-    List<String> _findUsableNames(String myName, List<String> allNames, List<String> notAllowedNames) {
+
+  List<String> _findUsableNames(String myName, List<String> allNames, List<String> notAllowedNames) {
       var notAllowedSet = Set.from(notAllowedNames).difference({myName});
       var usableSet = (Set.from(allNames)).difference(notAllowedSet);
       return List.from(usableSet);
@@ -94,7 +156,7 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
               appBar: AppBar(
                 leading: IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    tooltip: 'Keskeytä toimintatilan  muokkaus',
+                    tooltip: 'Keskeytä toimintatilan muokkaus',
                     onPressed: () async {
                       // check if the user wants to cancel all the changes
                       bool doExit = await askUserGuidance(context,
@@ -102,10 +164,11 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                           'Haluatko poistua näytöltä?'
                       );
                       if (doExit) {
+                        opModePool.dispose(excluding: '');
                         Navigator.of(context).pop();
                       }
                     }),
-                title: appTitle(insertNewOperationMode() ? 'luo toimintotila' : 'muokkaa toimintotilaa'),
+                title: appIconAndTitle(widget.estate.name, insertingNewOperationMode() ? 'luo toimintotila' : 'muokkaa toimintotilaa'),
               ), // new line
               body: SingleChildScrollView(
                   child: Column(children: <Widget>[
@@ -121,16 +184,16 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                                 },
                                 setValueOnChanged: (val) {
                                   operationModeName = val;
-                                }),
+                                }
+                      ),
                     ),
-                  (widget.possibleTypes.isEmpty)
+                  (widget.operationModes.types.alternatives().isEmpty)
                   ? widget.parameterFunction(
                       alternativeTypes.currentString(),
-                      editedOperationMode,
+                      opModePool.operationMode(opIndex),
                       widget.estate,
                       widget.operationModes,
                       (newEditedOperationMode){
-                            editedOperationMode = newEditedOperationMode;
                             setState(() {});
                       }
                   )
@@ -151,10 +214,11 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                                         height: 30,
                                         width: 120,
                                         child: MyDropdownWidget(
+                                          keyString: 'alternativeTypes',
                                             dropdownContent: alternativeTypes,
                                             setValue: (newValue) {
-                                              alternativeTypes
-                                                  .setIndex(newValue);
+                                              opIndex = newValue;
+                                              alternativeTypes.setIndex(newValue);
                                               setState(() {});
                                             }
                                         )
@@ -162,71 +226,50 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                                   ),
                               ),
                               widget.parameterFunction(
-                                alternativeTypes.currentString(),
-                                editedOperationMode,
+                                opModePool.operationMode(opIndex),
                                 widget.estate,
-                                widget.operationModes,
-                                (updatedOperationMode){ editedOperationMode = updatedOperationMode; setState(() {});}
+                                widget.operationModes
                               )
                             ]),
                     ),
-                    Container(
-                        margin: myContainerMargin,
-                        padding: myContainerPadding,
-                        child: Tooltip(
-                            message:
-                            'Paina tästä tallentaaksesi muutokset ja poistuaksesi näytöltä',
-                            child: OutlinedButton(
-                              style: OutlinedButton.styleFrom(
-                                  backgroundColor: mySecondaryColor,
-                                  side: const BorderSide(
-                                      width: 2, color: mySecondaryColor),
-                                  shape: const RoundedRectangleBorder(
-                                      borderRadius:
-                                      BorderRadius.all(Radius.circular(10))),
-                                  elevation: 10),
-                              onPressed: () async {
-                                if (insertNewOperationMode()) {
-                                  if (widget.operationModes.newNameOK(operationModeName)) {
-                                    widget.operationModes.add(editedOperationMode);
-                                    editedOperationMode.name = operationModeName;
-                                    // await myEstates.store();
-                                    log.info('${widget.estate.name}: toimintotila "$operationModeName" lisätty');
-                                    showSnackbarMessage('toimintotila lisätty!');
-                                    Navigator.pop(context, true);
-                                  }
-                                  else if ( operationModeName == '') {
-                                    await informMatterToUser(context, 'Toimintotilan nimi ei voi olla tyhjä',
-                                    'Lisää toimintotilan nimi!');
-                                  }
-                                  else {
-                                    await informMatterToUser(context, 'Nimeä ei voi käyttää',
-                                    'Vaihda toimintotilan nimeä!');
-                                  }
-                                }
-                                else if ((operationModeName == widget.initOperationModeName) || widget.operationModes.newNameOK(operationModeName)) {
-                                  editedOperationMode.name = operationModeName;
-                                  log.info(
-                                      '${widget.estate.name}: toimintotila "$operationModeName" päivitetty');
-                                  showSnackbarMessage('toimintotila päivitetty!');
-                                  Navigator.pop(context, true);
-                                }
-                                else if ( operationModeName == '') {
-                                  await informMatterToUser(context, 'Toimintotilan nimi ei voi olla tyhjä',
-                                    'Lisää toimintotilan nimi!');
-                                }
-                                else {
-                                  await informMatterToUser(context, 'Nimeä ei voi käyttää',
-                                      'Vaihda toimintotilan nimeä!');
-                                }
-                              },
-                              child: const Text(
-                                'Valmis',
-                                maxLines: 1,
-                                style: TextStyle(color: mySecondaryFontColor),
-                                textScaleFactor: 2.2,
-                              ),
-                            ))),
+                    readyWidget(() async {
+                      if (insertingNewOperationMode()) {
+                        if (widget.operationModes.newNameOK(operationModeName)) {
+                          OperationMode newOpMode = opModePool.operationMode(opIndex);
+                          newOpMode.name = operationModeName;
+                          widget.operationModes.add(newOpMode);
+                          log.info('${widget.estate.name}: toimintotila "$operationModeName" lisätty');
+                          showSnackbarMessage('toimintotila lisätty!');
+                          opModePool.dispose(excluding:newOpMode.typeName());
+                          Navigator.pop(context, true);
+                        }
+                        else if ( operationModeName == '') {
+                          await informMatterToUser(context, 'Toimintotilan nimi ei voi olla tyhjä',
+                              'Lisää toimintotilan nimi!');
+                        }
+                        else {
+                          await informMatterToUser(context, 'Nimeä ei voi käyttää',
+                              'Vaihda toimintotilan nimeä!');
+                        }
+                      }
+                      else if ((operationModeName == widget.initOperationModeName) || widget.operationModes.newNameOK(operationModeName)) {
+                        OperationMode editedOpMode = opModePool.operationMode(opIndex);
+                        editedOpMode.name = operationModeName;
+                        log.info(
+                            '${widget.estate.name}: toimintotila "$operationModeName" päivitetty');
+                        showSnackbarMessage('toimintotila päivitetty!');
+                        opModePool.dispose(excluding: editedOpMode.typeName());
+                        Navigator.pop(context, true);
+                      }
+                      else if ( operationModeName == '') {
+                        await informMatterToUser(context, 'Toimintotilan nimi ei voi olla tyhjä',
+                            'Lisää toimintotilan nimi!');
+                      }
+                      else {
+                        await informMatterToUser(context, 'Nimeä ei voi käyttää',
+                            'Vaihda toimintotilan nimeä!');
+                      }
+                    })
                   ])
               )
           );
@@ -264,6 +307,7 @@ class _OperationModeNameForm extends StatelessWidget {
       {
         fieldTextEditingController.text = modeName;
         return TextField(
+          key: Key('operationModeName'),
           controller: fieldTextEditingController,
           focusNode: fieldFocusNode,
           decoration: const InputDecoration(labelText: 'Toimintotilan nimi') ,
@@ -293,7 +337,6 @@ Widget operationModeHandling(
     BuildContext context,
     Estate estate,
     OperationModes operationModes,
-    List <String> possibleParameterTypes,
     Function parameterReadingFunction,
     Function callback
   ) {
@@ -303,7 +346,7 @@ Widget operationModeHandling(
     padding: myContainerPadding,
     // height: 150,
     child: InputDecorator(
-      decoration: const InputDecoration(labelText: 'Toimintatilat'),
+      decoration: const InputDecoration(labelText: 'Toimintotilat'),
       child: Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
@@ -311,11 +354,10 @@ Widget operationModeHandling(
                 ? Text('Toimintotiloja ei määritelty')
                 : OperationModesEditingView(
                     estate: estate,
-                    possibleParameterTypes: possibleParameterTypes,
                     operationModes: operationModes,
                     parameterReadingFunction: parameterReadingFunction,
                     selectionNameFunction: ()=>selectedOpMode,
-                    returnSelectedModeName: (name){selectedOpMode = name;}),
+                    returnSelectedModeName: (name){selectedOpMode = name; callback();}),
                   OutlinedButton(
                     style: OutlinedButton.styleFrom(
                         backgroundColor: mySecondaryColor,
@@ -334,9 +376,8 @@ Widget operationModeHandling(
                                   estate: estate,
                                   initOperationModeName: '',
                                   operationModes: operationModes,
-                                  possibleTypes: possibleParameterTypes,
                                   parameterFunction: parameterReadingFunction,
-                                  callback: (){});
+                                  callback: callback);
                             },
                           )
                       );
@@ -346,10 +387,55 @@ Widget operationModeHandling(
                       'Luo uusi',
                       maxLines: 1,
                       style: TextStyle(color: mySecondaryFontColor),
-                      textScaleFactor: 2.0,
+                      textScaler: const TextScaler.linear(2.0),
                     ),
                   ),
           ]),
     ),
   );
 }
+
+List<String> possibleParameterTypes = [constWarming, relativeWarming, dynamicOperationModeText];
+
+Widget airPumpParameterSetting(
+    OperationMode operationMode,
+    Estate estate,
+    OperationModes operationModes
+    )
+{
+  Widget myWidget;
+  if (operationMode is ConstantOperationMode) {
+    ConstantOperationMode cOM = operationMode as ConstantOperationMode;
+    myWidget=temperatureSelectionForm(temperatureParameterId, cOM.parameters);
+  }
+  else if (operationMode is ConditionalOperationModes) {
+    ConditionalOperationModes conditionalModes = operationMode as ConditionalOperationModes;
+    myWidget = ConditionalOperationView(
+        conditions: operationMode as ConditionalOperationModes
+    );
+  }
+  else {
+    myWidget=Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
+  }
+  return myWidget;
+}
+
+Widget temperatureSelectionForm(String parameterName, Map <String, dynamic> parameters) {
+  double currentValue = parameters[parameterName] ?? 24.0;
+
+  return Thermostat(
+      formatCurVal: (val) { return 'Lämpötila';},
+      curVal: currentValue,
+      setPoint: currentValue,
+      setPointMode: SetPointMode.displayAndEdit,
+      formatSetPoint: (val) { return '${val.toStringAsFixed(1)} $celsius';},
+      themeType: ThermostatThemeType.light,
+      maxVal: 40.0,
+      minVal: 15.0,
+      size: 300.0,
+      turnOn: true,
+      onChanged: (val) {currentValue = val; parameters[parameterName] = val; }
+  );
+}
+
+

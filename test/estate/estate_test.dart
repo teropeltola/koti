@@ -1,4 +1,8 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:koti/devices/my_device_info.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+
 import 'package:koti/devices/device/device.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
 import 'package:koti/devices/wlan/active_wifi_name.dart';
@@ -9,6 +13,11 @@ import 'package:koti/functionalities/heating_system_functionality/view/heating_s
 
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await initMySettings();
+  });
+
   group('Estate Tests 1', () {
 
     setUp(() {
@@ -31,11 +40,10 @@ void main() {
 
     test('json test 1', () {
       Estate e1 = Estate();
-      e1.init('abc','def','wifi');
+      e1.init('abc', 'wifi');
       var j = e1.toJson();
       Estate e2 = Estate.fromJson(j);
       expect(e2.name,'abc');
-      expect(e2.id,'def');
       expect(e2.myWifi,'wifi');
       expect(e2.devices.isNotEmpty, true);
       expect(e2.devices[0].name,'wifi');
@@ -45,7 +53,7 @@ void main() {
 
     test('json test 2', () {
       Estate e1 = Estate();
-      e1.init('abc','def','wifi');
+      e1.init('abc','wifi');
       OumanDevice oumanDevice = OumanDevice();
       oumanDevice.name = 'oumanName';
       oumanDevice.ipAddress = '1.2.3.4';
@@ -61,7 +69,7 @@ void main() {
       var j = e1.toJson();
       Estate e2 = Estate.fromJson(j);
       expect(e2.name,'abc');
-      expect(e2.id,'def');
+      expect(e2.id,e1.id);
       expect(e2.myWifi,'wifi');
       expect(e2.devices.isEmpty, false);
       expect(e2.devices[1].name, 'oumanName');
@@ -71,7 +79,7 @@ void main() {
 
       Functionality fun = e2.views[0].myFunctionality as Functionality;
       HeatingSystem h2 = fun as HeatingSystem;
-      expect(h2.id(), h.id());
+      expect(h2.id, h.id);
     });
 
   });
@@ -92,7 +100,7 @@ void main() {
     test('Remove Estate from Estates', () {
       Estates locations = Estates();
       final location = Estate(); // Create a location instance for testing
-      location.init('test','testId', 'wifi');
+      location.init('test', 'wifi');
       locations.addEstate(location);
 
       locations.removeEstate(location.id);
@@ -118,8 +126,7 @@ void main() {
       expect(locations.wifiNameExists(''), equals(false));
 
       final location1 = Estate(); // Create location instances for testing
-      location1.name = 'id 1';
-      location1.myWifi = 'wifi 1';
+      location1.init('id 1', 'wifi 1');
       locations.addEstate(location1);
 
       expect(locations.estateNameExists('id 2'), equals(false));
@@ -128,8 +135,7 @@ void main() {
       expect(locations.wifiNameExists('wifi 1'), equals(true));
 
       final location2 = Estate();
-      location2.name = 'id 2';
-      location2.myWifi = 'wifi 2';
+      location2.init('id 2', 'wifi 2');
       locations.addEstate(location2);
 
       expect(locations.estateNameExists('id 1'), equals(true));
@@ -143,7 +149,7 @@ void main() {
 
     test('Test isMyWifi', () {
       final location = Estate();
-      location.myWifi = '';
+      location.init('name', '');
       expect(location.myWifi == '', true);
       expect(location.myWifi == 'foo', false);
 

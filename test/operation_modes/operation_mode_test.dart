@@ -1,4 +1,10 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:koti/devices/my_device_info.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:koti/devices/device/device.dart';
+import 'package:koti/estate/estate.dart';
 import 'package:koti/look_and_feel.dart';
 import 'package:koti/operation_modes/operation_modes.dart';
 
@@ -9,6 +15,12 @@ OperationMode _operationMode(String n1) {
 }
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await initMySettings();
+  });
+
+  /*
   group('ParameterHandlingFunction', ()  {
     test('basic operation', () async {
       expect(_testInt, 0);
@@ -22,7 +34,7 @@ void main() {
     test('basic operations', () async {
       ParameterHandlingFunctions p = ParameterHandlingFunctions();
       OperationMode o = _operationMode('operationMode', 'notFound');
-/*
+
       expect(_testInt, 0);
       await p.call(o);
       expect(_testInt, 0);
@@ -35,18 +47,18 @@ void main() {
       await p.call(o);
       expect(_testInt, 1);
 
- */
     });
   });
 
+ */
 
   group('OperationMode', () {
     test('name() returns correct name', () {
-      final operationMode = _operationMode('TestMode', 'testFunction');
+      final operationMode = _operationMode('TestMode');
       expect(operationMode.name, 'TestMode');
-      expect(operationMode.selectFunctionName, 'testFunction');
     });
 
+    /*
     test('select() calls selectFunction', () {
       bool functionCalled = false;
       myParameterHandlingFunctions.clear();
@@ -57,22 +69,19 @@ void main() {
       operationMode.select();
       expect(functionCalled, true);
     });
-
-
+     */
     test('json', () {
 
-      ConstantOperationMode operationMode = ConstantOperationMode.fromJson(_operationMode('TestMode', 'testFunction').toJson());
+      ConstantOperationMode operationMode = ConstantOperationMode.fromJson(_operationMode('TestMode').toJson());
       operationMode.parameters = {'temp': 10.1 };
 
       final o2 = ConstantOperationMode.fromJson(operationMode.toJson());
       expect(o2.name, 'TestMode');
-      expect(o2.selectFunctionName, 'testFunction');
       expect(o2.parameters['temp'], 10.1);
 
       final o3 = ConstantOperationMode.fromJson({});
       expect(o3.name, '');
       expect(o3.parameters, {});
-      expect(o3.selectFunctionName, '');
     });
 
   });
@@ -103,49 +112,49 @@ void main() {
 
   group('OperationModes', () {
     test('current() returns noOperationMode when empty', () {
-      final operationModes = OperationModes('');
+      final operationModes = OperationModes();
       expect(operationModes.current(), equals(noOperationMode));
     });
 
     test('currentModeName() returns empty string when empty', () {
-      final operationModes = OperationModes('');
+      final operationModes = OperationModes();
       expect(operationModes.currentModeName(), '');
     });
 
     test('nameOK() returns true for unique name', () {
-      final operationModes = OperationModes('');
+      final operationModes = OperationModes();
       expect(operationModes.newNameOK('UniqueName'), true);
     });
 
     test('nameOK() returns false for empty name', () {
-      final operationModes = OperationModes('');
+      final operationModes = OperationModes();
       expect(operationModes.newNameOK(''), false);
     });
 
     test('nameOK() returns false for duplicate name', () {
-      final operationModes = OperationModes('');
-      operationModes.add(_operationMode('TestMode', 'aa'));
+      final operationModes = OperationModes();
+      operationModes.add(_operationMode('TestMode'));
       expect(operationModes.newNameOK('TestMode'), false);
     });
 
     test('select() updates currentIndex correctly', () async {
-      final operationModes = OperationModes('');
-      operationModes.add(_operationMode('Mode1', 'aa'));
-      operationModes.add(_operationMode('Mode2','aa'));
-      await operationModes.selectNameAndSetParentInfo('Mode2');
+      final operationModes = OperationModes();
+      operationModes.add(_operationMode('Mode1'));
+      operationModes.add(_operationMode('Mode2'));
+      await operationModes.selectNameAndSetParentInfo('Mode2', operationModes);
       expect(operationModes.currentModeName(), 'Mode2');
     });
 
     test('add() increases length of modes list', () async {
-      final operationModes = OperationModes('');
-      operationModes.add(_operationMode('TestMode', 'aa'));
-      await operationModes.selectNameAndSetParentInfo('TestMode');
+      final operationModes = OperationModes();
+      operationModes.add(_operationMode('TestMode'));
+      await operationModes.selectNameAndSetParentInfo('TestMode', operationModes);
       expect(operationModes.currentModeName(), 'TestMode');
     });
 
     test('remove() decreases length of modes list', () {
-      final operationModes = OperationModes('');
-      operationModes.add(_operationMode('TestMode', 'aa'));
+      final operationModes = OperationModes();
+      operationModes.add(_operationMode('TestMode' ));
       operationModes.remove('TestMode');
       expect(operationModes.current(), equals(noOperationMode));
     });
@@ -181,26 +190,36 @@ void main() {
       group('Operation Modes', () {
       test('Couple modes', () async {
 
-        final operationModes = OperationModes('');
+        Estate estate = Estate();
+        Device device = Device();
+        estate.addDevice(device);
+        final operationModes = estate.operationModes;
+        operationModes.initModeStructure(
+            estate:estate,
+            parameterSettingFunctionName: 'dummy',
+            deviceId:  device.id,
+            deviceAttributes: [],
+            setFunction: _testFunction1,
+            getFunction: _testFunction1);
         _testInt = 0;
-        operationModes.add(_operationMode('Mode 1', 'f1' ));
-        operationModes.add(_operationMode('Mode 2', 'f2' ));
-        await operationModes.selectNameAndSetParentInfo('Mode 1');
+        operationModes.add(_operationMode('Mode 1'));
+        operationModes.add(_operationMode('Mode 2'));
+        await operationModes.selectNameAndSetParentInfo('Mode 1', operationModes);
         expect(operationModes.currentModeName(),'Mode 1');
         expect(_testInt, 1);
-        await operationModes.selectNameAndSetParentInfo('Mode 2');
+        await operationModes.selectNameAndSetParentInfo('Mode 2', operationModes);
         expect(operationModes.currentModeName(),'Mode 2');
         expect(_testInt, 2);
 
       });
 
       test('json', () async {
-        final operationModes = OperationModes('');
+        final operationModes = OperationModes();
         var o2 = OperationModes.fromJson(operationModes.toJson());
         expect(o2.nbrOfModes(),0);
         _testInt = 0;
-        operationModes.add(_operationMode('Mode 1', 'f1' ));
-        operationModes.add(_operationMode('Mode 2', 'f2' ));
+        operationModes.add(_operationMode('Mode 1' ));
+        operationModes.add(_operationMode('Mode 2' ));
 
         o2 = OperationModes.fromJson(operationModes.toJson());
         expect(o2.operationModeNames(), ['Mode 1', 'Mode 2']);
@@ -211,19 +230,17 @@ void main() {
 
   group('inheritance test', () {
     test('basics 1', () async {
-      OperationMode o1 = _operationMode('O_name', 'O_sub');
+      ConstantOperationMode c0 = ConstantOperationMode();
+      c0.name = 'O_name';
 
-      ConstantOperationMode c1 = ConstantOperationMode().cloneFrom(o1);
+      ConstantOperationMode c1 = c0.clone() as ConstantOperationMode;
       expect(c1.name, 'O_name');
-
-      o1 = c1;
 
     });
 
     test('basics 2', () async {
       ConstantOperationMode c1 = ConstantOperationMode();
       c1.name = 'name';
-      c1.selectFunctionName = 'select';
       c1.parameters = {'a': 'b' };
       ConstantOperationMode c2 = ConstantOperationMode.fromJson(c1.toJson());
       expect(c2.name, 'name');

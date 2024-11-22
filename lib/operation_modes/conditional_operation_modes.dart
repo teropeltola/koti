@@ -1,11 +1,12 @@
-import 'dart:convert';
+import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:time_range_picker/time_range_picker.dart';
 
+import '../estate/estate.dart';
 import '../functionalities/electricity_price/electricity_price.dart';
+import '../logic/device_attribute_control.dart';
 import '../look_and_feel.dart';
-import '../main.dart';
 import 'analysis_of_modes.dart';
 import 'operation_modes.dart';
 
@@ -118,11 +119,11 @@ class SpotCondition {
 
 }
 
-enum OperationConditionType {notDefined, timeOfDay, spotPrice, spotDiff;
-  static const optionTextList = ['','kellonaika', 'hinta', 'hintamuutos'];
+enum OperationConditionType {notDefined, timeOfDay, deviceVariable, spotPrice, spotDiff;
+  static const optionTextList = ['','kellonaika', 'laitemuuttuja', 'hinta', 'hintamuutos'];
 
   String text() => optionTextList[index];
-  static const jsonText = ['notDefined','time', 'price', 'priceDelta'];
+  static const jsonText = ['notDefined','time', 'deviceInfo', 'price', 'priceDelta'];
 
 
   OperationConditionType fromJson(Map<String, dynamic> json){
@@ -165,6 +166,27 @@ class MyTimeRange extends TimeRange {
   }
 }
 
+class DeviceVariableData  {
+
+  String deviceName = '';
+  String serviceName = '';
+
+  DeviceVariableData.fromJson(Map<String, dynamic> json){
+    deviceName = json['deviceName'] ?? '';
+    serviceName = json['serviceName'] ?? '';
+  }
+
+  Map<String, dynamic> toJson() {
+
+    final json = <String, dynamic>{};
+
+    json['deviceName'] = deviceName;;
+    json['serviceName'] = serviceName;
+    return json;
+  }
+}
+
+
 Map<String, dynamic> _timeOfDayEncode(TimeOfDay timeOfDay) {
   Map<String, dynamic> json = {};
   json['hour'] = timeOfDay.hour;
@@ -192,6 +214,8 @@ class OperationCondition {
         return 'internal error';
       case OperationConditionType.timeOfDay:
         return '${conditionType.text()} ${timeRange.toString()}';
+      case OperationConditionType.deviceVariable:
+        return 'deviceVariable';
       case OperationConditionType.spotPrice:
         return 'spotPrice';
       case OperationConditionType.spotDiff:
@@ -231,18 +255,6 @@ class ResultOperationMode {
 
   ResultOperationMode(this.operationModeName);
 
-  /*
-  ResultOperationMode.fromJsonExtended(Map<String, dynamic> json, OperationModes operationModes){
-    String name = json['operationCodeName'] ?? '';
-    OperationMode opMode = operationModes.getMode(name);
-    if (opMode == noOperationMode) {
-      log.error('ResultOperationMode not found: $json from operation modes (${operationModes.operationModeNames()})');
-    }
-    result = opMode;
-  }
-
-   */
-
   ResultOperationMode.fromJson(Map<String, dynamic> json){
     operationModeName = json['operationCodeName'] ?? '';
   }
@@ -261,12 +273,12 @@ class ResultOperationMode {
 
 extension TOD on TimeOfDay {
   bool isEarlierOrEqualThan(TimeOfDay other) {
-    return ((this.hour < other.hour) || ((this.hour == other.hour) && (this.minute <= other.minute)));
+    return ((hour < other.hour) || ((hour == other.hour) && (minute <= other.minute)));
   }
 }
 
 class ConditionalOperationMode {
-  bool draft = true;
+  bool draft = false;
   late OperationCondition condition;
   late ResultOperationMode result;
 
@@ -299,6 +311,9 @@ class ConditionalOperationMode {
                 (time.isEarlierOrEqualThan(condition.timeRange.endTime)));
           }
         }
+      case OperationConditionType.deviceVariable:
+        // TODO: not implemented
+        return false; // condition.deviceIfno
       case OperationConditionType.spotPrice: {
         return condition.spot.isTrue(price,electricityPriceTable);
       }
@@ -324,14 +339,40 @@ class ConditionalOperationMode {
 
     return json;
   }
-
 }
 
 class ConditionalOperationModes extends OperationMode {
   List<ConditionalOperationMode> conditions = [];
-  final OperationModes operationModes;
+  String anchorConditionName = ''; // this condition is selected if no conditions match
 
-  ConditionalOperationModes(this.operationModes);
+  OperationModes operationModes = OperationModes();
+
+  String _currentConditionName = '';
+  AnalysisOfModes currentAnalysis = AnalysisOfModes();
+
+  Timer? _nextSelectTimer;
+
+  ElectricityPriceListener electricityPriceListener = ElectricityPriceListener();
+
+  ConditionalOperationModes() {
+  }
+
+  @override
+  void init([OperationModes? initOperationModes]) {
+    operationModes = initOperationModes!;
+    electricityPriceListener.start(
+        myEstates.estate(operationModes.estateName).myDefaultElectricityPrice().myBroadcaster(),
+        updateCurrentAnalysis);
+  }
+
+  //called whenever there are updates to listened electricityPriceTable
+  void updateCurrentAnalysis(ElectricityPriceTable electricityPriceTable) {
+    DateTime dateTime = DateTime.now();
+
+    currentAnalysis = _analyse(electricityPriceListener.data,dateTime);
+    log.info('ConditionalOperationModes "$name" updateCurrentAnalysis');
+
+  }
 
   void add(ConditionalOperationMode newMode) {
     conditions.insert(0, newMode);
@@ -342,14 +383,17 @@ class ConditionalOperationModes extends OperationMode {
   }
 
   String getOperationModeName(int spotIndex, ElectricityPriceTable electricityPriceTable) {
-    for (int i=0; i<conditions.length; i++) {
-      if (conditions[i].matchSpotIndex(spotIndex, electricityPriceTable)) {
-        return conditions[i].result.operationModeName;
+    for (var c in conditions) {
+      if (c.matchSpotIndex(spotIndex, electricityPriceTable)) {
+        return c.result.operationModeName;
       }
     }
-    return '';
+    return anchorConditionName;
   }
 
+  void setAnchorCondition(String newAnchorName) {
+    anchorConditionName = newAnchorName;
+  }
 
   int nbrOfConditions() {
     return conditions.length;
@@ -357,19 +401,28 @@ class ConditionalOperationModes extends OperationMode {
 
   int nbrOfCompletedConditions() {
     int nonDraftConditions = 0;
-    for (int i=0; i<conditions.length; i++) {
-      if (! conditions[i].draft) {
+    for (var c in conditions) {
+      if (! c.draft) {
         nonDraftConditions++;
       }
     }
     return nonDraftConditions;
   }
 
+  List<String> possibleOperationModes() {
+    List <String> modeNames = [];
+    for (var c in conditions) {
+      if (! modeNames.contains(c.result.operationModeName)) {
+        modeNames.add(c.result.operationModeName);
+      }
+    }
+    return modeNames;
+  }
 
   List<String> simulate() {
 
-    ElectricityPriceTable electricityPriceTable = myEstates.estate(operationModes.estateName).myDefaultElectricityPrice().get();
-    DateTime startingTime = electricityPriceTable.startingTime;
+//    ElectricityPriceTable electricityPriceTable = myEstates.estate(operationModes.estateName).myDefaultElectricityPrice().get();
+    DateTime startingTime = electricityPriceListener.data.startingTime;
 
     AnalysisOfModes analysis = AnalysisOfModes();
 
@@ -377,60 +430,147 @@ class ConditionalOperationModes extends OperationMode {
       return [];
     }
 
-    for (int i=0; i<electricityPriceTable.nbrOfMinutes(); i++) {
-      analysis.add(startingTime.add(Duration(minutes: i)),1,getOperationModeName(i ~/ electricityPriceTable.slotSizeInMinutes, electricityPriceTable));
+    for (int i=0; i<electricityPriceListener.data.nbrOfMinutes(); i++) {
+      DateTime slotStartingTime = startingTime.add(Duration(minutes: i));
+      String oName = getOperationModeName(i ~/ electricityPriceListener.data.slotSizeInMinutes, electricityPriceListener.data);
+      analysis.add(slotStartingTime, 1, oName);
     }
     analysis.compress();
 
     return analysis.toStringList();
   }
 
-  @override
-  Future<void> select(Function unUsedFunction, OperationModes? parentModes) async {
-    DateTime dateTime = DateTime.now();
-    ElectricityPrice electricityPrice = myEstates.estate(operationModes.estateName).myDefaultElectricityPrice();
-    double price = electricityPrice.currentPrice();
-    ElectricityPriceTable electricityPriceTable = electricityPrice.get();
+  AnalysisOfModes _analyse(ElectricityPriceTable electricityPriceTable, DateTime startingTime) {
+    AnalysisOfModes analysis = AnalysisOfModes();
 
-    for (int i=0; i<conditions.length; i++) {
-      String opModeName = conditions[i].result.operationModeName;
-      if (conditions[i].match(dateTime, price, electricityPriceTable)) {
-        OperationMode opMode = operationModes.getMode(conditions[i].result.operationModeName);
-        if (opMode == noOperationMode) {
-          log.error('ConditionalOperationModes select: $opModeName not found from operation modes');
-        }
-        else {
-          await opMode.select(operationModes.selectFunction, parentModes);
-        }
-      }
+    for (int i=0; i<electricityPriceTable.nbrOfMinutes(); i++) {
+      analysis.add(startingTime.add(Duration(minutes: i)),1,getOperationModeName(i ~/ electricityPriceTable.slotSizeInMinutes, electricityPriceTable));
+    }
+    analysis.compress();
+
+    return analysis;
+  }
+
+  @override
+  Future<void> select(ControlledDevice unUsedDevice, OperationModes? parentModes) async {
+
+    if (currentAnalysis.isEmpty()) {
+      log.error('conditional select options empty');
+      return;
+    }
+    String opModeName = currentAnalysis.setFirstOperationName(DateTime.now());
+    if (await _doSelect(opModeName, parentModes)) {
+      _setupTimerForNextSelect(parentModes);
     }
   }
 
-  ConditionalOperationModes.fromJsonExtended(
-      this.operationModes,
+  Future<bool> _doSelect(String operationModeName, OperationModes? parentModes) async {
+    OperationMode opMode = operationModes.getMode(operationModeName);
+    if (opMode == noOperationMode) {
+      log.error('ConditionalOperationModes select: $operationModeName not found from operation modes');
+      return false;
+    }
+    else {
+      await opMode.select(operationModes.controlledDevice, parentModes);
+      _currentConditionName = operationModeName;
+      return true;
+    }
+  }
+
+  void _setupTimerForNextSelect(OperationModes? parentModes) {
+
+    if (_nextSelectTimer != null) {
+      _nextSelectTimer!.cancel();
+    }
+
+    AnalysisItem next = currentAnalysis.updateAndGetCurrentItem();
+    Duration calcDuration = next.start.difference(DateTime.now());
+    if (calcDuration.isNegative) {
+      log.error('ConditionalOperationModes duration is negative with ${next.operationModeName}');
+    }
+    else {
+      _nextSelectTimer = Timer(calcDuration, () async {
+        if (await _doSelect(next.operationModeName, parentModes)) {
+          _setupTimerForNextSelect(parentModes);
+        }
+      });
+    }
+  }
+
+  @override
+  OperationMode clone() {
+    return ConditionalOperationModes.fromJson(toJson());
+  }
+
+  ConditionalOperationModes.fromJson(
       Map<String, dynamic> json) : super.fromJson(json){
 
     conditions = List.from(json['conditions'] ?? {}).map((e)=>ConditionalOperationMode.fromJson(e)).toList();
-  }
-/*
-  ConditionalOperationModes.fromJson(Map<String, dynamic> json) : super.fromJson(json){
-    conditions = List.from(json['conditions'].map((e)=>ConditionalOperationMode.fromJson(e)).toList());
+    anchorConditionName = json['anchorConditionName'] ?? '';
   }
 
-
- */
   @override
   Map<String, dynamic> toJson() {
     final json = super.toJson();
 
     json['conditions'] = conditions.map((e)=>e.toJson()).toList();
+    json['anchorConditionName'] = anchorConditionName;
 
     return json;
   }
 
   @override
   String typeName() {
-    return 'Muuttuva';
+    return dynamicOperationModeText;
+  }
+
+  @override
+  void clear() {
+    if (_nextSelectTimer != null) {
+      _nextSelectTimer!.cancel();
+    }
+    electricityPriceListener.cancel();
+    currentAnalysis.clear();
+  }
+
+  AnalysisItem nextSelectItem() {
+    if ((_nextSelectTimer != null) && (_nextSelectTimer!.isActive)) {
+      return currentAnalysis.currentItem();
+    }
+    else {
+      return AnalysisItem.empty();
+    }
+  }
+
+  String currentActiveConditionName() {
+    return _currentConditionName;
+  }
+
+  // checks if this have a recursive loop with other ConditionalOperationModes
+  // and informs the name of the other. Return '' if no recursive loops
+  String recursiveLoopWith() {
+    List <String> forbiddenModes = [];
+    return _recursiveLoopWith(this, operationModes, forbiddenModes);
+  }
+
+  String _recursiveLoopWith(ConditionalOperationModes currentCondition, OperationModes currentOperationModes, List<String> forbiddenModes) {
+    forbiddenModes.add( currentCondition.name);
+    for (var c in  currentCondition.conditions) {
+      String resultName = c.result.operationModeName;
+      OperationMode o = currentOperationModes.getMode(resultName);
+      if (o is ConditionalOperationModes) {
+        if (forbiddenModes.contains(o.name)) {
+          return (o.name);
+        }
+        else {
+          String recursiveResult = _recursiveLoopWith(o, currentOperationModes, forbiddenModes);
+          if (recursiveResult.isNotEmpty) {
+            return recursiveResult;
+          }
+        }
+      }
+    }
+    return '';
   }
 
 }

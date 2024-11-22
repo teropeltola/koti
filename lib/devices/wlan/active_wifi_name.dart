@@ -11,7 +11,6 @@ class ActiveWifiName extends ChangeNotifier{
   var _activeWifiName = '';
   final _controller = StreamController<String>();
 
-
   ActiveWifiName() {
     _controller.sink.add('');
   }
@@ -22,7 +21,7 @@ class ActiveWifiName extends ChangeNotifier{
       log.info('Ei wifi-yhteyttä');
     }
     else {
-      log.info('Aktiivinen wifi: $_activeWifiName');
+      log.info('Aktiivinen wifi: "$_activeWifiName"');
     }
     notifyListeners();
     _controller.sink.add(newName);
@@ -40,7 +39,6 @@ class ActiveWifiName extends ChangeNotifier{
 
   String get activeWifiName => _activeWifiName;
 
-  //Stream<String> get stream => _controller.stream;
   Stream<String> get stream => _controller.stream.asBroadcastStream();
 }
 

@@ -8,7 +8,7 @@ Widget editCode(BuildContext context, ShellyScriptCode code, Function setValue) 
   String currentCode = code.originalCode;
   FocusNode focusNode = FocusNode();
   return Scaffold(
-      appBar: AppBar(title: appTitle('Shelly scriptin syöttö')),
+      appBar: AppBar(title: appTitleOld('Shelly scriptin syöttö')),
       body:
       SingleChildScrollView(
           child:

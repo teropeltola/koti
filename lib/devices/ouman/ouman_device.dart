@@ -1,20 +1,22 @@
-
+import 'package:flutter/material.dart';
 import 'dart:async';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' as htmlParser;
+import 'package:koti/devices/ouman/view/edit_ouman_view.dart';
+import 'package:koti/service_catalog.dart';
 
 import 'dart:convert' show utf8;
 
+import '../../estate/estate.dart';
 import '../../logic/observation.dart';
-import '../device/device.dart';
+import '../../logic/services.dart';
+import '../../logic/state_broker.dart';
+import '../../logic/unique_id.dart';
 import '../../look_and_feel.dart';
+import '../device_with_login/device_with_login.dart';
 
-const _oumanIP = '192.168.72.99';
-const _oumanUrl = 'http://$_oumanIP';
-const _oumanUsername = 'pannusAAT0';
-const _oumanPassword = 'sX4c1WpZ';
+const String _oumanName = 'Ouman';
 
 const _oumanFetchingIntervalInMinutes = 2;
 
@@ -34,52 +36,116 @@ const Map <String, String> oumanCodes = {
 
 };
 
-const double noValue = -99.9;
+class OumanDevice extends DeviceWithLogin {
 
-class OumanDevice extends Device {
+  String _ipAddress = '';
 
-  String _userName = _oumanUsername;
-  String _password = _oumanPassword;
+  String get ipAddress => _ipAddress;
+  set ipAddress(String newIp) { _ipAddress = newIp; webLoginCredentials.url = _oumanUrl(); }
 
-  String ipAddress = _oumanUrl;
-  String urlString = _oumanUrl;
+  String _oumanUrl() {
+    return 'http://$ipAddress';
+  }
 
   late Timer _timer;
 
   Map <String, String> requestResult = {};
 
-  double _outsideTemperature = noValue;
-  double _measuredWaterTemperature = noValue;
-  double _requestedWaterTemperature = noValue;
-  double _valve = noValue;
-  double _heaterEstimatedTemperature = noValue;
+  StateDoubleNotifier _outsideTemperature = StateDoubleNotifier(noValueDouble);
+  StateDoubleNotifier _measuredWaterTemperature = StateDoubleNotifier(noValueDouble);
+  StateDoubleNotifier _requestedWaterTemperature = StateDoubleNotifier(noValueDouble);
+  StateDoubleNotifier _valve = StateDoubleNotifier(noValueDouble);
+  double _heaterEstimatedTemperature = noValueDouble;
   DateTime _latestDataFetched = DateTime(0);
 
+  void _initOfferedServices() {
+    services = Services([
+      RODeviceService<double>(
+          serviceName: outsideTemperatureDeviceService,
+          notWorkingValue: ()=> noValueDouble,
+          getFunction: outsideTemperature),
+      AttributeDeviceService(attributeName: deviceWithManualCreation)
+    ]);
+  }
+
   OumanDevice() {
-    id = 'Ouman$_oumanIP';
-    name = 'Ouman';
+    id = UniqueId(_oumanName).get();
+    _initOfferedServices();
+  }
+
+  OumanDevice.failed() {
+    setFailed();
+    _initOfferedServices();
+
+  }
+
+
+  @override
+  setOk() {
+    id = UniqueId(_oumanName).get();
   }
 
   bool noData() {
     return _latestDataFetched.year == 0;
   }
 
-  @override
-  Future<void> init() async {
-    // todo: clean this
-    if (myEstates[0].myWifiIsActive) {
-      await login();
-      await getData();
-      await logout();
+  Future<bool> initSuccessInCreation(Estate estate) async {
+    bool success = false;
+    try {
+      if (estate.myWifiIsActive) {
+        success = await login();
+        if (success) {
+          success = await getData();
+          if (success) {
+            success = await logout();
+          }
+        }
+      }
+    }
+    catch (e, st) {
+      log.error('OumanDevice init exception', e, st);
+      success = false;
     }
     _setupTimer();
+    return success;
+  }
+
+  @override
+  Future<void> init() async {
+    Estate myEstate = myEstates.estateFromId(myEstateId);
+    await initSuccessInCreation(myEstate);
+    webLoginCredentials.url = _oumanUrl();
+
+    myEstate.stateBroker.initNotifyingDoubleStateInformer(
+        device: this,
+        serviceName: currentRadiatorWaterTemperatureService,
+        stateDoubleNotifier: _measuredWaterTemperature,
+        dataReadingFunction: measuredWaterTemperature);
+
+    myEstate.stateBroker.initNotifyingDoubleStateInformer(
+        device: this,
+        serviceName: outsideTemperatureService,
+        stateDoubleNotifier: _outsideTemperature,
+        dataReadingFunction: outsideTemperature);
+
+    myEstate.stateBroker.initNotifyingDoubleStateInformer(
+        device: this,
+        serviceName: radiatorValvePositionService,
+        stateDoubleNotifier: _valve,
+        dataReadingFunction: valve);
+
+    myEstate.stateBroker.initNotifyingDoubleStateInformer(
+        device: this,
+        serviceName: requestedRadiatorWaterTemperatureService,
+        stateDoubleNotifier: _requestedWaterTemperature,
+        dataReadingFunction: requestedWaterTemperature);
+
   }
 
   Future<bool> fetchAndAnalyzeData() async {
     bool success = true;
 
-    // todo: clean this
-    if (myEstates[0].myWifiIsActive) {
+    if (myEstates.estateFromId(myEstateId).myWifiIsActive) {
       if ((await login()) && (await getData()) && (await logout())) {
         setNormalObservation();
       }
@@ -96,7 +162,7 @@ class OumanDevice extends Device {
   }
 
   void _setupTimer() {
-    Duration delay = Duration(
+    const Duration delay =  Duration(
       minutes: _oumanFetchingIntervalInMinutes,
     );
 
@@ -115,19 +181,19 @@ class OumanDevice extends Device {
   }
 
   double outsideTemperature() {
-    return _outsideTemperature;
+    return _outsideTemperature.data;
   }
 
   double measuredWaterTemperature() {
-    return _measuredWaterTemperature;
+    return _measuredWaterTemperature.data;
   }
 
   double requestedWaterTemperature() {
-    return _requestedWaterTemperature;
+    return _requestedWaterTemperature.data;
   }
 
   double valve() {
-    return _valve;
+    return _valve.data;
   }
 
   double heaterEstimatedTemperature() {
@@ -144,11 +210,11 @@ class OumanDevice extends Device {
   }
 
   void analyseRequest() {
-    _outsideTemperature = getValue('OutsideTemperature');
-    _measuredWaterTemperature = getValue('L1MeasuredWaterTemperature');
-    _requestedWaterTemperature = getValue('L1RequestedWaterTemperature');
-    _valve = getValue('L1Valve');
-    _heaterEstimatedTemperature = _measuredWaterTemperature * 100 / _valve;
+    _outsideTemperature.data = getValue('OutsideTemperature');
+    _measuredWaterTemperature.data = getValue('L1MeasuredWaterTemperature');
+    _requestedWaterTemperature.data = getValue('L1RequestedWaterTemperature');
+    _valve.data = getValue('L1Valve');
+    _heaterEstimatedTemperature = _measuredWaterTemperature.data * 100 / _valve.data;
     _latestDataFetched = DateTime.now();
   }
 
@@ -159,18 +225,18 @@ class OumanDevice extends Device {
   double _observationWarningTempDiff = 0.0;
   double _observationInfoValveLimit = 90.0;
 
-  double waterTempDiff() => _requestedWaterTemperature - _measuredWaterTemperature;
+  double waterTempDiff() => _requestedWaterTemperature.data - _measuredWaterTemperature.data;
 
   ObservationLevel observationLevel() {
-    if ((_valve > _observationAlarmValveLimit) &&
+    if ((_valve.data > _observationAlarmValveLimit) &&
         (waterTempDiff() > _observationAlarmTempDiff)) {
       return ObservationLevel.alarm;
     }
-    else if ((_valve > _observationWarningValveLimit) &&
+    else if ((_valve.data > _observationWarningValveLimit) &&
         (waterTempDiff() > _observationWarningTempDiff)) {
       return ObservationLevel.warning;
     }
-    else if (_valve > _observationInfoValveLimit) {
+    else if (_valve.data > _observationInfoValveLimit) {
       return ObservationLevel.informatic;
     }
     else {
@@ -183,20 +249,30 @@ class OumanDevice extends Device {
   }
 
   Future<bool> login() async {
-    String myLoginRequest = '$urlString/login?uid=$_oumanUsername;pwd=$_oumanPassword;';
-    final url = Uri.parse(myLoginRequest);  // Replace with your server's URL.
-    final response = await http.get(url);
+    String username = await webLoginCredentials.username();
+    String password = await webLoginCredentials.password();
 
-    if (response.statusCode == 200) {
-      return true;
-    } else {
-      log.error('Ouman kirjautuminen epäonnistui. Virhekoodi: ${response.statusCode}');
+    String myLoginRequest = '${webLoginCredentials.url}/login?uid=$username;pwd=$password;';
+    try {
+      final url = Uri.parse(myLoginRequest); // Replace with your server's URL.
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        log.error('Ouman kirjautuminen epäonnistui. Virhekoodi: ${response
+            .statusCode}');
+        return false;
+      }
+    }
+    catch(e,st) {
+      log.error('OumanDevice login exception: "$myLoginRequest" failed',e,st);
       return false;
     }
   }
 
   Future<bool> logout() async {
-    String myLoginRequest = '$urlString/logout?';
+    String myLoginRequest = '${webLoginCredentials.url}/logout?';
     final url = Uri.parse(myLoginRequest);
     final response = await http.get(url);
 
@@ -209,14 +285,14 @@ class OumanDevice extends Device {
   }
 
   Future<bool> getData() async {
-    final htmlResponse = await http.get(Uri.parse('$urlString/eh800.html'));
+    final htmlResponse = await http.get(Uri.parse('${webLoginCredentials.url}/eh800.html'));
     if (htmlResponse.statusCode != 200) {
       log.error('Ouman datan haku epäonnistui. Virhekoodi: ${htmlResponse.statusCode}');
       return false;
     }
     var mainPage = utf8.decode(htmlResponse.bodyBytes);
 
-    final jsResponse = await http.get(Uri.parse('$urlString/eh800.js'));
+    final jsResponse = await http.get(Uri.parse('${webLoginCredentials.url}/eh800.js'));
     if (jsResponse.statusCode != 200) {
       log.error('Ouman javaScriptin haku epäonnistui. Virhekoodi: ${jsResponse.statusCode}');
       return false;
@@ -224,7 +300,7 @@ class OumanDevice extends Device {
 
     String request = oumanDataCodes();
     final dataResponse =
-      await http.get( Uri.parse( '$urlString/request?$request'));
+      await http.get( Uri.parse( '${webLoginCredentials.url}/request?$request'));
     if (dataResponse.statusCode != 200) {
       log.error('Ouman datan haku epäonnistui. Virhekoodi: ${dataResponse.statusCode}');
       return false;
@@ -242,6 +318,45 @@ class OumanDevice extends Device {
   }
 
   @override
+  IconData icon() {
+    return Icons.water_drop;
+  }
+
+  @override
+  String shortTypeName() {
+    return 'ouman';
+  }
+
+
+  @override
+  Future<bool> editWidget(BuildContext context, Estate estate ) async {
+    return await Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return EditOumanView(
+          estate: estate,
+        );
+      },
+    ));
+  }
+
+  @override
+  Widget dumpData({required Function formatterWidget}) {
+    return formatterWidget(
+        headline: name,
+        textLines: [
+          'tunnus: $id',
+          _timer.isActive ? 'Ajastin aktiivinen' : 'Ajastin pois päältä',
+          'datan hakuaika: ${dumpTimeString(fetchingTime())}',
+          'IP-osoite: $_ipAddress',
+        ],
+        widgets: [
+          dumpDataMyFunctionalities(formatterWidget: formatterWidget),
+        ]
+    );
+  }
+
+
+  @override
   void dispose() {
     //super.dispose();
     _timer.cancel();
@@ -257,8 +372,15 @@ class OumanDevice extends Device {
   @override
   OumanDevice.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
+    _initOfferedServices();
     ipAddress = json['ipAddress'] ?? '';
   }
+
+  @override
+  OumanDevice clone() {
+    return OumanDevice.fromJson(toJson());
+  }
+
 
 }
 

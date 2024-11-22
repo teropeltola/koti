@@ -1,10 +1,19 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:koti/devices/my_device_info.dart';
+
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:koti/devices/ouman/ouman_device.dart';
 import 'package:koti/estate/estate.dart';
 import 'package:koti/logic/observation.dart';
 import 'package:koti/look_and_feel.dart';
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await initMySettings();
+  });
+
   group('OumanDevice', () {
 
     test('Initialization', () async {
@@ -22,11 +31,11 @@ void main() {
       estate.addDevice(oumanDevice);
       await oumanDevice.init();
 
-      expect(oumanDevice.outsideTemperature(), noValue);
-      expect(oumanDevice.measuredWaterTemperature(), noValue);
-      expect(oumanDevice.requestedWaterTemperature(), noValue);
-      expect(oumanDevice.valve(), noValue);
-      expect(oumanDevice.heaterEstimatedTemperature(), noValue);
+      expect(oumanDevice.outsideTemperature(), noValueDouble);
+      expect(oumanDevice.measuredWaterTemperature(), noValueDouble);
+      expect(oumanDevice.requestedWaterTemperature(), noValueDouble);
+      expect(oumanDevice.valve(), noValueDouble);
+      expect(oumanDevice.heaterEstimatedTemperature(), noValueDouble);
       expect(oumanDevice.fetchingTime(), DateTime(0));
     });
 
@@ -51,6 +60,7 @@ void main() {
       expect(oumanDevice.valve(), 50.0);
     });
 
+    /* not tested anymore because this would require username & password
     test('Login and logout', () async {
       OumanDevice oumanDevice = OumanDevice();
       Estate estate = Estate();
@@ -63,6 +73,8 @@ void main() {
       expect(await oumanDevice.logout(), isTrue);
     });
 
+
+     */
     test('Device should be created from JSON correctly', () {
       Map<String, dynamic> json = {
         'name': 'TestDevice',

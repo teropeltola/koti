@@ -1,16 +1,24 @@
 
 import 'dart:async';
+import 'package:flutter/material.dart';
 
-import 'package:provider/provider.dart';
-
+import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
 import '../../devices/porssisahko/porssisahko.dart';
+import '../../estate/estate.dart';
 import '../../functionalities/functionality/functionality.dart';
 import '../../devices/porssisahko/json/porssisahko_data.dart';
+import '../../logic/my_change_notifier.dart';
+import '../../look_and_feel.dart';
+
+int constantSlotSize = 60; // constant parameter that can be patched
+                           // eg. testing 1 or in future 15
 
 class ElectricityPriceTable {
   DateTime startingTime = DateTime(0);
-  int slotSizeInMinutes = 60;
+  int slotSizeInMinutes = constantSlotSize;
   List <double> slotPrices = [];
+
+  ElectricityPriceTable();
 
   int findIndex(DateTime myTime) {
     Duration diff = myTime.difference(startingTime);
@@ -35,6 +43,8 @@ class ElectricityPriceTable {
         return DateTime(d.year, d.month, d.day, d.hour);
       case 15:
         return DateTime(d.year, d.month, d.day, d.hour, 15 * (d.minute ~/ 15));
+      case 1:
+        return DateTime(d.year, d.month, d.day, d.hour, d.minute);
       default:
         return DateTime(0);
     }
@@ -96,7 +106,7 @@ class ElectricityPriceTable {
   double currentPrice() {
     int index = findIndex(DateTime.now());
     if (index == -1) {
-      return -9999.0;
+      return noValueDouble;
     }
     else {
       return slotPrices[index];
@@ -283,60 +293,151 @@ class ElectricityDistributionPrice {
 
 }
 
+class ElectricityPriceDataNotifier extends MyChangeNotifier<ElectricityPriceTable> {
+  ElectricityPriceDataNotifier(super.initData);
+}
+
+class ElectricityPriceListener extends BroadcastListener<ElectricityPriceTable>{
+}
+
+
 class ElectricityPrice extends Functionality {
 
+  static const String functionalityName = 'sähkön hinta';
+
   DateTime loadingTime = DateTime(0);
-  ElectricityPriceTable data = ElectricityPriceTable();
+
+  StockPriceListener stockPriceListener = StockPriceListener();
+
+  ElectricityPriceDataNotifier electricity = ElectricityPriceDataNotifier(ElectricityPriceTable());
+  BasicElectricityParameters parameters = BasicElectricityParameters();
   ElectricityTariff tariff = ElectricityTariff();
   ElectricityDistributionPrice distributionPrice = ElectricityDistributionPrice();
 
   ElectricityPrice() {
-    allFunctionalities.addFunctionality(this);
   }
 
   bool isInitialized() {
     return loadingTime.year != 0;
   }
 
-  Future <void> init() async {
+  ElectricityPriceDataNotifier myBroadcaster() {
+    return electricity;
+  }
 
-    PorssisahkoData stockElectricityPrice = (device as Porssisahko).data;
+  void updateStockData(PorssisahkoData stockData) {
+
+    if (stockData.prices.isNotEmpty) {
+      ElectricityPriceTable data = ElectricityPriceTable();
+
+      loadingTime = DateTime.now();
+
+      electricity.data.slotPrices.clear();
+      // todo: stockData.prices can be empty => how to avoid range error
+      electricity.data.startingTime =
+          electricity.data.crop(stockData.prices[0].startDate);
+
+      for (int i = 0; i < stockData.prices.length; i++) {
+        electricity.data.slotPrices.add(
+            tariff.price(stockData.prices[i].price) +
+                distributionPrice.price(data.startingTime.hour + i));
+      }
+
+      electricity.poke();
+
+      log.info(
+          'Pörssisähkön hintatiedot päivitetty (${connectedDevices[0].name})');
+    }
+    else {
+      log.error('Error in stockData - empty prices');
+    }
+  }
+/*
+  ElectricityPriceTable initData() {
+
+    ElectricityPriceTable data = ElectricityPriceTable();
 
     loadingTime = DateTime.now();
 
-    // todo: check if stockEle data is empty
-    data.startingTime = data.crop(stockElectricityPrice.prices[0].startDate);
-    data.slotPrices.clear();
+    data.startingTime = electricity.data.crop(stockPriceListener.data.prices[0].startDate);
+    electricity.data.slotPrices.clear();
 
-    for (int i=0; i<stockElectricityPrice.prices.length; i++) {
+    for (int i=0; i<stockPriceListener.data.prices.length; i++) {
       data.slotPrices.add(
-          tariff.price(stockElectricityPrice.prices[i].price)+
+          tariff.price(stockPriceListener.data.prices[i].price)+
               distributionPrice.price(data.startingTime.hour+i));
     }
+
+    return data;
   }
+
+
+ */
+  @override
+  Future <void> init() async {
+    if (connectedDevices.isEmpty) {
+      log.error('ElectricityPrice connectedDevices is missing Porssisahko');
+    }
+    else {
+      Porssisahko stockElectricity = (connectedDevices[0] as Porssisahko);
+      stockPriceListener.start(
+          stockElectricity.myBroadcaster(), updateStockData);
+      initOperationModes();
+    }
+  }
+
+  void initOperationModes() {
+
+    operationModes.initModeStructure(
+        estate: myEstates.estateFromId(connectedDevices[0].myEstateId),
+        parameterSettingFunctionName: '',
+        deviceId: connectedDevices[0].id,
+        deviceAttributes: [],
+        setFunction: (){},
+        getFunction: (){}
+    );
+  }
+
 
   ElectricityPriceTable get([DateTime? startingTimeParameter]) {
 
     // either use user given starting time or starting time of the whole data
-    DateTime startingTime = startingTimeParameter ?? data.startingTime;
+    DateTime startingTime = startingTimeParameter ?? electricity.data.startingTime;
     ElectricityPriceTable e = ElectricityPriceTable();
-    int startingIndex = data.findIndex(startingTime);
+    int startingIndex = electricity.data.findIndex(startingTime);
 
-    e.startingTime = data.crop(startingTime);
+    e.startingTime = electricity.data.crop(startingTime);
 
     if (startingIndex < 0) {
       return e;
     }
 
-    for (int i=startingIndex;i<data.slotPrices.length; i++) {
-      e.slotPrices.add(data.slotPrices[i]);
+    for (int i=startingIndex;i<electricity.data.slotPrices.length; i++) {
+      e.slotPrices.add(electricity.data.slotPrices[i]);
     }
     return e;
   }
 
   double currentPrice() {
-    return data.currentPrice();
+    return electricity.data.currentPrice();
   }
+
+  @override
+  Widget dumpData({required Function formatterWidget}) {
+    return formatterWidget(
+        headline: functionalityName,
+        textLines: [
+          'tunnus: $id',
+          'latausaika: ${dumpTimeString(loadingTime)}',
+          'sähkösopimus: ${tariff.name}',
+          'jakelusopimus: ${distributionPrice.name}',
+        ],
+        widgets: [
+          dumpDataMyDevices(formatterWidget: formatterWidget)
+        ]
+    );
+  }
+
 
   @override
   Map<String, dynamic> toJson() {
@@ -373,7 +474,7 @@ class ElectricityChartData {
   double yAxisMin = 0.0;
 }
 
-class slotAndPrice{
+class SlotAndPrice{
   int day = -1;
   int hour = -1;
   int minute = -1;

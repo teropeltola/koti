@@ -1,23 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:koti/app_configurator.dart';
 import 'package:koti/devices/shelly/shelly_script_code.dart';
-import 'package:koti/functionalities/electricity_price/view/edit_electricity_view.dart';
 import 'package:koti/main.dart';
+import 'package:koti/view/data_structure_dump_view.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
+import '../devices/device/device.dart';
 import '../devices/ouman/view/ouman_view.dart';
+import '../devices/porssisahko/porssisahko.dart';
 import '../devices/shelly/shelly_device.dart';
 import '../devices/shelly/shelly_code_editor_view.dart';
 import '../devices/shelly/shelly_script_analysis.dart';
 import '../devices/wlan/find_devices.dart';
-import '../estate/view/add_new_estate_view.dart';
+import '../estate/estate.dart';
 import '../estate/view/edit_estate_view.dart';
-import '../functionalities/electricity_price/electricity_price.dart';
-import '../functionalities/electricity_price/view/electricity_price_view.dart';
+import '../estate/view/estate_list_view.dart';
 import '../functionalities/functionality/functionality.dart';
+import '../logic/diagnostics.dart';
 import '../look_and_feel.dart';
-import '../operation_modes/view/conditional_option_list_view.dart';
-import 'my_talker_view.dart';
+
+const _primaryDrawerFontColor = myPrimaryFontColor;
+const _primaryDrawerIconSize = 40.0;
 
 Drawer myDrawerView( BuildContext context,
     Function callback) {
@@ -26,20 +30,35 @@ Drawer myDrawerView( BuildContext context,
     child: ListView(
       padding: EdgeInsets.zero,
       children: [
-        const DrawerHeader(
+        DrawerHeader(
           decoration: BoxDecoration(
             color: myPrimaryColor,
           ),
           child: Center(
-              child: Text(appName,
-                  style: TextStyle(color: Colors.white),
-                  textScaleFactor:2)
+              child: Image.asset(
+                  'assets/images/main_image.png',
+                  fit: BoxFit.contain)
           ),
         ),
         ListTile(
+          leading: const Icon(Icons.list,
+              color: myPrimaryFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Asunnot', style: TextStyle(color: _primaryDrawerFontColor)),
+          onTap: () async {
+            await Navigator.push(context, MaterialPageRoute(
+              builder: (context) {
+                return const EstateListView();
+              },
+            ));
+            callback();
+            if (!context.mounted) return;
+            Navigator.pop(context);
+          },
+        ),
+        ListTile(
           leading: const Icon(Icons.electrical_services,
-              color: myPrimaryColor, size: 40),
-          title: const Text('Lisää asunto'),
+              color: myPrimaryFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Lisää asunto', style: TextStyle(color: _primaryDrawerFontColor)),
           onTap: () async {
             await Navigator.push(context, MaterialPageRoute(
               builder: (context) {
@@ -51,6 +70,7 @@ Drawer myDrawerView( BuildContext context,
             Navigator.pop(context);
           },
         ),
+        /*
         ListTile(
           leading: const Icon(Icons.network_check,
               color: myPrimaryColor, size: 40),
@@ -77,27 +97,48 @@ Drawer myDrawerView( BuildContext context,
             Navigator.pop(context);
           },
         ),
+
+         */
         ListTile(
           leading: const Icon(Icons.speaker_notes,
-              color: myPrimaryColor, size: 40),
-          title: const Text('Lokit'),
+              color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Loki', style: TextStyle(color: _primaryDrawerFontColor)),
+          onTap: () async {
+            await _callLog(context);
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.account_tree,
+              color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Tietorakenteet', style: TextStyle(color: _primaryDrawerFontColor)),
           onTap: () {
             Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (context) =>
-                  TalkerScreen(
-                    talker: log,
-                    theme: const TalkerScreenTheme(
-                            backgroundColor: Colors.black12,
-                            textColor: Colors.white,
-                            cardColor: Colors.grey
-                        ),
-                    appBarTitle: 'loki',
-                  ),
+                MaterialPageRoute(
+                  builder: (context) =>
+                      DataStructureDumpView(),
                 )
             );
           },
         ),
+        ListTile(
+          leading: const Icon(Icons.manage_search,
+              color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Diagnostiikka', style: TextStyle(color: _primaryDrawerFontColor)),
+          onTap: () async {
+            Diagnostics diagnostics = Diagnostics(myEstates, allDevices, allFunctionalities, applicationDeviceConfigurator);
+            bool allGood = diagnostics.diagnosticsOk();
+            if (allGood) {
+              await informMatterToUser(context, "Kaikki kunnossa!", "Paina ok jatkaaksesi!");
+            }
+            else {
+              await informMatterToUser(context, "Diagnostiikka havaitsi virheitä", "Avataan loki katsoaksesi havaintoja!");
+              diagnostics.diagnosticsLog.dumpDiagnosticsLogsToErrorLog();
+              await _callLog(context);
+            }
+          },
+        ),
+
+        /*
         ListTile(
           leading: const Icon(Icons.code,
               color: myPrimaryColor, size: 40),
@@ -125,42 +166,40 @@ Drawer myDrawerView( BuildContext context,
             }
         ),
         ListTile(
-          leading: const Icon(Icons.gas_meter,
+          leading: const Icon(Icons.price_change,
               color: myPrimaryColor, size: 40),
-          title: const Text('Ilpo'),
+          title: const Text('Päivitä pörssisähkö'),
           onTap: () async {
-            MitsuHeatPumpDevice ilpo = MitsuHeatPumpDevice();
-            bool loginOK = await ilpo.login();
-            if (loginOK) {
-              bool deviceListOK = await ilpo.getDevices();
-            }
-            bool a = false;
-            /*
-            await Navigator.push(context, MaterialPageRoute(
-              builder: (context) {
-                return  const MyOumanApp();
-              },
-            ));
-
-             */
-            callback();
-            if (!context.mounted) return;
-            Navigator.pop(context);
-          },
+            Porssisahko p = myEstates
+                .currentEstate()
+                .myDefaultElectricityPrice()
+                .device as Porssisahko;
+            p.myBroadcaster().poke();
+          }
         ),
+
+         */
         ListTile(
           leading: const Icon(Icons.restart_alt,
-              color: Colors.red, size: 40),
-          title: const Text('Aloita alusta'),
+              color: Colors.red, size: _primaryDrawerIconSize),
+          title: const Text('Aloita alusta', style: TextStyle(color: _primaryDrawerFontColor)),
           onTap: () async {
             bool ok = await askUserGuidance(context, 'Tämä komento tuhoaa kaikki syötetyt tiedot', 'Oletko varma?');
             if (ok) {
-              await myEstates.resetAll();
-              allFunctionalities.clear();
+              await resetAllFatal();
               Navigator.pop(context);
             }
             callback();
             if (!context.mounted) return;
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.arrow_back,
+              color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Palaa takaisin', style: TextStyle(color: _primaryDrawerFontColor)),
+          onTap: () async {
+            callback();
+            Navigator.pop(context);
           },
         ),
 
@@ -168,3 +207,21 @@ Drawer myDrawerView( BuildContext context,
     ),
   );
 }
+
+Future <void> _callLog(BuildContext context) async {
+  Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            TalkerScreen(
+              talker: log,
+              theme: const TalkerScreenTheme(
+                  backgroundColor: Colors.white,
+                  textColor: Colors.blue,
+                  cardColor: Colors.white
+              ),
+              appBarTitle: 'Loki',
+            ),
+      )
+  );
+}
+

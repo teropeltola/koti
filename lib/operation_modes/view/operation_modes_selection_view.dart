@@ -199,7 +199,6 @@ class _OperationModesSelectionInternalViewState extends State<OperationModesSele
 class OperationModesEditingView extends StatefulWidget {
   //final String operationModeSetFunctionName;
   final Estate estate;
-  final List <String> possibleParameterTypes;
   final OperationModes operationModes;
   final Function selectionNameFunction;
   final Function returnSelectedModeName;
@@ -209,7 +208,6 @@ class OperationModesEditingView extends StatefulWidget {
     Key? key,
     //required this.operationModeSetFunctionName,
     required this.estate,
-    required this.possibleParameterTypes,
     required this.operationModes,
     required this.selectionNameFunction,
     required this.returnSelectedModeName,
@@ -245,7 +243,8 @@ class _OperationModesEditingViewState extends State<OperationModesEditingView> {
                     title: Text(widget.operationModes.modeName(index)),
                     trailing: SizedBox(width: 112, child: Row(children: [
                       IconButton(
-                          icon: const Icon(Icons.edit,
+                        key: Key('edit-${widget.operationModes.modeName(index)}'),
+                        icon: const Icon(Icons.edit,
                               color: myPrimaryFontColor, size: 40),
                           tooltip: 'Muokkaa toimintatilaa',
                           onPressed: () async {
@@ -257,15 +256,15 @@ class _OperationModesEditingViewState extends State<OperationModesEditingView> {
                                         estate: widget.estate,
                                         initOperationModeName: widget.operationModes.modeName(index), //operationModes.currentModeName(),
                                         operationModes: widget.operationModes,
-                                        possibleTypes: widget.possibleParameterTypes,
                                         parameterFunction: widget.parameterReadingFunction,
-                                        callback: (){});
+                                        callback: (){setState(() {});});
                                   },
                                 )
                             );
                             setState(() {});
                           }),
                       IconButton(
+                          key: Key('delete-${widget.operationModes.modeName(index)}'),
                           icon: const Icon(Icons.delete,
                               color: myPrimaryFontColor, size: 40),
                           tooltip: 'Poista toimintotila',

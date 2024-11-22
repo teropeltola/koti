@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:koti/devices/my_device_info.dart';
+import 'package:koti/logic/device_attribute_control.dart';
+import 'package:koti/operation_modes/analysis_of_modes.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
 import 'package:koti/devices/porssisahko/porssisahko.dart';
 import 'package:koti/estate/estate.dart';
 import 'package:koti/functionalities/electricity_price/electricity_price.dart';
@@ -11,6 +16,11 @@ import 'package:koti/operation_modes/conditional_operation_modes.dart';
 
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await initMySettings();
+  });
+
   group('OperationComparisons tests', () {
     test('OperationComparisons text should return correct value', () {
       expect(OperationComparisons.less.text(), 'pienempi kuin');
@@ -79,6 +89,22 @@ void main() {
       // Add more test cases for other conditions if needed.
     });
 
+
+    group('ConditionalOperationMode simple tests', ()  {
+      test('time test', () async {
+        OperationCondition o = OperationCondition();
+        o.conditionType = OperationConditionType.timeOfDay;
+        o.timeRange = MyTimeRange(startTime: TimeOfDay(hour:1,minute:1),
+                                  endTime: TimeOfDay(hour:1, minute:1));
+
+        ConditionalOperationMode c = ConditionalOperationMode(o, ResultOperationMode('result'));
+        expect(c.match(DateTime(2024,6,16,1,1),0.0,ElectricityPriceTable()),true);
+        expect(c.match(DateTime(2024,6,16,1,0),0.0,ElectricityPriceTable()),false);
+        expect(c.match(DateTime(2024,6,16,1,2),0.0,ElectricityPriceTable()),false);
+
+      });
+    });
+
     group('ConditionalOperationModes tests', ()  {
       test('simulate should return correct modes', () async {
         // Create a mock electricity price table.
@@ -115,7 +141,8 @@ void main() {
         OperationModes op = await _testInitOperationModes(electricityPriceTable);
 
         // Create the ConditionalOperationModes instance and add the modes.
-        var conditionalModes = ConditionalOperationModes(op);
+        var conditionalModes = ConditionalOperationModes();
+        conditionalModes.init(op);
         conditionalModes.add(mode3);
         conditionalModes.add(mode2);
         conditionalModes.add(mode1);
@@ -171,7 +198,8 @@ void main() {
         OperationModes op = await _testInitOperationModes(electricityPriceTable);
 
         // Create the ConditionalOperationModes instance and add the modes.
-        var conditionalModes = ConditionalOperationModes(op);
+        var conditionalModes = ConditionalOperationModes();
+        conditionalModes.init(op);
         conditionalModes.add(mode3);
         conditionalModes.add(mode2);
         conditionalModes.add(mode1);
@@ -211,7 +239,8 @@ void main() {
         OperationModes op = await _testInitOperationModes(electricityPriceTable);
 
         // Create the ConditionalOperationModes instance and add the modes.
-        var conditionalModes = ConditionalOperationModes(op);
+        var conditionalModes = ConditionalOperationModes();
+        conditionalModes.init(op);
         conditionalModes.add(mode3);
 
         // Call the simulate method.
@@ -320,12 +349,14 @@ void main() {
     test('ConditionalOperationModes', () async {
       OperationModes op = await _testInitOperationModes(ElectricityPriceTable());
 
-      ConditionalOperationModes c = ConditionalOperationModes(op);
-      ConditionalOperationModes c2 =ConditionalOperationModes.fromJsonExtended(op, c.toJson());
+      ConditionalOperationModes c = ConditionalOperationModes();
+      c.init(op);
+      ConditionalOperationModes c2 =ConditionalOperationModes.fromJson(c.toJson());
+      c2.init(op);
       expect(c2.conditions.length, 0);
 
       c.name = 'c';
-      c2 =ConditionalOperationModes.fromJsonExtended(op, c.toJson());
+      c2 =ConditionalOperationModes.fromJson(c.toJson());
       expect(c2.conditions.length, 0);
 
       OperationCondition operationCondition = OperationCondition();
@@ -337,15 +368,117 @@ void main() {
 
       c.add(cm);
 
-      c2 =ConditionalOperationModes.fromJsonExtended(op, c.toJson());
+      c2 =ConditionalOperationModes.fromJson(c.toJson());
       expect(c2.conditions.length, 1);
 
     });
 
   });
 
+
+  group('timer operations', () {
+
+    test('basic test', () async {
+
+      OperationModes o = await _testTimerInitOperationModes(1);
+      await Future.delayed(Duration( seconds: 2));
+
+      var conditions = o.getMode('conditional') as ConditionalOperationModes;
+      var modes = conditions.simulate();
+      modes.forEach((s)=>log.info(s));
+
+      await o.selectNameAndSetParentInfo('conditional', o);
+      expect(o.currentModeName(),'conditional');
+      expect(conditions.currentActiveConditionName(),'Mode 0');
+      AnalysisItem next = conditions.nextSelectItem();
+      expect(next.operationModeName, 'Mode 1');
+      await Future.delayed(Duration(minutes: 2, seconds: 5));
+      expect(conditions.currentActiveConditionName(),'Mode 1');
+      next = conditions.nextSelectItem();
+      expect(next.operationModeName, 'Mode 0');
+      await Future.delayed(Duration(minutes: 8, seconds: 5));
+
+    });
+
+  });
+
+  }
+
+Future <OperationModes> _testTimerInitOperationModes(int startInMinutes) async {
+  constantSlotSize = 1;
+  var electricityPriceTable = ElectricityPriceTable();
+  DateTime now = DateTime.now();
+  DateTime start = DateTime(now.year, now.month, now.day, now.hour, now.minute+startInMinutes);
+  electricityPriceTable.startingTime = DateTime(now.year, now.month, now.day, now.hour, now.minute); // Adjust as needed.
+  electricityPriceTable.slotPrices = List.generate(30, (index){return index.toDouble(); }); // Example slot prices.
+  electricityPriceTable.slotSizeInMinutes = 1; // Example slot size in minutes.
+
+  // Create mock ResultOperationMode instances.
+  var resultMode0 = ResultOperationMode("Mode 0");
+  var resultMode1 = ResultOperationMode("Mode 1");
+  var resultMode2 = ResultOperationMode("Mode 2");
+  var resultMode3 = ResultOperationMode("Mode 3");
+
+  // Create ConditionalOperationMode instances with mock conditions and results.
+  var condition0 = OperationCondition();
+  condition0.conditionType = OperationConditionType.timeOfDay;
+  condition0.timeRange.startTime = TimeOfDay.fromDateTime(DateTime(start.year, start.month, start.day, start.hour, start.minute-startInMinutes));
+  condition0.timeRange.endTime = TimeOfDay.fromDateTime(DateTime(start.year, start.month, start.day, start.hour, start.minute+30));
+  var condition1 = OperationCondition();
+  condition1.conditionType = OperationConditionType.timeOfDay;
+  condition1.timeRange.startTime = TimeOfDay.fromDateTime(DateTime(start.year, start.month, start.day, start.hour, start.minute+1));
+  condition1.timeRange.endTime = TimeOfDay.fromDateTime(DateTime(start.year, start.month, start.day, start.hour, start.minute+2));
+  var condition2 = OperationCondition();
+  condition2.conditionType = OperationConditionType.timeOfDay;
+  condition2.timeRange.startTime = TimeOfDay.fromDateTime(DateTime(start.year, start.month, start.day, start.hour, start.minute+4));
+  condition2.timeRange.endTime = TimeOfDay.fromDateTime(DateTime(start.year, start.month, start.day, start.hour, start.minute+5));
+  var condition3 = OperationCondition();
+  condition3.conditionType = OperationConditionType.timeOfDay;
+  condition3.timeRange.startTime = TimeOfDay.fromDateTime(DateTime(start.year, start.month, start.day, start.hour, start.minute+7));
+  condition3.timeRange.endTime = TimeOfDay.fromDateTime(DateTime(start.year, start.month, start.day, start.hour, start.minute+8));
+  var mode0 = ConditionalOperationMode(condition0, resultMode0);
+  mode0.draft = false;
+  var mode1 = ConditionalOperationMode(condition1, resultMode1);
+  mode1.draft = false;
+  var mode2 = ConditionalOperationMode(condition2, resultMode2);
+  mode2.draft = false;
+  var mode3 = ConditionalOperationMode(condition3, resultMode3);
+  mode3.draft = false;
+
+  OperationModes op = await _testInitOperationModes(electricityPriceTable);
+
+  op.add(_TestOperationMode.testInit('Mode 0'));
+  op.add(_TestOperationMode.testInit('Mode 1'));
+  op.add(_TestOperationMode.testInit('Mode 2'));
+  op.add(_TestOperationMode.testInit('Mode 3'));
+  // Create the ConditionalOperationModes instance and add the modes.
+  var conditionalModes = ConditionalOperationModes();
+  conditionalModes.init(op);
+  conditionalModes.name = 'conditional';
+  conditionalModes.add(mode0);
+  conditionalModes.add(mode3);
+  conditionalModes.add(mode2);
+  conditionalModes.add(mode1);
+
+  op.add(conditionalModes);
+
+  return op;
 }
 
+class _TestOperationMode extends OperationMode {
+  bool isSelected = false;
+
+  _TestOperationMode.testInit(String initName) {
+    name = initName;
+  }
+
+  @override
+  Future<void> select(ControlledDevice unUsedDevice,
+      OperationModes? parentModes) async {
+    log.info('testOperation $name selected');
+    isSelected = true;
+  }
+}
 OperationMode _operationMode(String n1, String n2) {
   OperationMode x = OperationMode();
   x.name = n1;
@@ -355,13 +488,14 @@ OperationMode _operationMode(String n1, String n2) {
 Future <OperationModes> _testInitOperationModes(ElectricityPriceTable electricityPriceTable) async {
   myEstates.clearDataStructures();
   Estate estate = Estate();
-  estate.init('estate name','e1', 'wifinothere');
+  estate.init('estate name', 'wifinothere');
   myEstates.addEstate(estate);
 
   // Create a mock electricity price table.
   ElectricityPrice ep = await addElectricityPrice(estate, 'fake service');
 
-  ep.data = electricityPriceTable;
+  ep.electricity.data = electricityPriceTable;
+  ep.electricity.poke();
 
   return estate.operationModes;
 }

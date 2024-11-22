@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
-import '../../../main.dart';
 import '../air_heat_pump.dart';
 import 'edit_air_pump_view.dart';
 
@@ -50,7 +49,7 @@ class _AirHeatPumpState extends State<AirHeatPumpOverview> {
                   widget.callback();
                   Navigator.pop(context, true);
                 }),
-            title: appTitle(myAirHeatPumpDevice.name),
+            title: appTitleOld(myAirHeatPumpDevice.name),
           ), // new line
           body: SingleChildScrollView(
               child: Column(children: <Widget>[
@@ -79,8 +78,8 @@ class _AirHeatPumpState extends State<AirHeatPumpOverview> {
                             builder: (context) {
                               return EditAirPumpView(
                                   estate: myEstates.currentEstate(),
-                                  airHeatPumpInput: widget.airHeatPump as Functionality,
-                                  callback: (){widget.callback(); setState(() {});});
+                                  createNew: false,
+                                  airHeatPumpInput: widget.airHeatPump);
                             }
                           ));
                           widget.callback();
@@ -111,13 +110,13 @@ Widget airHeatPumpSummary(MitsuHeatPumpDevice myAirHeatPumpDevice) {
             color: observationSymbolColor(myAirHeatPumpDevice.observationLevel()),
           ),
         ),
-        Expanded(
+        const Expanded(
           flex: 6,
           child:
-          Column(
+            const Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                Text('Ulkolämpötila:'),
+                const Text('Ulkolämpötila:'),
                 Text('Sisälämpötila: '),
                 Text('Haluttu lämpötila: '),
                 Text('Tuuletusteho:'),

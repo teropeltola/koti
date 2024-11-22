@@ -1,12 +1,20 @@
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'package:koti/devices/my_device_info.dart';
 import 'package:koti/operation_modes/hierarcical_operation_mode.dart';
 
 void main() {
+  setUpAll(() async {
+    SharedPreferences.setMockInitialValues({});
+    await initMySettings();
+  });
+
   group('FunctionalityAndOperationMode', () {
     test('fromJson creates an instance from a JSON map', () {
       final json = {
-        'functionalityName': 'TestFunctionality',
+        'functionalityId': 'TestFunctionality',
         'operationName': 'TestOperation'
       };
 
@@ -21,7 +29,7 @@ void main() {
 
       final json = functionalityAndOperationMode.toJson();
 
-      expect(json['functionalityName'], 'TestFunctionality');
+      expect(json['functionalityId'], 'TestFunctionality');
       expect(json['operationName'], 'TestOperation');
     });
   });
@@ -31,11 +39,11 @@ void main() {
       final json = {
         'items': [
           {
-            'functionalityName': 'TestFunctionality1',
+            'functionalityId': 'TestFunctionality1',
             'operationName': 'TestOperation1'
           },
           {
-            'functionalityName': 'TestFunctionality2',
+            'functionalityId': 'TestFunctionality2',
             'operationName': 'TestOperation2'
           }
         ]
@@ -60,9 +68,9 @@ void main() {
       final json = hierarchicalOperationMode.toJson();
 
       expect(json['items'].length, 2);
-      expect(json['items'][0]['functionalityName'], 'TestFunctionality1');
+      expect(json['items'][0]['functionalityId'], 'TestFunctionality1');
       expect(json['items'][0]['operationName'], 'TestOperation1');
-      expect(json['items'][1]['functionalityName'], 'TestFunctionality2');
+      expect(json['items'][1]['functionalityId'], 'TestFunctionality2');
       expect(json['items'][1]['operationName'], 'TestOperation2');
     });
 

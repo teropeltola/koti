@@ -9,6 +9,8 @@ import '../../logic/dropdown_content.dart';
 import '../../look_and_feel.dart';
 import '../conditional_operation_modes.dart';
 
+OperationCondition debugOperationCondition = OperationCondition();
+
 class ConditionalOperationView extends StatefulWidget {
   final ConditionalOperationModes conditions;
   const ConditionalOperationView({super.key, required this.conditions});
@@ -18,8 +20,6 @@ class ConditionalOperationView extends StatefulWidget {
 }
 
 class ConditionalOperationViewState extends State<ConditionalOperationView> {
-
-  late DropdownContent possibleOperationModeNames;
 
   @override
   void initState() {
@@ -66,13 +66,15 @@ class ConditionalOperationViewState extends State<ConditionalOperationView> {
                     OperationCondition oC = OperationCondition();
                     oC.conditionType = OperationConditionType.notDefined;
                     widget.conditions.add( ConditionalOperationMode(oC, ResultOperationMode('')));
+                    widget.conditions.conditions.last.draft = true;
+                    // edit added condition
                     setState(() {});
                   },
                   child: const Text(
                     'Lisää uusi sääntö',
                     maxLines: 1,
                     style: TextStyle(color: mySecondaryFontColor),
-                    textScaleFactor: 2.0,
+                    textScaler: const TextScaler.linear(2.0),
                   ),
                 ),
           ]),
@@ -108,12 +110,65 @@ class ConditionalOperationViewState extends State<ConditionalOperationView> {
               },
 
             ),
-            ],))
-              ),
-        ]);
+            Card(
+              key: Key('Anchor'),
+              elevation: 6,
+              margin: const EdgeInsets.all(1),
+                child:
+                  anchorCard(widget.conditions, () {setState(() {});})
+            )
+        ])
+      )
+    )
+    ]
+    );
   }
 }
 
+List<String> findNames(ConditionalOperationModes condition) {
+  return condition.operationModes.operationModeNames();
+}
+
+Widget anchorCard(
+    ConditionalOperationModes condition,
+    Function callback
+) {
+  List<String> alternatives = findNames(condition);
+  alternatives.remove(condition.name);
+  if (alternatives.isEmpty) {
+    return Text('TYHJÄ');
+  }
+  else {
+    if (condition.anchorConditionName.isEmpty) {
+      condition.anchorConditionName = alternatives[0];
+    }
+
+    int index = alternatives.indexOf(condition.anchorConditionName);
+    DropdownContent possibleOperationModes = DropdownContent(
+        alternatives, '', index);
+
+    return ListTile(
+      title:
+      Row(children: [
+        Expanded(flex: 1,
+            child: Text('Muuten tila: ${condition.anchorConditionName}')),
+        Expanded(
+            flex: 1,
+            child: MyDropdownWidget(
+                keyString: 'possibleOperationModesForAnchor',
+                dropdownContent: possibleOperationModes,
+                setValue: (val) {
+                  var x = val;
+                  condition.anchorConditionName =
+                      possibleOperationModes.currentString();
+                  callback();
+                }
+            )
+        )
+      ],),
+    );
+  }
+}
 
 
 DropdownContent _comparisonOptions = DropdownContent(OperationComparisons.comparisonText,'',0);
@@ -129,12 +184,12 @@ Widget _conditionParameters(BuildContext context, OperationCondition condition, 
     case OperationConditionType.spotPrice: {
       return Column(children: [
         Row(children:[
-          Expanded(flex: 5, child: MyDropdownWidget(key:Key('comparisonOptions'),dropdownContent: _comparisonOptions ,
+          Expanded(flex: 5, child: MyDropdownWidget(keyString: 'comparisonOptions',dropdownContent: _comparisonOptions ,
               setValue: (val) {
                 condition.spot.comparison = OperationComparisons.values[val];
                 callback();
               })),
-          Expanded(flex: 4, child: MyDropdownWidget(key:Key('comparisonTypes'),dropdownContent: _spotPrizeOptions ,
+          Expanded(flex: 4, child: MyDropdownWidget(keyString:'comparisonTypes',dropdownContent: _spotPrizeOptions ,
               setValue: (val) {
                 condition.spot.myType = SpotPriceComparisonType.values[val];
                 callback();
@@ -207,7 +262,9 @@ ExpansionTile editConditionalOperationMode(
             Expanded(
               flex: 1,
               child: Text('Määrittele ehto:')),
-            Expanded(flex: 1, child: MyDropdownWidget(dropdownContent: conditionOptions,
+            Expanded(flex: 1, child: MyDropdownWidget(
+                keyString: 'conditionOptions$index',
+                dropdownContent: conditionOptions,
               setValue: (val) {
                 items.conditions[index].condition.conditionType = OperationConditionType.values[val];
                 callback();
@@ -223,7 +280,9 @@ ExpansionTile editConditionalOperationMode(
             Expanded(flex: 1, child: Text('toimintotila:')),
             Expanded(
               flex: 1,
-              child: MyDropdownWidget(dropdownContent: possibleOperationModes,
+              child: MyDropdownWidget(
+                keyString: 'possibleOperationModes$index',
+                  dropdownContent: possibleOperationModes,
                 setValue: (val) {
                   var x = val;
                   items.conditions[index].result.operationModeName = possibleOperationModes.currentString();
@@ -261,7 +320,7 @@ ExpansionTile editConditionalOperationMode(
           children: [
             IconButton(
               icon: const Icon(Icons.edit,
-                color: mySecondaryFontColor, size: 40),
+                color: defaultIconColor, size: 40),
               tooltip: 'muokkaa ehdollista toimintoa',
               onPressed: () async {
                 items.conditions[index].draft = true;
@@ -270,7 +329,7 @@ ExpansionTile editConditionalOperationMode(
             ),
             IconButton(
                 icon: const Icon(Icons.delete,
-                    color: mySecondaryFontColor, size: 40),
+                    color: defaultIconColor, size: 40),
                 tooltip: 'poista tämä ehdollinen toiminto',
                 onPressed: () async {
                   bool doDelete = await askUserGuidance(context, 'Komennolla tuhotaan tämä ehdollinen toiminto eikä sitä voi perua.', 'Haluatko tuhota toimintatilan?');
@@ -319,6 +378,10 @@ Widget _timeRange(BuildContext context, OperationCondition operationCondition, F
         disabledColor: Colors.red.withOpacity(0.5),
       );
       if (timeRange != null) {
+        //TODO: This hack global variable is used for integration testing to update the timeRange
+        // this can be deleted when integration testing is capable to modify time ranges
+        debugOperationCondition = operationCondition;
+
         operationCondition.timeRange = MyTimeRange(startTime: timeRange.startTime, endTime: timeRange.endTime);
       }
       callback();
@@ -327,7 +390,7 @@ Widget _timeRange(BuildContext context, OperationCondition operationCondition, F
       _timeRangeToString(operationCondition.timeRange),
       maxLines: 1,
       style: TextStyle(color: mySecondaryFontColor),
-      textScaleFactor: 2.0,
+      textScaler: const TextScaler.linear(2.0),
     ),
   );
 }
@@ -353,7 +416,7 @@ String _conditionText(OperationCondition condition) {
       }
     }
     default:
-      return 'odota vähän';
+      return 'ei määritelty';
   }
 }
 

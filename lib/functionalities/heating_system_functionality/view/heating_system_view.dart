@@ -17,6 +17,7 @@ class HeatingSystemView extends FunctionalityView {
   }
 
   ButtonStyle myButtonStyle() {
+    // TODO: Tässä pitäisi laskea hälytystaso kaikille laitteille
     ObservationLevel observationLevel = (myFunctionality as HeatingSystem).myOuman().observationLevel();
     return (observationLevel == ObservationLevel.alarm) ? buttonStyle(Colors.red, Colors.white) :
     (observationLevel == ObservationLevel.warning) ? buttonStyle(Colors.yellow, Colors.white) :
@@ -78,14 +79,12 @@ class HeatingSystemView extends FunctionalityView {
   @override
   String subtitle() {
     Functionality functionality = myFunctionality as Functionality;
-    return functionality.device.name;
-
-    return 'Tapanila';
+    return functionality.connectedDevices[0].name;
   }
 
 
 }
-
+/*
 const String networkServiceProblemInfo = 'Emme saa yhteyttä säätietoihin, joten tätä palvelua ei voi käyttää.';
 
 
@@ -114,9 +113,10 @@ class WeatherExplorer extends StatelessWidget {
       ..loadRequest(Uri.parse(weatherUrl));
     return Scaffold(
       appBar: AppBar(
-        title: appTitle('Sää'),
+        title: appIconAndTitle('','Sää'),
       ),// new line
       body: WebViewWidget( controller: controller ),
     );
   }
 }
+*/
