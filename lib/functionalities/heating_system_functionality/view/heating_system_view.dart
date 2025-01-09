@@ -13,8 +13,7 @@ import '../heating_system.dart';
 
 class HeatingSystemView extends FunctionalityView {
 
-  HeatingSystemView(dynamic myFunctionality) : super(myFunctionality) {
-  }
+  HeatingSystemView();
 
   ButtonStyle myButtonStyle() {
     // TODO: Tässä pitäisi laskea hälytystaso kaikille laitteille
@@ -34,7 +33,7 @@ class HeatingSystemView extends FunctionalityView {
             builder: (context) {
               //HeatingSystem heatingSystem = myFunctionality as HeatingSystem;
               //return HeatingOverview(heatingSystem:heatingSystem);
-              return HeatingOverview(heatingSystem:myFunctionality, callback: callback);
+              return HeatingOverview(heatingSystem:myFunctionality() as HeatingSystem, callback: callback);
             },
           ));
           callback();
@@ -66,9 +65,8 @@ class HeatingSystemView extends FunctionalityView {
   }
 */
 
-  HeatingSystemView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
-    //super.fromJson(json);
-    myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '') as HeatingSystem;
+  HeatingSystemView.fromJson(Map<String, dynamic> json) {
+    super.fromJson(json);
   }
 
   @override

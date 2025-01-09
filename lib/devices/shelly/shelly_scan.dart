@@ -9,6 +9,7 @@ const String shellyBonsoirService = '_shelly._tcp';
 const Map<String, String> _knownShellyDevices = {
   'shellyplusplugs' : 'ShellyTimerSwitch',
   'shellypro2' : 'ShellyPro2',
+  'shellyblugwg3' : 'ShellyBluGw'
 };
 
 String findShellyTypeName(String s) {

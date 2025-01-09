@@ -18,6 +18,8 @@ class AirHeatPump extends Functionality {
   static const String functionalityName = 'ilmalämpöpumppu';
 
   AirHeatPump() {
+    myView = AirHeatPumpView();
+    myView.setFunctionality(this);
   }
 
   AirHeatPump.failed() {
@@ -29,7 +31,7 @@ class AirHeatPump extends Functionality {
     operationModes.initModeStructure(
         estate: myEstates.currentEstate(),
         parameterSettingFunctionName: airHeatParameterFunction,
-        deviceId: '',
+        deviceId: connectedDevices.isNotEmpty ? connectedDevices[0].id : '',
         deviceAttributes: [DeviceAttributeCapability.directControl],
         setFunction: airpumpSetOperationParametersOn,
         getFunction: getFunction );
@@ -47,10 +49,13 @@ class AirHeatPump extends Functionality {
     return connectedDevices[0] as MitsuHeatPumpDevice;
   }
 
+  /*
   @override
   FunctionalityView myView() {
-    return AirHeatPumpView(this);
+    return AirHeatPumpView(this.id);
   }
+
+   */
 
 
   @override
@@ -79,6 +84,8 @@ class AirHeatPump extends Functionality {
 
   @override
   AirHeatPump.fromJson( Map<String, dynamic> json) : super.fromJson(json) {
+    myView = AirHeatPumpView();
+    myView.setFunctionality(this);
     initStructures();
   }
 
@@ -100,32 +107,10 @@ class AirHeatPump extends Functionality {
         {
           return EditAirPumpView(
               estate: estate,
-              createNew: createNew,
-              airHeatPumpInput: this
-          );
+              airHeatPumpInput: this,
+              callback: (){}
+         );
         }));
     return success;
   }
-}
-
-Future <AirHeatPump> createAirHeatPumpSystem(BuildContext context, Estate estate, String serviceName) async {
-  AirHeatPump airHeatPump = AirHeatPump();
-  await airHeatPump.init();
-
-  bool success = await Navigator.push(context, MaterialPageRoute(
-      builder: (context)
-      {
-        return EditAirPumpView(
-          estate: estate,
-          createNew: true,
-          airHeatPumpInput: airHeatPump,
-        );
-      }
-  ));
-
-  if (! success) {
-    airHeatPump.setFailed();
-  }
-  return airHeatPump;
-
 }

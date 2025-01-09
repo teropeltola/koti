@@ -53,3 +53,18 @@ Future <void> tapKey(WidgetTester tester, String keyText) async {
   await tester.tap(textForm);
   await tester.pumpAndSettle();
 }
+
+Future <void> tapIcon(WidgetTester tester, IconData iconData) async {
+  await tester.pumpAndSettle();
+  await tester.scrollUntilVisible(
+      find.byIcon(iconData), 500.0, scrollable: find.byType(Scrollable).last);
+  final Finder icon = find.byIcon(iconData);
+  await tester.tap(icon);
+  await tester.pumpAndSettle();
+}
+
+Future <void> toGetScreenUpdatesDone() async {
+  await Future.delayed(const Duration(seconds: 8));
+}
+
+

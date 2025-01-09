@@ -25,6 +25,8 @@ import 'json/shelly_switch_config.dart';
 const String _http = 'http://';
 const String _rpc = '/rpc/';
 
+const int _retryIntervalInMinutes = 2;
+
 class ShellyDevice extends Device {
 
   String ipAddress = '';
@@ -56,8 +58,21 @@ class ShellyDevice extends Device {
     }
     else {
       state.setState(StateModel.notConnected);
+      _setupRetryTimer();
     }
   }
+
+  void _setupRetryTimer() {
+    const Duration delay =  Duration(
+      minutes: _retryIntervalInMinutes,
+    );
+
+    // Schedule the daily task at given time
+    Timer _timer = Timer(delay, () async {
+      await init();
+    });
+  }
+
 
   void initScript(ShellyDevice myDevice) {
     script = ShellyScript(myDevice);
@@ -80,11 +95,8 @@ class ShellyDevice extends Device {
 
   Future <String> rpcCall(String commandName) async {
     if (! state.connected()) {
-      await init();
-      if (! state.connected()) {
-        // todo: what is the right answer here to tell that connection is not available?
-        return '';
-      }
+      // todo: what is the right answer here to tell that connection is not available?
+      return '';
     }
     try {
       var uri = Uri.parse(_cmd(commandName));
@@ -99,8 +111,13 @@ class ShellyDevice extends Device {
       else {
         errorClarification = 'statusCode = ${response.statusCode}';
         var x = utf8.decode(response.bodyBytes);
-        log.error('${name}/$commandName/rpcCall error: $errorClarification, ${x.toString()}');
-        log.info(uri.toString());
+        if (response.statusCode != 500) {
+          // status code 500 is a normal response with non existence service
+          log.error(
+              '${name}/$commandName/rpcCall error: $errorClarification, ${x
+                  .toString()}');
+          log.info(uri.toString());
+        }
         return '';
       }
     }
@@ -201,6 +218,7 @@ class ShellyDevice extends Device {
 
     try {
       String response =  await rpcCall('Switch.Set?id=$index&on=${turnSwitchOn?'true':'false'}');
+      int i= 1;
     }
     catch (e, st) {
       log.handle(e, st, 'exception in shelly Switch.GetStatus');

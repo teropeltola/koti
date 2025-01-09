@@ -6,6 +6,7 @@ import 'package:koti/interfaces/weather_forecast_provider_data.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
+import '../../../view/interrupt_editing_widget.dart';
 import '../../../view/ready_widget.dart';
 import '../weather_forecast.dart';
 
@@ -22,7 +23,8 @@ class _WeatherServices {
 
   void init(WeatherForecast weatherForecast) {
     clear();
-    for (var w in weatherForecast.weatherServices) {
+    for (var device in weatherForecast.connectedDevices) {
+      WeatherServiceProvider w = device as WeatherServiceProvider;
       items.add(_WeatherServiceItem(w.name, w.weatherPage(), w.title()));
     }
   }
@@ -55,19 +57,20 @@ class _WeatherServices {
 
 
 class EditWeatherForecastView extends StatefulWidget {
-  final bool createNew;
   final Estate estate;
   final WeatherForecast originalWeatherForecast;
+  final Function callback;
 
   const EditWeatherForecastView({Key? key,
-    required this.createNew,
     required this.estate,
-    required this.originalWeatherForecast}) : super(key: key);
+    required this.originalWeatherForecast,
+    required this.callback}) : super(key: key);
   @override
   _EditWeatherForecastViewState createState() => _EditWeatherForecastViewState();
 }
 
 class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
+  bool createNew = false;
   final FocusNode _focusNode = FocusNode();
   final myLocationNameController = TextEditingController();
 
@@ -78,8 +81,11 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
   @override
   void initState() {
     super.initState();
-    if (widget.createNew) {
-      weatherForecast = WeatherForecast();
+    // todo: hack - this way we know that we are creating a new functionality
+    createNew = widget.originalWeatherForecast.locationName == '';
+
+    if (createNew) {
+      weatherForecast = widget.originalWeatherForecast;
     }
     else {
       weatherForecast = widget.originalWeatherForecast.clone();
@@ -104,20 +110,11 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              tooltip: 'Palaa takaisin tallentamatta muutoksia',
-              onPressed: () async {
-                // check if the user wants to cancel all the changes
-                bool doExit = await askUserGuidance(context,
-                    'Poistuttaessa muutokset eivät säily.',
-                    'Haluatko poistua muutossivulta ?'
-                );
-                if (doExit) {
-                  Navigator.of(context).pop();
-                }
-              }),
-          title: appIconAndTitle('', 'muokkaa sääsivuja'),
+          leading: interruptEditingWidget(context, () async {
+            weatherForecast.remove();
+            widget.callback();
+          }),
+          title: appIconAndTitle(widget.estate.name, 'muokkaa sääsivuja'),
         ), // new line
         body: SingleChildScrollView(
             child: Column(children: <Widget>[
@@ -159,19 +156,18 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
                       ListView.builder(
                           scrollDirection: Axis.vertical,
                           shrinkWrap: true,
-                          itemCount: weatherForecast.weatherServices.length,
+                          itemCount: weatherForecast.connectedDevices.length,
                           itemBuilder: (context, index) => Card(
                               elevation: 6,
                               margin: const EdgeInsets.all(10),
                               child: ListTile(
-                                  title: Text(weatherForecast.weatherServices[index].name),
-                                  subtitle: Text(weatherForecast.weatherServices[index].locationName),
+                                  title: Text(weatherForecast.connectedDevices[index].name),
+                                  subtitle: Text((weatherForecast.connectedDevices[index] as WeatherServiceProvider).locationName),
                                   trailing: IconButton(
                                       icon: Icon(Icons.delete),
                                       tooltip: 'poista sääpalvelu',
                                       onPressed: () async {
-                                        var weatherService = weatherForecast.weatherServices.removeAt(index);
-                                        weatherForecast.connectedDevices.remove(weatherService);
+                                        var weatherService = weatherForecast.connectedDevices.removeAt(index) as WeatherServiceProvider;
                                         weatherService.dispose();
                                         refresh();
                                       })
@@ -208,7 +204,6 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
                                               availableServices.locationName(index));
                                         weatherServiceProvider.name = availableServices.items[index].name;
                                         weatherForecast.pair(weatherServiceProvider);
-                                        weatherForecast.weatherServices.add(weatherServiceProvider);
                                         refresh();
                                         setState(() {});
                                       }),
@@ -223,31 +218,27 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
                 if (weatherForecast.locationName == '') {
                   informMatterToUser(context,'Paikan nimi ei voi olla tyhjä', 'Korjaa nimi!');
                 }
-                else if (weatherForecast.weatherServices.isEmpty) {
+                else if (weatherForecast.connectedDevices.isEmpty) {
                   informMatterToUser(context,'Sinulla ei ole yhtään sääpalvelua määritelty', 'Lisää sääpalvelu!');
                 }
                 else {
-                  if (widget.createNew) {
-                    // OumanDevice ouman = await getOuman(context, estate);
-                    // todo: create temperature device that connects all temp sources
-                    // weatherForecast.pair(ouman);
-                  }
-                  else {
-                    for (var weatherService in widget.originalWeatherForecast.weatherServices) {
+                  // remove the old version
+                  if (! createNew) {
+                    for (var weatherService in widget.originalWeatherForecast.connectedDevices) {
                       widget.estate.removeDevice(weatherService.id);
                     }
-                    widget.estate.removeView(widget.originalWeatherForecast.myView());
                     widget.estate.removeFunctionality(widget.originalWeatherForecast);
+                    widget.originalWeatherForecast.remove();
                   }
+                  // create new version
+                  // note: we don't call init because everything has been created already
                   widget.estate.addFunctionality(weatherForecast);
-                  for (var weatherService in weatherForecast.weatherServices) {
+                  for (var weatherService in weatherForecast.connectedDevices) {
                     widget.estate.addDevice(weatherService);
                   }
-                  widget.estate.addView(WeatherForecastView(weatherForecast));
 
                   // weatherForecast.
-                  showSnackbarMessage(
-                      'Muutokset talletettu!');
+                  showSnackbarMessage('Muutokset talletettu!');
                   Navigator.pop(context, true);
                 }
 
@@ -257,4 +248,21 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
     );
   }
 }
+
+
+Future<bool> createWeatherForecastSystem(BuildContext context, Estate estate) async {
+
+  bool success = await Navigator.push(
+      context, MaterialPageRoute(
+    builder: (context) {
+      return EditWeatherForecastView(
+          estate: estate,
+          originalWeatherForecast: WeatherForecast(), // create a new one
+          callback: () {}
+      );
+    },
+  ));
+  return success;
+}
+
 

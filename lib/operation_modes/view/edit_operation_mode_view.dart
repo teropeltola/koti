@@ -48,12 +48,12 @@ class _PossibleOpModes {
     return max(0, index);
   }
 
-  OperationMode operationMode(int index) {
+  OperationMode operationMode(String estateName, int index) {
     if (list[index].operationMode == null) {
       list[index].autoCreated = true;
       list[index].operationMode =
           operationModeTypeRegistry.createObject(list[index].name);
-      list[index].operationMode!.init(_operationModes);
+      list[index].operationMode!.init(estateName, _operationModes);
     }
     return list[index].operationMode!;
   }
@@ -190,7 +190,7 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                   (widget.operationModes.types.alternatives().isEmpty)
                   ? widget.parameterFunction(
                       alternativeTypes.currentString(),
-                      opModePool.operationMode(opIndex),
+                      opModePool.operationMode(widget.estate.name, opIndex),
                       widget.estate,
                       widget.operationModes,
                       (newEditedOperationMode){
@@ -226,7 +226,7 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                                   ),
                               ),
                               widget.parameterFunction(
-                                opModePool.operationMode(opIndex),
+                                opModePool.operationMode(widget.estate.name, opIndex),
                                 widget.estate,
                                 widget.operationModes
                               )
@@ -235,7 +235,7 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                     readyWidget(() async {
                       if (insertingNewOperationMode()) {
                         if (widget.operationModes.newNameOK(operationModeName)) {
-                          OperationMode newOpMode = opModePool.operationMode(opIndex);
+                          OperationMode newOpMode = opModePool.operationMode(widget.estate.name, opIndex);
                           newOpMode.name = operationModeName;
                           widget.operationModes.add(newOpMode);
                           log.info('${widget.estate.name}: toimintotila "$operationModeName" lisätty');
@@ -253,7 +253,7 @@ class _EditOperationModeViewState extends State<EditOperationModeView> {
                         }
                       }
                       else if ((operationModeName == widget.initOperationModeName) || widget.operationModes.newNameOK(operationModeName)) {
-                        OperationMode editedOpMode = opModePool.operationMode(opIndex);
+                        OperationMode editedOpMode = opModePool.operationMode(widget.estate.name, opIndex);
                         editedOpMode.name = operationModeName;
                         log.info(
                             '${widget.estate.name}: toimintotila "$operationModeName" päivitetty');

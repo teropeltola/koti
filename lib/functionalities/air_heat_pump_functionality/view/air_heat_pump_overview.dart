@@ -78,8 +78,8 @@ class _AirHeatPumpState extends State<AirHeatPumpOverview> {
                             builder: (context) {
                               return EditAirPumpView(
                                   estate: myEstates.currentEstate(),
-                                  createNew: false,
-                                  airHeatPumpInput: widget.airHeatPump);
+                                  airHeatPumpInput: widget.airHeatPump,
+                                  callback: (){});
                             }
                           ));
                           widget.callback();

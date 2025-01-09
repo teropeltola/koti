@@ -140,7 +140,8 @@ class _EstateViewState extends State<EstateView> {
                                   },
                                 )
                             );
-                            setState(() {});
+                            // local variables like currentEstate need to be updated
+                            refresh();
                           }
                       ),
                       IconButton(

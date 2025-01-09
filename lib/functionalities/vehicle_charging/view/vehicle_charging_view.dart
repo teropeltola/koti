@@ -6,10 +6,9 @@ import '../../functionality/view/functionality_view.dart';
 
 class VehicleChargingView extends FunctionalityView {
 
-  VehicleChargingView(dynamic myFunctionality) : super(myFunctionality) {
-  }
+  VehicleChargingView();
 
-  VehicleChargingView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+  VehicleChargingView.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
   }
 

@@ -16,9 +16,13 @@ class GeneralAgent extends Functionality {
   static const String functionalityName = 'agentti';
 
   GeneralAgent() {
+    myView = GeneralAgentView();
+    myView.setFunctionality(this);
   }
 
   GeneralAgent.failed() {
+    myView = GeneralAgentView();
+    myView.setFunctionality(this);
     setFailed();
   }
 
@@ -48,11 +52,13 @@ class GeneralAgent extends Functionality {
   }
 
 
-
+/*
   @override
   FunctionalityView myView() {
-    return GeneralAgentView(this);
+    return GeneralAgentView(this.id);
   }
+
+ */
 
 
   @override
@@ -89,6 +95,8 @@ class GeneralAgent extends Functionality {
 
   @override
   GeneralAgent.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+    myView = GeneralAgentView();
+    myView.setFunctionality(this);
   }
 
 }

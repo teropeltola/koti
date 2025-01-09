@@ -162,7 +162,6 @@ class _EditDeviceViewState extends State<EditDeviceView> {
                         newFunctionality.pair(newDevice);
                         newFunctionality.init();
                         widget.estate.addFunctionality(newFunctionality);
-                        widget.estate.addView(newFunctionality.myView());
                         log.info('${widget.estate.name}: laite ${newDevice.name}(${newDevice.id}) asetettu toimintoon "${_functionality.currentString()}"');
                       }
                       else {

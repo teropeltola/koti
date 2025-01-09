@@ -42,7 +42,7 @@ class Estate extends Environment {
   }
 
   String get myWifi => myWifiDevice().name;
-  set myWifi(String newName) { this.myWifiDevice().name = newName; }
+//  set myWifi(String newName) { this.myWifiDevice().name = newName; }
 
   bool get myWifiIsActive => myWifiDevice().iAmActive.value;
 
@@ -86,13 +86,12 @@ class Estate extends Environment {
   Estate clone() {
     Estate newEstate = Estate.fromJson(toJson());
     newEstate.initOperationModes();
-    newEstate.initDevicesAndFunctionalities(); // TODO: no waiting - check the risk?
 
     return newEstate;
   }
 
   // note: this is called both with and without waiting
-  Future<void> initDevicesAndFunctionalities() async {
+  Future<bool> initDevicesAndFunctionalities() async {
     // first non waiting activities
     for (var d in devices) {
       d.myEstateId = id;
@@ -107,7 +106,9 @@ class Estate extends Environment {
     }
     for (var f in features) {
       await f.init();
+      addView(f.myView);
     }
+    return true;
   }
 
   ElectricityPrice myDefaultElectricityPrice() {
@@ -160,6 +161,7 @@ class Estate extends Environment {
 
     allFunctionalities.addFunctionality(newFunctionality);
     features.add(newFunctionality);
+    addView(newFunctionality.myView);
   }
 
   void removeDevice(String deviceId) {
@@ -173,6 +175,7 @@ class Estate extends Environment {
 
   void removeFunctionality(Functionality functionality) {
 
+    _removeView(functionality.id);
     int index = _functionalityIndex(functionality.id);
     if (index >= 0) {
       features.removeAt(index);
@@ -186,8 +189,8 @@ class Estate extends Environment {
     views.add(newFunctionalityView);
   }
 
-  void removeView(FunctionalityView functionalityView) {
-    views.remove(functionalityView);
+  void _removeView(String functionalityId) {
+    views.removeWhere((e)=>e.myFunctionality().id == functionalityId);
   }
 
   void removeData(){
@@ -202,16 +205,28 @@ class Estate extends Environment {
 
     operationModes.clear();
   }
-
+/*
   void setViews() {
     views.clear();
   }
 
+
+ */
   List<String> operationModeNames() {
     List<String> names = operationModes.operationModeNames();
     features.forEach((e)=>names += e.operationModes.operationModeNames());
     names.sort();
     return names;
+  }
+
+
+  Device findDeviceWithService({required String deviceService}) {
+    for (var device in devices) {
+      if (device.services.offerService(deviceService)) {
+        return device;
+      }
+    }
+    return noDevice;
   }
 
   List<String> findPossibleDevices({required String deviceService}) {
@@ -269,16 +284,14 @@ class Estate extends Environment {
       );
   }
 
-
   Estate.fromJson(Map<String, dynamic> json){
     name = json['name'] ?? '';
     id = json['id'] ?? '';
 
     devices = List.from(json['devices']).map((e)=>extendedDeviceFromJson(e)).toList();
-    features = List.from(json['features']).map((e)=>extendedFunctionalityFromJson(this.name, e)).toList();
-    views = List.from(json['views']).map((e)=>extendedFunctionalityViewFromJson(e)).toList();
+    features = List.from(json['features']).map((e)=>extendedFunctionalityFromJson(e)).toList();
+    //views = List.from(json['views']).map((e)=>extendedFunctionalityViewFromJson(e)).toList();
     operationModes = OperationModes.fromJson(json['operationModes'] ?? {});
-
   }
 
   Map<String, dynamic> toJson() {
@@ -290,7 +303,7 @@ class Estate extends Environment {
     json['id'] = id;
     json['devices'] = devices.map((e)=>e.toJson()).toList();
     json['features'] = features.map((e)=>e.toJson()).toList();
-    json['views'] = views.map((e)=>e.toJson()).toList();
+    // json['views'] = views.map((e)=>e.toJson()).toList();
     json['operationModes'] = operationModes.toJson();
 
     return json;
@@ -306,9 +319,6 @@ Map<String, dynamic> _getParameters() {
   return {};
 }
 
-
-
-
 class Estates {
   List <Estate> estates = [];
   final EstateDataStorage _estateDataStorage =  EstateDataStorage();
@@ -317,13 +327,14 @@ class Estates {
 
   Estates();
 
-  Estate currentEstate () => ((currentIndex >= 0) && (currentIndex < nbrOfEstates()))
+  Estate currentEstate () => _candidateActive ? candidateEstate() : ((currentIndex >= 0) && (currentIndex < nbrOfEstates()))
                                 ? estates [currentIndex]
                                 : noEstates;
 
   int nbrOfEstates() => estates.length;
 
   Estate _candidateEstate = Estate();
+  bool _candidateActive = false;
 
   Estate candidateEstate() {
     return _candidateEstate;
@@ -409,6 +420,8 @@ class Estates {
           d2.connectedFunctionalities.add(f);
         }
         await f.init();
+        e.addView(f.myView);
+
       }
       e.initOperationModes();
     }
@@ -452,10 +465,11 @@ class Estates {
     int storedIndex = json['currentIndex'] ?? -1;
     if (estates.isEmpty) {
       currentIndex = -1;
-    } else if (estates.length == 1) {
-      currentIndex = 0;
     } else if (storedIndex < estates.length) {
       currentIndex = storedIndex;
+    }
+    else {
+      currentIndex = 0;
     }
   }
 
@@ -486,6 +500,7 @@ class Estates {
     else {
       log.error('Estate $clonedEstateName cloneCandidate failed');
     }
+    _candidateActive = true;
     return _candidateEstate;
   }
 
@@ -502,6 +517,15 @@ class Estates {
     }
     // set new object for the next possible candidate
     _candidateEstate = Estate();
+    _candidateActive = false;
+  }
+
+  void activateCandidate() {
+    _candidateActive = true;
+  }
+
+  void deactivateCandidate() {
+    _candidateActive = false;
   }
 
   Estate estate(String name) {

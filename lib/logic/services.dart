@@ -9,6 +9,10 @@ class Services {
     _services = initServices;
   }
 
+  void setServices(List<DeviceService> newServices) {
+    _services = newServices;
+  }
+
   bool offerService(String requestedServiceName) {
     return _services.indexWhere((s) => s.serviceName == requestedServiceName) != -1;
   }
@@ -37,24 +41,42 @@ class AttributeDeviceService extends DeviceService {
   }
 }
 
-class RWAsyncDeviceService<T> extends DeviceService {
+class DeviceServiceClass<T> extends DeviceService {
+  late T services;
 
-  late Future<void> Function(T) _set;
+  DeviceServiceClass({required String serviceName, required T services}) {
+    this.serviceName = serviceName;
+    this.services = services;
+  }
+}
+
+class RWAsyncDeviceServiceOldie<T> extends DeviceService {
+
+  late Future<void> Function(T, String caller) _set;
   late Future<T> Function() _get;
+  late T Function() _peek;
 
-  RWAsyncDeviceService({required String serviceName, required Future<void> Function (T) setFunction, required Future<T> Function() getFunction})
+  RWAsyncDeviceService({required String serviceName,
+                        required Future<void> Function (T, String) setFunction,
+                        required Future<T> Function() getFunction,
+                        required T Function() peekFunction})
   {
     this.serviceName = serviceName;
     _set = setFunction;
     _get = getFunction;
+    _peek = peekFunction;
   }
 
-  Future <void> set(T value) async {
-    await _set(value);
+  Future <void> set(T value, {String caller=''}) async {
+    await _set(value, caller);
   }
 
   Future<T> get() async {
     return await _get();
+  }
+
+  T peek() {
+    return _peek();
   }
 }
 

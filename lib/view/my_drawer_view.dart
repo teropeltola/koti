@@ -1,9 +1,14 @@
+
 import 'package:flutter/material.dart';
+import 'dart:async';
+
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:koti/app_configurator.dart';
 import 'package:koti/devices/shelly/shelly_script_code.dart';
 import 'package:koti/main.dart';
 import 'package:koti/view/data_structure_dump_view.dart';
+import 'package:koti/view/temperature_setting_widget.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../devices/device/device.dart';
@@ -18,6 +23,11 @@ import '../estate/view/edit_estate_view.dart';
 import '../estate/view/estate_list_view.dart';
 import '../functionalities/functionality/functionality.dart';
 import '../logic/diagnostics.dart';
+import '../logic/events.dart';
+import '../logic/observation.dart';
+import '../logic/my_workmanager.dart';
+import '../trend/trend.dart';
+import '../trend/trend_event.dart';
 import '../look_and_feel.dart';
 
 const _primaryDrawerFontColor = myPrimaryFontColor;
@@ -100,6 +110,34 @@ Drawer myDrawerView( BuildContext context,
 
          */
         ListTile(
+          leading: const Icon(Icons.temple_hindu,
+              color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Testaa kello', style: TextStyle(color: _primaryDrawerFontColor)),
+          onTap: () async {
+            events.write(myEstates.currentEstate().id, '', ObservationLevel.ok, 'Testi alkaa');
+            final prefs = await SharedPreferences.getInstance();
+            prefs.setInt("test",0);
+            print("Int from prefs in UI1: ${prefs.getInt("test")??98}");
+            myWorkManager.initialize();
+            myWorkManager.test1();
+            await Future.delayed(const Duration(seconds: 10));
+            await prefs.reload();
+            print("Int from prefs in UI2: ${prefs.getInt("test")??97}");
+            int i = 75;
+            myWorkManager.test2();
+            await Future.delayed(const Duration(seconds: 10));
+            await prefs.reload();
+            print("Int from prefs in UI2: ${prefs.getInt("test2")??50}");
+            await Future.delayed(const Duration(seconds: 10));
+            await prefs.reload();
+            print("Int from prefs in UI2: ${prefs.getInt("test2")??51}");
+            await Future.delayed(const Duration(seconds: 10));
+            await prefs.reload();
+            print("Int from prefs in UI2: ${prefs.getInt("test2")??52}");
+
+          },
+        ),
+        ListTile(
           leading: const Icon(Icons.speaker_notes,
               color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
           title: const Text('Loki', style: TextStyle(color: _primaryDrawerFontColor)),
@@ -135,6 +173,19 @@ Drawer myDrawerView( BuildContext context,
               diagnostics.diagnosticsLog.dumpDiagnosticsLogsToErrorLog();
               await _callLog(context);
             }
+          },
+        ),
+        ListTile(
+          leading: const Icon(Icons.event_note,
+              color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Tapahtumaloki', style: TextStyle(color: _primaryDrawerFontColor)),
+          onTap: () async {
+            Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (context) =>
+                      EventsView(),
+                )
+            );
           },
         ),
 
@@ -224,4 +275,147 @@ Future <void> _callLog(BuildContext context) async {
       )
   );
 }
+
+/*
+Future <bool> _testHive() async {
+
+  Trend trend = Trend();
+  await trend.init();
+  int i = 75;
+  assert(trend.nbrOfBoxes() == 1);
+
+  TrendBox<TrendEvent> o = trend.open<TrendEvent> ('observations');
+  await o.clearForTesting();
+  assert(o.boxSize()==0);
+  o.add(TrendEvent(DateTime(2024,12,5,20).millisecondsSinceEpoch, 'home', 'device1', ObservationLevel.informatic, 'obs1'));
+  List<TrendEvent> all = o.getAll();
+  assert(o.boxSize()==1);
+  addX(o, 100, DateTime(2024,12,5,21),1);
+  all = o.getAll();
+  assert(all.length == 101);
+  List<TrendEvent> last10 = o.getLastItems(10);
+  return true;
+}
+
+void addX(TrendBox<TrendEvent> box, int count, DateTime startingTime, int intervalInMinutes) {
+  for (int i=0; i<count; i++) {
+    box.add(TrendEvent(
+        startingTime
+            .add(Duration(minutes: i * intervalInMinutes))
+            .millisecondsSinceEpoch,
+        'home', 'device1', ObservationLevel.ok, 'interval $i'));
+  }
+}
+
+*/
+
+class EventsView extends StatefulWidget {
+  const EventsView({Key? key}) : super(key: key);
+
+  @override
+  State<EventsView> createState() => _EventsViewState();
+}
+
+class _EventsViewState extends State<EventsView> {
+
+  List<TrendEvent> myEvents = events.getAll();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+            appBar: AppBar(
+                title: appIconAndTitle('$appName','tapahtumat'),
+                backgroundColor: myPrimaryColor,
+                iconTheme: const IconThemeData(color:myPrimaryFontColor)
+            ),// new line
+            body: SingleChildScrollView( child: Column(children: <Widget>[
+              for (int index=myEvents.length-1; index>=0; index--)
+                showEvent(myEvents[index]),
+            ]
+            )
+            ),
+
+            bottomNavigationBar: Container(
+              height: bottomNavigatorHeight,
+              alignment: AlignmentDirectional.topCenter,
+              color: myPrimaryColor,
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    IconButton(
+                        icon: const Icon(Icons.share,
+                            color:myPrimaryFontColor,
+                            size:40),
+                        tooltip: 'jaa näyttö somessa',
+                        onPressed: () async {
+                        }
+                    ),
+                  ]),
+
+            )
+    );
+  }
+}
+
+class TestView extends StatefulWidget {
+  const TestView({Key? key}) : super(key: key);
+
+  @override
+  State<TestView> createState() => _TestViewState();
+}
+
+class _TestViewState extends State<TestView> {
+
+  List<TrendEvent> myEvents = events.getAll();
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+            title: appIconAndTitle('$appName','testaus'),
+            backgroundColor: myPrimaryColor,
+            iconTheme: const IconThemeData(color:myPrimaryFontColor)
+        ),// new line
+        body: SingleChildScrollView( child: Column(children: <Widget>[
+          Text('ttt'),
+          TemperatureSettingWidget(currentTarget: 22.0, currentTemperature: 19.0,
+              returnValue: (value){}),
+          TemperatureSettingWidget(currentTarget: 22.0, currentTemperature: 10.0,
+              returnValue: (value){}),
+          TemperatureSettingWidget(currentTarget: 22.0, currentTemperature: 30.0,
+              returnValue: (value){}),
+          TemperatureSettingWidget(currentTarget: 22.0, currentTemperature: 20.0,
+              returnValue: (value){}),
+        ]
+        )
+        ),
+
+    );
+  }
+}
+
+const int _intervalInMinutes = 10;
+
+void _testSetTimer() {
+  const Duration delay =  Duration(
+    minutes: _intervalInMinutes,
+  );
+
+  // Schedule a given time
+  Timer _timer = Timer(delay, () async {
+    events.write(myEstates.currentEstate().id, '', ObservationLevel.ok, "testi jatkuu" );
+    _testSetTimer();
+  });
+}
+
 

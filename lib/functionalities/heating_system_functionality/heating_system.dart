@@ -16,9 +16,13 @@ class HeatingSystem extends Functionality {
   MitsuHeatPumpDevice myAirPump = MitsuHeatPumpDevice();
 
   HeatingSystem() {
+    myView = HeatingSystemView();
+    myView.setFunctionality(this);
   }
 
   HeatingSystem.failed() {
+    myView = HeatingSystemView();
+    myView.setFunctionality(this);
     setFailed();
   }
 
@@ -30,12 +34,12 @@ class HeatingSystem extends Functionality {
   OumanDevice myOuman() {
     return connectedDeviceOf('OumanDevice') as OumanDevice;
   }
-
+/*
   @override
   FunctionalityView myView() {
-    return HeatingSystemView(this);
+    return HeatingSystemView(this.id);
   }
-
+*/
 
   @override
   Future<bool> editWidget(BuildContext context, bool createNew, Estate estate, Functionality functionality, Device device) async {
@@ -72,6 +76,8 @@ class HeatingSystem extends Functionality {
 
   @override
   HeatingSystem.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+    myView = HeatingSystemView();
+    myView.setFunctionality(this);
     myAirPump = allDevices.findDevice(json['myAirPump'] ?? '') as MitsuHeatPumpDevice;
   }
 

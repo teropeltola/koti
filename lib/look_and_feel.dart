@@ -1,5 +1,6 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:talker/talker.dart';
 
 import 'estate/estate.dart';
@@ -10,6 +11,7 @@ const appName = 'Koti';
 const familyDeliminator = '/';
 
 const String celsius =  "\u2103";
+const String degree =  "\u00B0";
 const double noValueDouble = -99.9987654;
 
 ThemeData myTheme = ThemeData(
@@ -243,5 +245,34 @@ String currencyCentInText(double cents) {
   else {
     return '${cents.toStringAsFixed(2)} c';
   }
+}
+
+// used Date and Time
+const myDateTimeFormat = 'dd.MM.yyyy HH.mm';
+const myDateTimeWithoutYear = 'dd.MM. HH.mm';
+const myDateFormat = 'dd.MM.yyyy';
+const myTimeFormat = 'HH.mm';
+
+String myDateTimeFormatter(DateTime dateTime, {bool withoutYear=false}) {
+  final formatter = DateFormat(withoutYear ? myDateTimeWithoutYear : myDateTimeFormat);
+
+  return formatter.format(dateTime);
+}
+
+String myDateFormatter(DateTime dateTime) {
+  final formatter = DateFormat(myDateFormat);
+
+  return formatter.format(dateTime);
+}
+
+String myTimeFormatter(int hour, int minutes) {
+  var formatter = NumberFormat('00');
+
+  return '${formatter.format(hour)}.${formatter.format(minutes)}';
+}
+
+String timestampToDateTimeString(int timestamp, {bool withoutYear=false}) {
+  DateTime d = DateTime.fromMillisecondsSinceEpoch(timestamp);
+  return myDateTimeFormatter(d,withoutYear:withoutYear);
 }
 

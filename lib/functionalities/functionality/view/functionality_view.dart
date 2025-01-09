@@ -12,9 +12,18 @@ import '../../weather_forecast/view/weather_forecast_view.dart';
 
 class FunctionalityView {
 
-  dynamic myFunctionality;
+  late Functionality _myFunctionality;
 
-  FunctionalityView(this.myFunctionality);
+  FunctionalityView() {
+  }
+
+  void setFunctionality(Functionality functionality) {
+    _myFunctionality = functionality;
+  }
+
+  Functionality myFunctionality() {
+    return _myFunctionality;
+  }
 
   ButtonStyle buttonStyle (Color backgroundColor, Color foregroundColor) {
     return   ElevatedButton.styleFrom(
@@ -31,7 +40,7 @@ class FunctionalityView {
   }
 
   Widget shortOperationModeText() {
-    Functionality functionality = myFunctionality as Functionality;
+    Functionality functionality = myFunctionality() as Functionality;
     if (functionality.operationModes.showCurrent())  {
       return Container(
         padding: const EdgeInsets.all(3.0), // Adjust padding as needed
@@ -62,7 +71,7 @@ class FunctionalityView {
   }
 
   void fromJson(Map<String, dynamic> json){
-    myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '');
+    //myFunctionalityId = json['myFunctionalityId'] ?? '';
   }
 
 
@@ -73,7 +82,7 @@ class FunctionalityView {
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
     json['type'] = runtimeType.toString();
-    json['myFunctionalityId'] = myFunctionality.id;
+    //json['myFunctionalityId'] = myFunctionalityId;
     return json;
   }
 
@@ -101,6 +110,6 @@ FunctionalityView extendedFunctionalityViewFromJson(Map<String, dynamic> json) {
     case 'BoilerHeatingFunctionalityView': return BoilerHeatingFunctionalityView.fromJson(json);
   }
   log.error('unknown FunctionalityView jsonObject: ${json['type'] ?? '- not found at all-'}');
-  return FunctionalityView(allFunctionalities.noFunctionality());
+  return FunctionalityView();
 }
 

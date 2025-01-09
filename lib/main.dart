@@ -1,7 +1,10 @@
 
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:koti/app_configurator.dart';
 import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
+import 'package:koti/logic/observation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 
@@ -15,6 +18,8 @@ import 'estate/view/edit_estate_view.dart';
 import 'estate/view/estate_page_view.dart';
 import 'estate/view/estate_view.dart';
 import 'functionalities/functionality/functionality.dart';
+import 'logic/events.dart';
+import 'trend/trend.dart';
 import 'look_and_feel.dart';
 import 'operation_modes/operation_modes.dart';
 
@@ -33,22 +38,37 @@ ConnectionStatusListener connectionStatusListener = ConnectionStatusListener(act
 Future <void> resetAllFatal() async {
   await myEstates.resetAll();
   allFunctionalities.clear();
-  //allDevices.clear();
+  allDevices.clear();
   log.cleanHistory();
   FlutterSecureStorage().deleteAll();
+
+  applicationDeviceConfigurator.initConfiguration();
 }
 
 Future <void> appInitializationRoutines() async {
   await initMySettings();
-  initConfiguration();
   registerOperationModeTypes();
   await getPermissions();
   runningInSimulator = await isSimulator();
+
   await shellyScan.init();
+
+  await Hive.initFlutter();
+
+  applicationDeviceConfigurator.initConfiguration();
+
   await connectionStatusListener.initialize();
+
+  await trend.init();
+
+  await events.init();
+
   await myEstates.init();
+
   //electricityPriceParameters.init();
   electricityPriceParameters = await readElectricityPriceParameters();
+
+  events.write('','',ObservationLevel.ok,'$appName käynnistyi (laitteen wifi on "${activeWifiName.activeWifiName}")');
 
 }
 

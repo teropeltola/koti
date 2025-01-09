@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
+import 'package:koti/devices/shelly_blu_gw/shelly_blu_gw.dart';
 import 'package:koti/devices/weather_service_provider/weather_service_provider.dart';
 
 import 'package:koti/functionalities/functionality/functionality.dart';
@@ -11,6 +12,7 @@ import '../../logic/services.dart';
 import '../../look_and_feel.dart';
 import '../ouman/ouman_device.dart';
 import '../porssisahko/porssisahko.dart';
+import '../shelly_blu_trv/shelly_blu_trv.dart';
 import '../shelly_pro2/shelly_pro2.dart';
 import '../shelly_timer_switch/shelly_timer_switch.dart';
 import '../testing_switch_device/testing_switch_device.dart';
@@ -261,9 +263,12 @@ Device deviceFromTypeName(String typeName) {
       return ShellyPro2();
     case 'Vehicle':
       return Vehicle();
-    case 'TestingSwitchDevice':
-      return TestingSwitchDevice()
+    case  'ShellyBluGw':
+      return ShellyBluGw();
+    case 'ShellyBluTrv':
+      return ShellyBluTrv.empty();
       ;
+
   }
   log.error('unknown type name "$typeName"');
   return Device();
@@ -282,6 +287,8 @@ Device extendedDeviceFromJson(Map<String, dynamic> json) {
     case 'WeatherServiceProvider': return WeatherServiceProvider.fromJson(json);
     case 'Vehicle': return Vehicle.fromJson(json);
     case 'TestingSwitchDevice': return TestingSwitchDevice.fromJson(json);
+    case 'ShellyBluGw': return ShellyBluGw.fromJson(json);
+    case 'ShellyBluTrv': return ShellyBluTrv.fromJson(json);
   }
   log.error('unknown jsonObject: ${json['type'] ?? '- not found at all-'}');
   return noDevice;

@@ -100,6 +100,7 @@ class Functionality {
   List<Device> connectedDevices = [];
   late UniqueId _id;
   static const String functionalityName = 'toiminnon nimi';
+  late FunctionalityView myView;
 
   String get id => _id.get();
 
@@ -107,20 +108,28 @@ class Functionality {
 
   Functionality() {
     _id = UniqueId('f');
+    myView = FunctionalityView();
+    myView.setFunctionality(this);
   }
 
   Functionality.withParameters(Device devicePar, UniqueId idPar) {
     connectedDevices.add(devicePar);
     _id = idPar;
+    myView = FunctionalityView();
+    myView.setFunctionality(this);
   }
 
   Functionality.empty() {
     connectedDevices.clear();
     _id = UniqueId.fromString('f#');
+    myView = FunctionalityView();
+    myView.setFunctionality(this);
   }
 
   Functionality.failed() {
     setFailed();
+    myView = FunctionalityView();
+    myView.setFunctionality(this);
   }
 
   void setFailed() {
@@ -168,8 +177,9 @@ class Functionality {
     return await device.editWidget(context, estate);
   }
 
-  FunctionalityView myView() {
-    return FunctionalityView(this);
+  // returns a function for functionality editing. Each inherited class should implement their own version of this
+  Future<bool> Function(BuildContext context, Estate estate, Functionality functionality, Function callback)  myEditingFunction() {
+    return editFunctionality;
   }
 
   Widget dumpData({required Function formatterWidget}) {
@@ -241,6 +251,8 @@ class Functionality {
 
   Functionality.fromJson(Map<String, dynamic> json){
     _id = UniqueId.fromString(json['id'] ?? '');
+    myView = FunctionalityView();
+    myView.setFunctionality(this);
     fromJson(json);
   }
 
@@ -257,7 +269,7 @@ class Functionality {
 
 }
 
-Functionality extendedFunctionalityFromJson(String estateName, Map<String, dynamic> json) {
+Functionality extendedFunctionalityFromJson( Map<String, dynamic> json) {
   String myId = json['id'] ?? '';
   String myType = json['type'] ?? '';
 
@@ -314,7 +326,12 @@ Functionality extendedFunctionalityFromJson(String estateName, Map<String, dynam
   }
 
  */
-  myFunctionality.operationModes.estateName = estateName;
 
   return myFunctionality;
+}
+
+
+Future<bool> editFunctionality(BuildContext context, Estate estate, Functionality functionality, Function callback) async {
+  log.error('editFunctionality not implemented in ${functionality.runtimeType.toString()}');
+  return false;
 }

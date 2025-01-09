@@ -10,7 +10,7 @@ import '../functionality/functionality.dart';
 import '../functionality/view/functionality_view.dart';
 
 double _noTemperature() {
-  return -99.9;
+  return noValueDouble;
 }
 
 class WeatherForecast extends Functionality {
@@ -19,25 +19,14 @@ class WeatherForecast extends Functionality {
 
   String locationName = '';
 
-  List<WeatherServiceProvider> weatherServices = [];
-
-  void updateWeatherServices() {
-    weatherServices.clear();
-    Estate estate = myEstates.estateFromId(connectedDevices[0].myEstateId);
-    for (var dev in estate.devices) {
-      if (dev is WeatherServiceProvider) {
-        weatherServices.add(dev as WeatherServiceProvider);
-      }
-    }
-  }
 
   WeatherForecast() {
+    myView = WeatherForecastView();
+    myView.setFunctionality(this);
   }
-
 
   @override
   Future<void> init () async {
-    updateWeatherServices();
   }
 
   String currentTemperature() {
@@ -51,11 +40,6 @@ class WeatherForecast extends Functionality {
   }
 
   @override
-  FunctionalityView myView() {
-    return WeatherForecastView(this);
-  }
-
-  @override
   Map<String, dynamic> toJson() {
     var json = super.toJson();
     json['locationName'] = locationName;
@@ -64,6 +48,8 @@ class WeatherForecast extends Functionality {
 
   @override
   WeatherForecast.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+    myView = WeatherForecastView();
+    myView.setFunctionality(this);
     locationName = json['locationName'] ?? '';
   }
 
@@ -74,9 +60,9 @@ class WeatherForecast extends Functionality {
         MaterialPageRoute(
           builder: (context) {
             return EditWeatherForecastView(
-              createNew: createNew,
                 estate: estate,
-                originalWeatherForecast: functionality as WeatherForecast
+                originalWeatherForecast: functionality as WeatherForecast,
+                callback: () {}
             );
           },
         )
@@ -100,6 +86,21 @@ class WeatherForecast extends Functionality {
       ]
     );
   }
+  @override
+  Future<bool> Function(BuildContext context, Estate estate, Functionality functionality, Function callback)  myEditingFunction() {
+    return editWeatherForecastFunctionality;
+  }
+}
 
 
+Future<bool> editWeatherForecastFunctionality(BuildContext context, Estate estate, Functionality functionality, Function callback) async {
+  bool success = await Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return EditWeatherForecastView(
+            estate: estate,
+            originalWeatherForecast: functionality as WeatherForecast,
+            callback: callback
+        );
+      }));
+  return success;
 }

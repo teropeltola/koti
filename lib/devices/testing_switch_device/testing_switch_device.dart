@@ -5,22 +5,21 @@ import '../../logic/services.dart';
 import '../../logic/unique_id.dart';
 import '../../logic/state_broker.dart';
 import '../../service_catalog.dart';
+import '../../trend/trend_switch.dart';
 import '../device/device.dart';
+import '../mixins/on_off_switch.dart';
 
-class TestingSwitchDevice extends Device {
-
-  StateBoolNotifier _on = StateBoolNotifier(false);
+class TestingSwitchDevice extends Device with OnOffSwitch {
 
   void _initOfferedServices() {
     services = Services([
-      RWDeviceService<bool>(serviceName: powerOnOffService, setFunction: setPower, getFunction: getPower),
+      onOffServiceDefinition(),
       AttributeDeviceService(attributeName: deviceWithManualCreation)
     ]);
   }
 
   TestingSwitchDevice() {
     _setUniqueId();
-    _initOfferedServices();
   }
 
   @override
@@ -33,33 +32,54 @@ class TestingSwitchDevice extends Device {
     _setUniqueId();
   }
 
+  String _trendBoxName() {
+    return id;
+  }
+
   @override
   Future<void> init () async {
     Estate myEstate = myEstates.estateFromId(myEstateId);
     await super.init();
-    myEstate.stateBroker.initNotifyingBoolStateInformer(
+
+    await initSwitch(
+        myEstate: myEstates.estateFromId(myEstateId),
         device: this,
-        serviceName: powerOnOffService,
-        stateBoolNotifier: _on,
-        dataReadingFunction: switchStatus);
+        boxName: _trendBoxName(),
+        getFunction: asyncGetPower,
+        setFunction: asyncSetPower,
+        peekFunction: switchStatus
+    );
+
+    _initOfferedServices();
+
+    trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, switchStatus(), 'alustus käynnistyksessä'));
 
   }
 
   bool switchToggle() {
-    setPower(!_on.data);
-    return _on.data;
+    setPower(!switchOn.data, 'Painokytkin');
+    return switchOn.data;
   }
 
   bool switchStatus() {
-    return _on.data;
+    return switchOn.data;
   }
 
-  void setPower(bool value) {
-    _on.data = value;
+  void setPower(bool value, String caller) {
+    switchOn.data = value;
+    trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, value, caller));
   }
 
   bool getPower()  {
-    return _on.data;
+    return switchOn.data;
+  }
+
+  Future <void> asyncSetPower(bool value, String caller) async {
+    setPower(value, caller);
+  }
+
+  Future <bool> asyncGetPower() async {
+    return getPower();
   }
 
   @override
@@ -108,13 +128,19 @@ class TestingSwitchDevice extends Device {
   @override
   TestingSwitchDevice.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
-    _initOfferedServices();
   }
+
 
   @override
   TestingSwitchDevice clone() {
     return TestingSwitchDevice.fromJson(toJson());
   }
 
+  @override
+  bool isReusableForFunctionalities() {
+    return true;
+  }
 
 }
+
+

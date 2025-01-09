@@ -3,15 +3,18 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:http/http.dart' as http;
+import 'package:koti/devices/ouman/trend_ouman.dart';
 import 'package:koti/devices/ouman/view/edit_ouman_view.dart';
 import 'package:koti/service_catalog.dart';
 
 import 'dart:convert' show utf8;
 
+import '../../app_configurator.dart';
 import '../../estate/estate.dart';
 import '../../logic/observation.dart';
 import '../../logic/services.dart';
 import '../../logic/state_broker.dart';
+import '../../trend/trend.dart';
 import '../../logic/unique_id.dart';
 import '../../look_and_feel.dart';
 import '../device_with_login/device_with_login.dart';
@@ -19,6 +22,7 @@ import '../device_with_login/device_with_login.dart';
 const String _oumanName = 'Ouman';
 
 const _oumanFetchingIntervalInMinutes = 2;
+const _trendUpdateIntevalInMinutes = 20;
 
 const Map <String, String> oumanCodes = {
   'OutsideTemperature': 'S_227_85',
@@ -57,6 +61,9 @@ class OumanDevice extends DeviceWithLogin {
   StateDoubleNotifier _valve = StateDoubleNotifier(noValueDouble);
   double _heaterEstimatedTemperature = noValueDouble;
   DateTime _latestDataFetched = DateTime(0);
+  DateTime _latestTrendUpdateTime = DateTime(0);
+
+  late TrendBox<TrendOuman> trendBox;
 
   void _initOfferedServices() {
     services = Services([
@@ -64,7 +71,8 @@ class OumanDevice extends DeviceWithLogin {
           serviceName: outsideTemperatureDeviceService,
           notWorkingValue: ()=> noValueDouble,
           getFunction: outsideTemperature),
-      AttributeDeviceService(attributeName: deviceWithManualCreation)
+      AttributeDeviceService(attributeName: deviceWithManualCreation),
+      AttributeDeviceService(attributeName: waterTemperatureService)
     ]);
   }
 
@@ -78,7 +86,6 @@ class OumanDevice extends DeviceWithLogin {
     _initOfferedServices();
 
   }
-
 
   @override
   setOk() {
@@ -113,6 +120,10 @@ class OumanDevice extends DeviceWithLogin {
   @override
   Future<void> init() async {
     Estate myEstate = myEstates.estateFromId(myEstateId);
+
+    await trend.initBox<TrendOuman>(hiveTrendOumanName);
+    trendBox = trend.open(hiveTrendOumanName);
+
     await initSuccessInCreation(myEstate);
     webLoginCredentials.url = _oumanUrl();
 
@@ -216,6 +227,19 @@ class OumanDevice extends DeviceWithLogin {
     _valve.data = getValue('L1Valve');
     _heaterEstimatedTemperature = _measuredWaterTemperature.data * 100 / _valve.data;
     _latestDataFetched = DateTime.now();
+
+    if (_latestDataFetched.difference(_latestTrendUpdateTime).inMinutes > _trendUpdateIntevalInMinutes) {
+      trendBox.add(TrendOuman(
+          _latestDataFetched.millisecondsSinceEpoch,
+          myEstateId,
+          id,
+          _outsideTemperature.data,
+          _measuredWaterTemperature.data,
+          _requestedWaterTemperature.data,
+          _valve.data
+      ));
+      _latestTrendUpdateTime = _latestDataFetched;
+    }
   }
 
   bool _useObservations = false;
@@ -272,8 +296,8 @@ class OumanDevice extends DeviceWithLogin {
   }
 
   Future<bool> logout() async {
-    String myLoginRequest = '${webLoginCredentials.url}/logout?';
-    final url = Uri.parse(myLoginRequest);
+    String myLogout = '${webLoginCredentials.url}/logout?';
+    final url = Uri.parse(myLogout);
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
@@ -354,8 +378,7 @@ class OumanDevice extends DeviceWithLogin {
         ]
     );
   }
-
-
+  
   @override
   void dispose() {
     //super.dispose();
@@ -380,8 +403,6 @@ class OumanDevice extends DeviceWithLogin {
   OumanDevice clone() {
     return OumanDevice.fromJson(toJson());
   }
-
-
 }
 
 Map<String, String> parseDeviceData(String deviceData) {

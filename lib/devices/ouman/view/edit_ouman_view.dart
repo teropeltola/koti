@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:koti/logic/observation.dart';
 
 import '../../../estate/estate.dart';
+import '../../../logic/events.dart';
 import '../../../look_and_feel.dart';
 import '../../../view/ready_widget.dart';
 import '../ouman_device.dart';
@@ -258,7 +260,7 @@ class _EditOumanViewState extends State<EditOumanView> {
                               myUsernameController.text,
                               myPasswordController.text);
                         await oumanDevice.init();
-                        log.info('${widget.estate.name}: laite ${oumanDevice.name}(${oumanDevice.id}) luotu');
+                        events.write(widget.estate.id, oumanDevice.id, ObservationLevel.informatic, 'laite luotu');
                         if (widget.estate.myWifiIsActive) {
                           bool connectionSucceeded = await oumanDevice
                             .initSuccessInCreation(widget.estate);

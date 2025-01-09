@@ -7,8 +7,7 @@ import 'general_agent_overview.dart';
 
 class GeneralAgentView extends FunctionalityView {
 
-  GeneralAgentView(dynamic myFunctionality) : super(myFunctionality) {
-  }
+  GeneralAgentView();
 
   ButtonStyle myButtonStyle() {
     // TODO: Tässä pitäisi laskea hälytystaso kaikille laitteille
@@ -49,9 +48,8 @@ class GeneralAgentView extends FunctionalityView {
     );
   }
 
-  GeneralAgentView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
-    //super.fromJson(json);
-    myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '') as GeneralAgent;
+  GeneralAgentView.fromJson(Map<String, dynamic> json) {
+    super.fromJson(json);
   }
 
   @override

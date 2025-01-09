@@ -5,6 +5,7 @@ import 'package:koti/functionalities/boiler_heating/view/boiler_heating_overview
 import 'package:koti/look_and_feel.dart';
 import 'package:koti/service_catalog.dart';
 
+import '../../../devices/mixins/on_off_switch.dart';
 import '../../../logic/services.dart';
 import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
@@ -12,31 +13,42 @@ import '../boiler_heating_functionality.dart';
 
 class BoilerHeatingFunctionalityView extends FunctionalityView {
 
-  late BoilerHeatingFunctionality myBoilerFunctionality;
-  late RWDeviceService<bool> mySwitch;
+  late DeviceServiceClass<OnOffSwitchService> _mySwitch;
+  bool cacheNotOk = true;
 
-  BoilerHeatingFunctionalityView(dynamic myFunctionality) : super(myFunctionality) {
-    myBoilerFunctionality = myFunctionality as BoilerHeatingFunctionality;
-    mySwitch = myBoilerFunctionality.connectedDevices[0].services.getService(powerOnOffService) as RWDeviceService<bool>;
+  DeviceServiceClass<OnOffSwitchService> mySwitch() {
+    if (cacheNotOk) {
+      _mySwitch = myBoilerFunctionality().connectedDevices[0].services.getService(powerOnOffWaitingService) as DeviceServiceClass<OnOffSwitchService>;
+      cacheNotOk = false;
+    }
+    return _mySwitch;
   }
 
-  BoilerHeatingFunctionalityView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+  BoilerHeatingFunctionality myBoilerFunctionality() => myFunctionality() as BoilerHeatingFunctionality;
+
+  BoilerHeatingFunctionalityView()  {
+  }
+
+  BoilerHeatingFunctionalityView.fromJson(Map<String, dynamic> json)  {
     super.fromJson(json);
-    myBoilerFunctionality = myFunctionality as BoilerHeatingFunctionality;
-    mySwitch = myBoilerFunctionality.connectedDevices[0].services.getService(powerOnOffService) as RWDeviceService<bool>;
+  }
+
+  @override
+  void setFunctionality(Functionality functionality) {
+    super.setFunctionality(functionality);
   }
 
   @override
   Widget gridBlock(BuildContext context, Function callback) {
 
     return ElevatedButton(
-        style: mySwitch.get()
+        style: mySwitch().services.peek()
           ? buttonStyle(Colors.green, Colors.white)
           : buttonStyle(Colors.grey, Colors.white),
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return BoilerHeatingOverview(boilerHeating: myBoilerFunctionality);
+              return BoilerHeatingOverview(boilerHeating: myBoilerFunctionality());
             },
           ));
 
@@ -47,11 +59,13 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
             Text(
-              myBoilerFunctionality.connectedDevices[0].name,
+              myBoilerFunctionality().connectedDevices[0].name,
               style: const TextStyle(
                 fontSize: 12)),
-            _currentOperationModeWidget(myBoilerFunctionality.operationModes.currentModeName(), mySwitch.get()),
-            _heaterIcon(mySwitch.get()),
+            _currentOperationModeWidget(
+                myBoilerFunctionality().operationModes.currentModeName(),
+                mySwitch().services.peek()),
+            _heaterIcon(mySwitch().services.peek()),
           ]),
 
     );
@@ -59,18 +73,16 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
 
   @override
   String viewName() {
-    return 'Lämminvesivaraaja';
+    return BoilerHeatingFunctionality.functionalityName;
   }
 
   @override
   String subtitle() {
-    Functionality functionality = myFunctionality as Functionality;
-    return functionality.connectedDevices[0].name;
+    return myFunctionality().connectedDevices[0].name;
   }
 
-
-
 }
+
 
 Icon _heaterIcon(bool heating) {
   if (heating) {

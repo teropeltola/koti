@@ -22,9 +22,13 @@ class RadiatorWaterCirculation extends Functionality {
   static const String functionalityName = 'patterijärjestelmä';
 
   RadiatorWaterCirculation() {
+    myView = RadiatorWaterCirculationView();
+    myView.setFunctionality(this);
   }
 
   RadiatorWaterCirculation.failed() {
+    myView = RadiatorWaterCirculationView();
+    myView.setFunctionality(this);
     setFailed();
   }
 
@@ -57,10 +61,13 @@ class RadiatorWaterCirculation extends Functionality {
     return connectedDeviceOf('OumanDevice') as OumanDevice;
   }
 
+  /*
   @override
   FunctionalityView myView() {
-    return RadiatorWaterCirculationView(this);
+    return RadiatorWaterCirculationView(this.id);
   }
+
+   */
 
 
   @override
@@ -97,11 +104,13 @@ class RadiatorWaterCirculation extends Functionality {
 
   @override
   RadiatorWaterCirculation.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+    myView = RadiatorWaterCirculationView();
+    myView.setFunctionality(this);
   }
 
 }
 
-Future <RadiatorWaterCirculation> createNewRadiatorWaterCirculation(BuildContext context, Estate estate, String serviceName) async {
+Future <bool> createNewRadiatorWaterCirculation(BuildContext context, Estate estate) async {
   RadiatorWaterCirculation radiatorSystem = RadiatorWaterCirculation();
   await radiatorSystem.init();
 
@@ -115,9 +124,6 @@ Future <RadiatorWaterCirculation> createNewRadiatorWaterCirculation(BuildContext
       }
   ));
 
-  if (! success) {
-    radiatorSystem.setFailed();
-  }
-  return radiatorSystem;
+  return success;
 
 }

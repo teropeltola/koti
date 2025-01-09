@@ -358,10 +358,10 @@ class ConditionalOperationModes extends OperationMode {
   }
 
   @override
-  void init([OperationModes? initOperationModes]) {
+  void init(String estateName, [OperationModes? initOperationModes]) {
     operationModes = initOperationModes!;
     electricityPriceListener.start(
-        myEstates.estate(operationModes.estateName).myDefaultElectricityPrice().myBroadcaster(),
+        myEstates.estate(estateName).myDefaultElectricityPrice().myBroadcaster(),
         updateCurrentAnalysis);
   }
 

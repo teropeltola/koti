@@ -2,15 +2,18 @@
 
 const String deviceWithManualCreation = 'Device with manual creation';
 const String powerOnOffService = 'powerOnOffService';
-const String powerOnOffAsyncService = 'powerOnOffAsyncService';
+const String powerOnOffWaitingService = 'powerOnOffWaitingService';
 const String outsideTemperatureDeviceService = 'outsideTemperature';
 const String airHeatPumpService = 'airHeatPumpService';
+const String waterTemperatureService = 'waterTemperatureService';
 
 // general services introduced to estate specific stateBroker
+const String powerOnOffStatusService = 'powerOnOffStatusService';
 const String outsideTemperatureService = 'Ulkolämpötila';
 const String currentRadiatorWaterTemperatureService = 'Patteriveden lämpötila';
 const String requestedRadiatorWaterTemperatureService = 'Haluttu patteriveden lämpötila';
 const String radiatorValvePositionService = 'Patteriventtiilin asento';
+const String thermostatService = 'thermostatService';
 
 const String currentElectricityPrice = 'Sähkön hinta';
 

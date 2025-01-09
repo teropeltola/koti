@@ -6,7 +6,6 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'active_wifi_name.dart';
 import 'package:koti/look_and_feel.dart';
 
-
 class ConnectionStatusListener {
 
   ConnectionStatusListener(ActiveWifiName initWifiName) {
@@ -32,8 +31,8 @@ class ConnectionStatusListener {
         hasWifiConnection = true;
 
         final info = NetworkInfo();
-        String resultWithQuatationMarks = await info.getWifiName() ?? '';
-        wifiName = resultWithQuatationMarks.replaceAll('"','');
+        String resultWithQuotationMarks = await info.getWifiName() ?? '';
+        wifiName = resultWithQuotationMarks.replaceAll('"','');
 
       } else {
         hasWifiConnection = false;
@@ -58,7 +57,6 @@ class ConnectionStatusListener {
   //Hook into connectivity_plus's Stream to listen for changes
   //And check the connection status out of the gate
   Future<void> initialize() async {
-    log.info('Käynnistetään wifin kuuntelu');
     _connectivity.onConnectivityChanged.listen(_connectionChange);
     // await checkConnection();
   }

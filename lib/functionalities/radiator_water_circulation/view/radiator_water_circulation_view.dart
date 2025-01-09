@@ -11,12 +11,11 @@ import '../radiator_water_circulation.dart';
 
 class RadiatorWaterCirculationView extends FunctionalityView {
 
-  RadiatorWaterCirculationView(dynamic myFunctionality) : super(myFunctionality) {
-  }
+  RadiatorWaterCirculationView();
 
   ButtonStyle myButtonStyle() {
     // TODO: Tässä pitäisi laskea hälytystaso kaikille laitteille
-    ObservationLevel observationLevel = (myFunctionality as RadiatorWaterCirculation).myOuman().observationLevel();
+    ObservationLevel observationLevel = (myFunctionality() as RadiatorWaterCirculation).myOuman().observationLevel();
     return (observationLevel == ObservationLevel.alarm) ? buttonStyle(Colors.red, Colors.white) :
     (observationLevel == ObservationLevel.warning) ? buttonStyle(Colors.yellow, Colors.white) :
     buttonStyle(Colors.green, Colors.white);
@@ -32,7 +31,7 @@ class RadiatorWaterCirculationView extends FunctionalityView {
             builder: (context) {
               //RadiatorWaterCirculation heatingSystem = myFunctionality as RadiatorWaterCirculation;
               //return HeatingOverview(heatingSystem:heatingSystem);
-              return RadiatorWaterCirculationOverview(radiator:myFunctionality, callback: callback);
+              return RadiatorWaterCirculationOverview(radiator:myFunctionality() as RadiatorWaterCirculation, callback: callback);
             },
           ));
           callback();
@@ -64,9 +63,8 @@ class RadiatorWaterCirculationView extends FunctionalityView {
   }
 */
 
-  RadiatorWaterCirculationView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
-    //super.fromJson(json);
-    myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '') as RadiatorWaterCirculation;
+  RadiatorWaterCirculationView.fromJson(Map<String, dynamic> json) {
+    super.fromJson(json);
   }
 
   @override

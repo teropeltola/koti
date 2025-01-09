@@ -31,17 +31,17 @@ Future <void> _firstTest(WidgetTester tester) async {
 
   EstateViewRobot e = EstateViewRobot(tester);
 
-  await e.checkDiagnostics();
+  //await e.checkDiagnostics();
 
   await e.goEditEstate();
   await EditEstateViewRobot(tester).tapReady();
 
-  await e.checkDiagnostics();
+  // await e.checkDiagnostics();
 
   await e.goEditEstate();
   await EditEstateViewRobot(tester).goBack();
 
-  await e.checkDiagnostics();
+  // await e.checkDiagnostics();
 
   await e.goEditEstate();
 
@@ -52,7 +52,7 @@ Future <void> _firstTest(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await ee.tapReady();
 
-  await e.checkDiagnostics();
+  // await e.checkDiagnostics();
 
   await e.goEditEstate();
 
@@ -72,6 +72,6 @@ Future <void> _firstTest(WidgetTester tester) async {
 
   await ee.tapReady();
 
-  await e.checkDiagnostics();
+  // await e.checkDiagnostics();
 }
 

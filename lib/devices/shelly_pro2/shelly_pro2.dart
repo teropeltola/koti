@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:koti/devices/mixins/on_off_switch.dart';
 
 import 'package:koti/devices/shelly/json/shelly_input_config.dart';
+import '../../estate/estate.dart';
 import '../../logic/services.dart';
-import '../../service_catalog.dart';
+import '../../trend/trend_switch.dart';
 import '../shelly/json/shelly_switch_config.dart';
 import '../shelly/json/switch_get_status.dart';
 import '../shelly/shelly_device.dart';
@@ -13,9 +15,11 @@ enum ShellyPro2Id {
   id1,
   both;
   int id() => index;
+
+  String get text => (this == ShellyPro2Id.both) ? '' : (this == ShellyPro2Id.id0) ? '(indeksi:0)' : '(indeksi:1)';
 }
 
-class ShellyPro2 extends ShellyDevice {
+class ShellyPro2 extends ShellyDevice with OnOffSwitch {
 
   List<ShellySwitchConfig> switchConfigList = [ShellySwitchConfig.empty(), ShellySwitchConfig.empty()];
   List<ShellySwitchStatus> switchStatusList = [ShellySwitchStatus.empty(), ShellySwitchStatus.empty()];
@@ -23,19 +27,36 @@ class ShellyPro2 extends ShellyDevice {
 
   void _initOfferedServices() {
     services = Services([
-      RWAsyncDeviceService<bool>(serviceName: powerOnOffAsyncService, setFunction: setFullPower, getFunction: getFullPower),
-      RWDeviceService<bool>(serviceName: powerOnOffService, setFunction: setFullPower, getFunction: getSwitchFullStatus)
+      onOffServiceDefinition(),
     ]);
   }
 
   ShellyPro2() {
-    _initOfferedServices();
   }
 
   ShellyPro2.failed() {
     setFailed();
-
   }
+
+  @override
+  Future<void> init () async {
+
+    await super.init();
+
+    await initSwitch(
+      myEstate: myEstates.estateFromId(myEstateId),
+      device: this,
+        boxName: id,
+        getFunction: getFullPower,
+        setFunction: setFullPower,
+        peekFunction: (){return switchStatus(ShellyPro2Id.both); }
+    );
+
+    _initOfferedServices();
+
+    trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, switchStatus(ShellyPro2Id.both), 'alustus käynnistyksessä'));
+  }
+
 
   bool switchToggle(ShellyPro2Id id) {
     if (id == ShellyPro2Id.id0) {
@@ -69,8 +90,9 @@ class ShellyPro2 extends ShellyDevice {
     return switchStatus(ShellyPro2Id.both);
   }
 
-  Future <void> setFullPower(bool value) async {
+  Future <void> setFullPower(bool value, String caller) async {
     await setPower(ShellyPro2Id.both, value);
+    trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, value, caller));
   }
 
   Future<bool> getFullPower() async {
@@ -133,7 +155,6 @@ class ShellyPro2 extends ShellyDevice {
   @override
   ShellyPro2.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
-    _initOfferedServices();
   }
 
 }

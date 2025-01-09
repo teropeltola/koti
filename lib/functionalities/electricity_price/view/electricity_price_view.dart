@@ -103,7 +103,7 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
                           //  interval: electricityChartData.yAxisInterval,
                           numberFormat: NumberFormat("#0.00")
                       ),
-                      series: <ChartSeries<ChartData, DateTime>>[
+                      series: <CartesianSeries<ChartData, DateTime>>[
                         // Renders column chart
                         ColumnSeries<ChartData, DateTime>(
                             dataSource: chartData,
@@ -190,25 +190,25 @@ class _BarColor {
 
 class ElectricityGridBlock extends FunctionalityView {
 
-  late ElectricityPrice myElectricityPrice;
-
-  ElectricityGridBlock(dynamic myFunctionality) : super(myFunctionality) {
-    myElectricityPrice = myFunctionality as ElectricityPrice;
+  ElectricityPrice myElectricityPrice() {
+    return myFunctionality() as ElectricityPrice;
   }
 
-  ElectricityGridBlock.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+  ElectricityGridBlock();
+
+  ElectricityGridBlock.fromJson(Map<String, dynamic> json)  {
     super.fromJson(json);
-    myElectricityPrice = myFunctionality as ElectricityPrice;
   }
 
   @override
   Widget gridBlock(BuildContext context, Function callback) {
-    PriceChange priceChange = myElectricityPrice.electricity.data.priceChange();
-    double currentPrice = myElectricityPrice.currentPrice();
+    ElectricityPrice electricityPrice = myElectricityPrice();
+    PriceChange priceChange = electricityPrice.electricity.data.priceChange();
+    double currentPrice = electricityPrice.currentPrice();
     _BarColor colorPalette = _BarColor();
     colorPalette.init(
-        myElectricityPrice.electricity.data.minPrice(),
-        myElectricityPrice.electricity.data.maxPrice()
+        electricityPrice.electricity.data.minPrice(),
+        electricityPrice.electricity.data.maxPrice()
     );
     Color backgroundColor = colorPalette.get(currentPrice);
     Color foregroundColor = properTextColor(backgroundColor);
@@ -219,7 +219,7 @@ class ElectricityGridBlock extends FunctionalityView {
 
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return ElectricityPriceView(electricityPrice: myElectricityPrice);
+              return ElectricityPriceView(electricityPrice: electricityPrice);
             },
           ));
           callback();
@@ -232,7 +232,7 @@ class ElectricityGridBlock extends FunctionalityView {
                 style: TextStyle(
                   fontSize: 10)),
               Text(
-                  '${currencyCentInText(myElectricityPrice.currentPrice())}',
+                  '${currencyCentInText(electricityPrice.currentPrice())}',
                   textScaler: const TextScaler.linear(1.2),
                   textAlign: TextAlign.center,
               ),

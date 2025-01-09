@@ -1,16 +1,16 @@
 
 import 'package:flutter/material.dart';
 import 'package:koti/devices/shelly/json/switch_get_status.dart';
+import 'package:koti/devices/testing_switch_device/testing_switch_device.dart';
 
+import '../../../devices/device/device.dart';
 import '../../../look_and_feel.dart';
+import '../../../trend/trend_switch.dart';
 import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../plain_switch_functionality.dart';
 
 class PlainSwitchFunctionalityView extends FunctionalityView {
-
-  late PlainSwitchFunctionality mySwitch;
-
 
   @override
   String viewName() {
@@ -19,17 +19,17 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
 
   @override
   String subtitle() {
-    return mySwitch.myDevice().name;
+    return mySwitch().myDevice().name;
   }
 
-
-  PlainSwitchFunctionalityView(dynamic myFunctionality) : super(myFunctionality) {
-    mySwitch = myFunctionality as PlainSwitchFunctionality;
+  PlainSwitchFunctionality mySwitch() {
+    return myFunctionality() as PlainSwitchFunctionality;
   }
 
-  PlainSwitchFunctionalityView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
-    super.fromJson(json);
-    mySwitch = myFunctionality as PlainSwitchFunctionality;
+  PlainSwitchFunctionalityView() {
+  }
+
+  PlainSwitchFunctionalityView.fromJson(Map<String, dynamic> json) {
   }
 
 
@@ -37,31 +37,31 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
   Widget gridBlock(BuildContext context, Function callback) {
 
     return ElevatedButton(
-        style: mySwitch.switchStatusPeak()
+        style: mySwitch().switchStatusPeek()
           ? buttonStyle(Colors.green, Colors.white)
           : buttonStyle(Colors.grey, Colors.white),
         onPressed: () async {
-          await mySwitch.toggle();
+          await mySwitch().toggle();
           callback();
         },
         onLongPress: () async {
-          await _switchStatistics(context, mySwitch, 0);
+          await _switchStatistics(context, mySwitch(), 0);
 
         },
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
           Text(
-          mySwitch.myDevice().name,
+          mySwitch().myDevice().name,
           style: const TextStyle(
           fontSize: 12)),
           Icon(
-            mySwitch.switchStatusPeak()
+            mySwitch().switchStatusPeek()
             ? Icons.power
             : Icons.power_off,
             size: 50,
             color:
-              mySwitch.switchStatusPeak()
+              mySwitch().switchStatusPeek()
                 ? Colors.yellowAccent
                 : Colors.white,
 
@@ -72,14 +72,73 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
 }
 
 Future <void> _switchStatistics(BuildContext context, PlainSwitchFunctionality mySwitch, int switchNumber) async {
+  Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            SwitchTrendView(
+              switchFunctionality: mySwitch,
+            ),
+      )
+  );
 
-  // TODO: THIS IS NOT WORKING ANYMORE - NEEDS TO BE RETHINKED
-  /*
-  ShellySwitchStatus status = await mySwitch.shellyTimerSwitch.switchGetStatus(switchNumber);
-  String header = status.output ? 'Kytkin $switchNumber päällä' : 'Kytkin $switchNumber suljettu';
-  String body = status.id == -1 ? 'ei statusta' : status.toString();
-  await informMatterToUser(context, header, body );
+}
 
-   */
+class SwitchTrendView extends StatefulWidget {
+  final PlainSwitchFunctionality switchFunctionality;
+  const SwitchTrendView({required this.switchFunctionality, Key? key}) : super(key: key);
+
+  @override
+  State<SwitchTrendView> createState() => _SwitchTrendViewState();
+}
+
+class _SwitchTrendViewState extends State<SwitchTrendView> {
+
+  List<TrendSwitch> switchTrend = [];
+  late Device deviceWithSwitchFunctionality;
+  String deviceName = '';
+
+  @override
+  void initState() {
+    super.initState();
+    deviceWithSwitchFunctionality = widget.switchFunctionality.myDevice();
+    deviceName = deviceWithSwitchFunctionality.name;
+    switchTrend = widget.switchFunctionality.mySwitchDeviceService.services.trendBox().getAll();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+            title: appIconAndTitle(deviceName,'tapahtumat'),
+            backgroundColor: myPrimaryColor,
+            iconTheme: const IconThemeData(color:myPrimaryFontColor)
+        ),// new line
+        body: SingleChildScrollView( child: Column(children: <Widget>[
+          for (int index=switchTrend.length-1; index>=0; index--)
+            switchTrend[index].showInLine(),
+        ]
+        )
+        ),
+
+        bottomNavigationBar: Container(
+          height: bottomNavigatorHeight,
+          alignment: AlignmentDirectional.topCenter,
+          color: myPrimaryColor,
+          child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                IconButton(
+                    icon: const Icon(Icons.share,
+                        color:myPrimaryFontColor,
+                        size:40),
+                    tooltip: 'jaa näyttö somessa',
+                    onPressed: () async {
+                    }
+                ),
+              ]),
+
+        )
+    );
+  }
 }
 

@@ -12,11 +12,10 @@ const String temperatureParameterId = 'temperature';
 
 class AirHeatPumpView extends FunctionalityView {
 
-  AirHeatPumpView(dynamic myFunctionality) : super(myFunctionality) {
-  }
+  AirHeatPumpView();
 
   ButtonStyle myButtonStyle() {
-    ObservationLevel observationLevel = (myFunctionality as AirHeatPump).myPumpDevice().observationLevel();
+    ObservationLevel observationLevel = (myFunctionality() as AirHeatPump).myPumpDevice().observationLevel();
     return (observationLevel == ObservationLevel.alarm) ? buttonStyle(Colors.red, Colors.white) :
     (observationLevel == ObservationLevel.warning) ? buttonStyle(Colors.yellow, Colors.white) :
     buttonStyle(Colors.green, Colors.white);
@@ -30,7 +29,7 @@ class AirHeatPumpView extends FunctionalityView {
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return AirHeatPumpOverview(airHeatPump:myFunctionality, callback: callback);
+              return AirHeatPumpOverview(airHeatPump:myFunctionality() as AirHeatPump, callback: callback);
             },
           ));
         },
@@ -40,7 +39,7 @@ class AirHeatPumpView extends FunctionalityView {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Text(
-                  (myFunctionality as AirHeatPump).myPumpDevice().name,
+                  (myFunctionality() as AirHeatPump).myPumpDevice().name,
                   style: const TextStyle(
                       fontSize: 12)),
               shortOperationModeText(),
@@ -56,8 +55,8 @@ class AirHeatPumpView extends FunctionalityView {
   @override
 
 
-  AirHeatPumpView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
-    myFunctionality = allFunctionalities.findFunctionality(json['myFunctionalityId'] ?? '') as AirHeatPump;
+  AirHeatPumpView.fromJson(Map<String, dynamic> json)  {
+    super.fromJson(json);
   }
 
   @override
@@ -67,11 +66,9 @@ class AirHeatPumpView extends FunctionalityView {
 
   @override
   String subtitle() {
-    Functionality functionality = myFunctionality as Functionality;
-    return functionality.connectedDevices[0].name;
+    return myFunctionality().connectedDevices[0].name;
   }
 
 }
-
 
 

@@ -76,7 +76,6 @@ class MitsuHeatPumpDevice extends DeviceWithLogin {
           serviceName: outsideTemperatureDeviceService,
           notWorkingValue: ()=> noValue,
           getFunction: outsideTemperature),
-      RWDeviceService<bool>(serviceName: powerOnOffService, setFunction: setPower, getFunction: getPower),
       AttributeDeviceService(attributeName: airHeatPumpService),
       AttributeDeviceService(attributeName: deviceWithManualCreation)
     ]);
@@ -319,15 +318,22 @@ class MitsuHeatPumpDevice extends DeviceWithLogin {
     _timer.cancel();
   }
 
-  void setPower(bool value) {
+  Future<void> setPower(bool value, String caller) async {
+    log.info('${myEstates.estateFromId(myEstateId).name}: ${name} setPower ${value? 'on' : 'off'}');
     // TODO: how to switch Mitsu on?
   }
 
-  bool getPower()  {
+  Future<bool> getPower() async {
+    log.info('${myEstates.estateFromId(myEstateId).name}: ${name} getPower');
     //TODO: how to read the value from Mitsu
     return false;
   }
 
+  bool peekPower() {
+    log.info('${myEstates.estateFromId(myEstateId).name}: ${name} peekPower');
+    //TODO: how to read the value from Mitsu
+    return false;
+  }
 
   @override
   Future<bool> editWidget(BuildContext context, Estate estate) async {

@@ -7,20 +7,25 @@ import 'package:koti/functionalities/plain_switch_functionality/plain_switch_fun
 import '../../../devices/device/device.dart';
 import '../../../estate/estate.dart';
 import '../../../logic/dropdown_content.dart';
+import '../../../logic/events.dart';
+import '../../../logic/observation.dart';
 import '../../../look_and_feel.dart';
+import '../../../operation_modes/view/edit_generic_operation_modes_view.dart';
+import '../../../service_catalog.dart';
+import '../../../view/interrupt_editing_widget.dart';
 import '../../../view/my_dropdown_widget.dart';
+import '../../../view/no_needed_resources_widget.dart';
 import '../../../view/ready_widget.dart';
+import '../../boiler_heating/view/boiler_heating_parameter_setting.dart';
+import '../../boiler_heating/view/controlled_devices_widget.dart';
 
 class EditPlainSwitchView extends StatefulWidget {
   final Estate estate;
-  final bool createNew;
-  final String switchType;
   final PlainSwitchFunctionality switchFunctionality;
   final Function callback;
+
   const EditPlainSwitchView({Key? key,
     required this.estate,
-    required this.createNew,
-    required this.switchType,
     required this.switchFunctionality,
     required this.callback}) : super(key: key);
 
@@ -29,26 +34,21 @@ class EditPlainSwitchView extends StatefulWidget {
 }
 
 class _EditPlainSwitchViewState extends State<EditPlainSwitchView> {
-  late PlainSwitchFunctionality plainSwitchFunctionality;
+  late PlainSwitchFunctionality plainSwitch;
   List <String> foundDeviceNames = [''];
   late DropdownContent possibleDevicesDropdown;
 
   @override
   void initState() {
     super.initState();
-    if (widget.createNew) {
-      plainSwitchFunctionality = widget.switchFunctionality;
-    }
-    else {
-      plainSwitchFunctionality = (widget.switchFunctionality as PlainSwitchFunctionality).clone();
-    }
+    plainSwitch = widget.switchFunctionality.clone();
     refresh();
   }
 
   List<String> findPossibleDevices(List<Device> devices) {
     List<String> list = [];
     for (var device in devices) {
-      if (device.services.offerService('powerOnOffService')) {
+      if (device.services.offerService(powerOnOffWaitingService)) {
         list.add(device.name);
       }
     }
@@ -57,7 +57,7 @@ class _EditPlainSwitchViewState extends State<EditPlainSwitchView> {
 
   void refresh() {
     foundDeviceNames = findPossibleDevices(widget.estate.devices);
-    int index = max(0, foundDeviceNames.indexOf(plainSwitchFunctionality.id));
+    int index = max(0, foundDeviceNames.indexOf(plainSwitch.id));
     possibleDevicesDropdown = DropdownContent(foundDeviceNames, '', index);
   }
 
@@ -70,129 +70,43 @@ class _EditPlainSwitchViewState extends State<EditPlainSwitchView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-            tooltip: 'Keskeytä laitteen tietojen muokkaus',
-            onPressed: () async {
-              // check if the user wants to cancel all the changes
-              bool doExit = await askUserGuidance(context,
-                          'Poistuttaessa muutetut tiedot katoavat.',
-                          'Haluatko poistua näytöltä?'
-              );
-              if (doExit) {
-                Navigator.of(context).pop();
-              }
-            }),
-            title: appIconAndTitle(widget.estate.name, widget.createNew ? 'luo kytkin' : 'muokkaa kytkintä'),
+        leading: interruptEditingWidget(context, () async {
+          plainSwitch.remove();
+          widget.callback();
+        }),
+        title: appIconAndTitle(widget.estate.name, 'muokkaa kytkintä'),
       ), // new line
       body: SingleChildScrollView(
         child:
           foundDeviceNames.isEmpty
-          ? Column(children: <Widget>[
-            Container(
-              margin: myContainerMargin,
-              padding: myContainerPadding,
-              height: 200,
-              child: InputDecorator(
-                decoration: InputDecoration(labelText: widget.switchType), //k
-                child:
-                Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: <Widget>[
-                      Container(
-                        margin: myContainerMargin,
-                        padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
-                        child: Text('Asunnossa ei ole laitteita, jossa tarvittava virtakytkin.'
-                                    'Lisää ensin asuntoon vaadittava laite')
-                        ),
-                      Container(
-                        margin: myContainerMargin,
-                        padding: myContainerPadding,
-                        child: Tooltip(
-                          message: 'Paina tästä poistuaksesi näytöltä',
-                          child: OutlinedButton(
-                                  style: OutlinedButton.styleFrom(
-                                      backgroundColor: mySecondaryColor,
-                                      side: const BorderSide(
-                                          width: 2, color: mySecondaryColor),
-                                      shape: const RoundedRectangleBorder(
-                                          borderRadius:
-                                          BorderRadius.all(Radius.circular(10))),
-                                      elevation: 10),
-                                  onPressed: () async {
-                                    Navigator.pop(context, false);
-                                  },
-                                  child: const Text(
-                                    'Ok',
-                                    maxLines: 1,
-                                    style: TextStyle(color: mySecondaryFontColor),
-                                    textScaler: const TextScaler.linear(2.2),
-                                  ),
-                                ))),
-                      ])))])
-              : Column(children: <Widget>[
-                    Container(
-                      margin: myContainerMargin,
-                      padding: myContainerPadding,
-                      height: 200,
-                      child: InputDecorator(
-                        decoration: InputDecoration(labelText: widget.switchType), //k
-                        child:
-                          Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: <Widget>[
-                            Text('Valitse sähkökatkaisin -laite:'),
-                            Container(
-                              margin: myContainerMargin,
-                              padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
-                              child: InputDecorator(
-                                decoration: const InputDecoration(labelText: 'Laitteen nimi'),
-                                child: SizedBox(
-                                  height: 30,
-                                  width: 120,
-                                  child: MyDropdownWidget(
-                                    keyString: 'plainSwitchDevices',
-                                    dropdownContent: possibleDevicesDropdown,
-                                    setValue: (newValue) {
-                                      possibleDevicesDropdown
-                                                        .setIndex(newValue);
-                                                    setState(() {});
-                                                  }
-                                              )
-                                          ),
-                                        ),
-                                ),
-                                Container(
-                                  margin: myContainerMargin,
-                                  padding: myContainerPadding,
-                                  child: InputDecorator(
-                                    decoration: const InputDecoration(
-                                        labelText: 'Laitteen yksityiskohtaiset tiedot'),
-                                    child: Text('voisiko tähän lisätä valitun laitteen tiedot')
-                                )
-                            ),
-                          ]),
-                      ),
-                    ),
-                    readyWidget(() async {
-                      Device device = widget.estate.myDeviceFromName(possibleDevicesDropdown.currentString());
-                      if (! widget.createNew) {
-                        widget.switchFunctionality.unPairAll();
-                        widget.estate.removeFunctionality(widget.switchFunctionality);
-                      }
-                      plainSwitchFunctionality.pair(device);
-                      widget.estate.addFunctionality(plainSwitchFunctionality);
-                      widget.estate.addView(plainSwitchFunctionality.myView());
-                      await plainSwitchFunctionality.init();
-                      widget.callback(plainSwitchFunctionality);
-                      log.info('${widget.estate.name}: laite ${device.name}(${device.id}) asetettu toimintoon: ${widget.switchType}"');
-                      showSnackbarMessage('laitteen tietoja päivitetty!');
-                      Navigator.pop(context, true);
-                    })
-                  ])
-              )
-          );
-
+          ? noNeededResources(context, 'Asunnossa ei ole laitteita, jossa tarvittava virtakytkin.'
+                                        'Lisää ensin asuntoon vaadittava laite')
+          : Column(children: <Widget>[
+            controlledDevicesWidget('Ohjattava laite', 'Sähkökatkaisin', possibleDevicesDropdown, () {setState(() {});}),
+            operationModeHandling2(
+                context,
+                widget.estate,
+                plainSwitch.operationModes,
+                boilerHeatingParameterSetting,
+                refresh
+            ),
+            readyWidget(() async {
+              Device device = widget.estate.myDeviceFromName(possibleDevicesDropdown.currentString());
+              // remove earlier version
+              widget.switchFunctionality.unPairAll();
+              widget.estate.removeFunctionality(widget.switchFunctionality);
+              // add new version
+              plainSwitch.pair(device);
+              await plainSwitch.init();
+              widget.estate.addFunctionality(plainSwitch);
+              widget.callback(plainSwitch);
+              events.write(widget.estate.id, device.id, ObservationLevel.informatic, 'laite asetettu sähkökytkimeksi');
+              showSnackbarMessage('laitteen tietoja päivitetty!');
+              Navigator.pop(context, true);
+            })
+          ])
+        )
+      );
   }
 }
 

@@ -1,24 +1,24 @@
 
 import 'package:flutter/material.dart';
+import 'package:koti/devices/weather_service_provider/weather_service_provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
 
-import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../weather_forecast.dart';
 
 class WeatherForecastView extends FunctionalityView {
 
-  late WeatherForecast myForecast;
-  WeatherForecastView(dynamic myFunctionality) : super(myFunctionality) {
-    myForecast = myFunctionality as WeatherForecast;
+  WeatherForecast myForecast() {
+    return myFunctionality() as WeatherForecast;
   }
 
-  WeatherForecastView.fromJson(Map<String, dynamic> json) : super(allFunctionalities.noFunctionality()) {
+  WeatherForecastView();
+
+  WeatherForecastView.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
-    myForecast = myFunctionality as WeatherForecast;
   }
 
   @override
@@ -29,7 +29,7 @@ class WeatherForecastView extends FunctionalityView {
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
-              return WeatherPageCollection(weatherForecast: myForecast);
+              return WeatherPageCollection(weatherForecast: myForecast());
             },
           ));
           callback();
@@ -44,7 +44,7 @@ class WeatherForecastView extends FunctionalityView {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Text(
-                  myForecast.locationName,
+                  myForecast().locationName,
                   style: const TextStyle(
                       fontSize: 12)),
               Icon(
@@ -52,7 +52,7 @@ class WeatherForecastView extends FunctionalityView {
                 size: 50,
                 color: Colors.white,
               ),
-              Text(myForecast.currentTemperature() + " $celsius")
+              Text(myForecast().currentTemperature() + " $celsius")
             ])
     );
   }
@@ -64,7 +64,7 @@ class WeatherForecastView extends FunctionalityView {
 
   @override
   String subtitle() {
-    return myForecast.locationName;
+    return myForecast().locationName;
   }
 
 
@@ -119,9 +119,9 @@ class WeatherPageCollection extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = PageController(
     );
-    List<Widget> widgets = List.generate(weatherForecast.weatherServices.length, (int index) => WeatherExplorer(
-      title: weatherForecast.weatherServices[index].title(),
-      weatherUrl: weatherForecast.weatherServices[index].weatherPage(),
+    List<Widget> widgets = List.generate(weatherForecast.connectedDevices.length, (int index) => WeatherExplorer(
+      title: (weatherForecast.connectedDevices[index] as WeatherServiceProvider).title(),
+      weatherUrl: (weatherForecast.connectedDevices[index] as WeatherServiceProvider).weatherPage(),
     ));
     return PageView(
       controller: controller,

@@ -35,19 +35,32 @@ Widget shortNamedDeviceView(
       },
       child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Text(device.name,
-                 style: const TextStyle(fontSize: 12)),
-            Icon(
-              device.icon(),
-              size: 18,
-              color: Colors.white,
+            Flexible(
+              fit:FlexFit.loose,
+              child:
+              Text(device.name,
+                  style: const TextStyle(fontSize: 12)),
             ),
-            AutoSizeText(device.shortTypeName(),
-                textAlign: TextAlign.center,
-                presetFontSizes: [8,10,12,14],
+            Flexible(
+                fit:FlexFit.loose,
+                child:
+                Icon(
+                  device.icon(),
+                  size: 18,
+                  color: Colors.white,
+                ),
+            ),
+            Flexible(
+                fit:FlexFit.loose,
+                child:
+                AutoSizeText(device.shortTypeName(),
+                  textAlign: TextAlign.center,
+                  presetFontSizes: [8,10,12,14],
 
                 ),
+            ),
           ])
   );
 }
@@ -75,7 +88,6 @@ Widget devicesGrid(
   return  Container(
     margin: myContainerMargin,
     padding: myContainerPadding,
-    height: _height(devices.length),
     child:
       InputDecorator(
         decoration: InputDecoration(
@@ -83,10 +95,15 @@ Widget devicesGrid(
         child:
           devices.isEmpty
           ? Text('Ei laitteita')
-          : GridView.count(
+          : SizedBox(
+              height: _height(devices.length),
+              width: MediaQuery.of(context).size.width,
+              child:
+              GridView.count(
             crossAxisCount: _crossAxisCount,
             crossAxisSpacing: 5,
             mainAxisSpacing: 5,
+            shrinkWrap: true, // TODO: is this needed?
             padding: const EdgeInsets.all(1.0),
             children: [
               for (var device in devices)
@@ -98,6 +115,9 @@ Widget devicesGrid(
                   callback)
             ]
           )
+          )
       )
+
+
   );
 }

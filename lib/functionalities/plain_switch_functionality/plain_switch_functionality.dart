@@ -1,11 +1,18 @@
 
 import 'package:flutter/material.dart';
+import 'package:koti/devices/mixins/on_off_switch.dart';
 
 import 'package:koti/functionalities/plain_switch_functionality/view/plain_switch_functionality_view.dart';
 
 import '../../devices/device/device.dart';
 import '../../devices/shelly_timer_switch/shelly_timer_switch.dart';
+import '../../estate/estate.dart';
+import '../../logic/device_attribute_control.dart';
 import '../../logic/services.dart';
+import '../../look_and_feel.dart';
+import '../../operation_modes/conditional_operation_modes.dart';
+import '../../operation_modes/operation_modes.dart';
+import '../../service_catalog.dart';
 import '../functionality/functionality.dart';
 import '../functionality/view/functionality_view.dart';
 
@@ -13,41 +20,65 @@ class PlainSwitchFunctionality extends Functionality {
 
   static const String functionalityName = 'sähkökytkin';
 
-  PlainSwitchFunctionality();
+  PlainSwitchFunctionality() {
+    myView = PlainSwitchFunctionalityView();
+    myView.setFunctionality(this);
+  }
 
-  late RWAsyncDeviceService<bool> mySwitchDeviceService;
-  bool _power = false;
+  late DeviceServiceClass<OnOffSwitchService> mySwitchDeviceService;
+
+  void initStructures() {
+
+    operationModes.initModeStructure(
+        estate: myEstates.currentEstate(),
+        parameterSettingFunctionName: '',
+        deviceId: connectedDevices.isEmpty ? '' : connectedDevices[0].id,
+        deviceAttributes: [DeviceAttributeCapability.directControl],
+        setFunction: PlainSwitchSetOperationParametersOn,
+        getFunction: getFunction );
+
+    operationModes.addType(ConditionalOperationModes().typeName());
+    operationModes.addType(BoolServiceOperationMode().typeName());
+  }
+
+  void PlainSwitchSetOperationParametersOn(Map<String, dynamic> parameters) {
+    log.error('plainSwitch setFunction not implemented ');
+  }
+
+  Map<String, dynamic> getFunction() {
+    Map<String, dynamic> map = {};
+//    map[temperatureParameterId] = myPumpDevice().setTemperature();
+    log.error('plainSwitch getFunction not implemented ');
+    return map;
+  }
 
   @override
-
   Future<void> init () async {
-    mySwitchDeviceService = myDevice().services.getService('powerOnOffService') as RWAsyncDeviceService<bool>;
-    await switchStatus();
+    initStructures();
+    mySwitchDeviceService = myDevice().services.getService(powerOnOffWaitingService) as DeviceServiceClass<OnOffSwitchService>;
   }
 
   Device myDevice() {
     // todo: not nice but we know that PlainSwitch has only one device
-    return connectedDevices[0];
+    return connectedDevices.isNotEmpty ? connectedDevices[0] : noDevice;
   }
 
   Future<bool> toggle() async {
-    _power = ! _power;
-    await mySwitchDeviceService.set(_power);
-    return _power;
+    bool newState =  ! await mySwitchDeviceService.services.get();
+    await mySwitchDeviceService.services.set(newState ,caller: 'painokytkin');
+    return newState;
   }
 
   Future <void> setPower(bool newValue) async {
-    _power = newValue;
-    await mySwitchDeviceService.set(newValue);
+    await mySwitchDeviceService.services.set(newValue);
   }
 
   Future<bool> switchStatus() async {
-    _power =  await mySwitchDeviceService.get();
-    return _power;
+    return await mySwitchDeviceService.services.get();
   }
 
-  bool switchStatusPeak()  {
-    return _power;
+  bool switchStatusPeek()  {
+    return mySwitchDeviceService.services.peek();
   }
 
 
@@ -71,11 +102,6 @@ class PlainSwitchFunctionality extends Functionality {
   }
 
   @override
-  FunctionalityView myView() {
-    return PlainSwitchFunctionalityView(this);
-  }
-
-  @override
   Map<String, dynamic> toJson() {
     var json = super.toJson();
     return json;
@@ -83,5 +109,7 @@ class PlainSwitchFunctionality extends Functionality {
 
   @override
   PlainSwitchFunctionality.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+    myView = PlainSwitchFunctionalityView();
+    myView.setFunctionality(this);
   }
 }

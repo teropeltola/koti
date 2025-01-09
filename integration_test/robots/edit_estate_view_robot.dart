@@ -25,6 +25,7 @@ class EditEstateViewRobot {
 
 
   Future <void> enterEstateName(String name) async {
+    await tester.pumpAndSettle();
     await enterTextField(tester, 'estateName', name);
     await tester.testTextInput.receiveAction(TextInputAction.done);
     await tester.pump();
@@ -90,5 +91,6 @@ class EditEstateViewRobot {
     await editEstateView.selectElectricityDistributionAgreement(
         'Helen Aikasiirto');
     await editEstateView.tapReady();
+    await toGetScreenUpdatesDone();
   }
 }

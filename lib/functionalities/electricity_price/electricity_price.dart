@@ -3,12 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
+import 'package:koti/functionalities/electricity_price/view/electricity_price_view.dart';
 import '../../devices/porssisahko/porssisahko.dart';
 import '../../estate/estate.dart';
 import '../../functionalities/functionality/functionality.dart';
 import '../../devices/porssisahko/json/porssisahko_data.dart';
 import '../../logic/my_change_notifier.dart';
 import '../../look_and_feel.dart';
+import '../functionality/view/functionality_view.dart';
 
 int constantSlotSize = 60; // constant parameter that can be patched
                            // eg. testing 1 or in future 15
@@ -315,6 +317,8 @@ class ElectricityPrice extends Functionality {
   ElectricityDistributionPrice distributionPrice = ElectricityDistributionPrice();
 
   ElectricityPrice() {
+    myView = ElectricityGridBlock();
+    myView.setFunctionality(this);
   }
 
   bool isInitialized() {
@@ -437,7 +441,14 @@ class ElectricityPrice extends Functionality {
         ]
     );
   }
+/*
+  @override
+  FunctionalityView myView() {
+    return ElectricityGridBlock(id);
+  }
 
+
+ */
 
   @override
   Map<String, dynamic> toJson() {
@@ -449,6 +460,8 @@ class ElectricityPrice extends Functionality {
 
   @override
   ElectricityPrice.fromJson(Map<String, dynamic> json)  : super.fromJson(json) {
+    myView = ElectricityGridBlock();
+    myView.setFunctionality(this);
     tariff = ElectricityTariff.fromJson(json['electricityTariff']);
     distributionPrice = ElectricityDistributionPrice.fromJson(json['distributionTariff']);
   }

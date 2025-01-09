@@ -10,7 +10,10 @@ class VehicleCharging extends Functionality {
 
   static const String functionalityName = 'kulkuneuvon lataus';
 
-  VehicleCharging();
+  VehicleCharging() {
+    myView = VehicleChargingView();
+    myView.setFunctionality(this);
+  }
 
   @override
   Future<void> init () async {
@@ -23,10 +26,13 @@ class VehicleCharging extends Functionality {
   void setCharging() {
   }
 
+  /*
   @override
   FunctionalityView myView() {
-    return VehicleChargingView(this);
+    return VehicleChargingView(this.id);
   }
+
+   */
 
   @override
   Widget dumpData({required Function formatterWidget}) {
@@ -50,5 +56,7 @@ class VehicleCharging extends Functionality {
 
   @override
   VehicleCharging.fromJson(Map<String, dynamic> json) : super.fromJson(json) {
+    myView = VehicleChargingView();
+    myView.setFunctionality(this);
   }
 }

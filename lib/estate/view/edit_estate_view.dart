@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
+import 'package:koti/devices/shelly_blu_trv/shelly_blu_trv.dart';
 import 'package:koti/devices/wlan/active_wifi_name.dart';
 import 'package:koti/functionalities/boiler_heating/boiler_heating_functionality.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
@@ -18,17 +19,17 @@ import '../../devices/device/device.dart';
 import '../../devices/device/view/short_device_view.dart';
 import '../../devices/porssisahko/porssisahko.dart';
 import '../../devices/shelly/shelly_scan.dart';
+import '../../devices/shelly_blu_gw/shelly_blu_gw.dart';
 import '../../devices/vehicle/vehicle.dart';
 import '../../functionalities/air_heat_pump_functionality/air_heat_pump.dart';
-import '../../functionalities/air_heat_pump_functionality/view/air_heat_pump_view.dart';
+import '../../functionalities/air_heat_pump_functionality/view/create_air_heat_pump_view.dart';
+import '../../functionalities/boiler_heating/view/create_boiler_heating_view.dart';
 import '../../functionalities/electricity_price/electricity_price.dart';
 import '../../functionalities/electricity_price/view/edit_electricity_view.dart';
-import '../../functionalities/electricity_price/view/electricity_price_view.dart';
 import '../../functionalities/heating_system_functionality/heating_system.dart';
-import '../../functionalities/heating_system_functionality/view/heating_system_view.dart';
+import '../../functionalities/plain_switch_functionality/view/create_plain_switch_view.dart';
 import '../../functionalities/plain_switch_functionality/view/edit_plain_switch_view.dart';
 import '../../functionalities/vehicle_charging/vehicle_charging.dart';
-import '../../functionalities/vehicle_charging/view/vehicle_charging_view.dart';
 import '../../functionalities/weather_forecast/view/edit_weather_forecast_view.dart';
 import '../../functionalities/weather_forecast/weather_forecast.dart';
 import '../../operation_modes/conditional_operation_modes.dart';
@@ -42,35 +43,61 @@ import '../estate.dart';
 import '../../look_and_feel.dart';
 
 class _DevicePrototypes {
-  List <Device> list = [];
+  List <Device> protypeList = [];
 
   List <String> currentShellyServices = [];
 
+  List <Device> shellyBluConnectedDevices = [];
+
   void init(Estate editedEstate) {
-    list.addAll(_findPossibleDevices(editedEstate));
-    scanPossibleShellyServices(editedEstate);
+    refresh(editedEstate);
   }
 
-  void refresh(Estate editedEstate) {
+  Future<void> refresh(Estate editedEstate) async {
+    remove(); // protypeList.clear();
+    protypeList.addAll(_findPossibleDevices(editedEstate));
     scanPossibleShellyServices(editedEstate);
+    await addShellyBluConnectedDevices(editedEstate);
   }
 
   void remove() {
-    for (var device in list) {
+    for (var device in protypeList) {
       device.remove();
     }
-    list.clear();
+    protypeList.clear();
     currentShellyServices.clear();
+    shellyBluConnectedDevices.clear();
   }
 
   void removeFromList(List <String> removedNames) {
-    for (var device in list) {
+    for (var device in protypeList) {
       if (removedNames.contains(device.id)) {
-        list.remove(device);
+        protypeList.remove(device);
         device.remove();
       }
     }
 
+  }
+
+  // check estate connected Shelly Blu gateways and add to the possible list the connected blu devices
+  // that are not yet in use.
+  Future<void> addShellyBluConnectedDevices(Estate estate) async {
+    shellyBluConnectedDevices.clear();
+
+    for (var d in estate.devices) {
+      if (d is ShellyBluGw) {
+        ShellyBluGw gw = d as ShellyBluGw;
+        await gw.updateConnectedDevices();
+        for (var connectedDevice in gw.bluTrvStatusList) {
+          String deviceId = connectedDevice.deviceId();
+          if (! estate.deviceExists(deviceId)) {
+            shellyBluConnectedDevices.add(ShellyBluTrv(deviceId, gw.id, connectedDevice.status.id));
+          }
+        }
+      }
+    }
+
+    protypeList.addAll(shellyBluConnectedDevices);
   }
 
   void scanPossibleShellyServices(Estate editedEstate) {
@@ -92,7 +119,7 @@ class _DevicePrototypes {
         Device shellyDevice = deviceFromTypeName(
             findShellyTypeName(shellyName));
         shellyDevice.id = shellyName;
-        list.add(shellyDevice);
+        protypeList.add(shellyDevice);
       }
     }
   }
@@ -133,23 +160,35 @@ class _EditEstateViewState extends State<EditEstateView> {
   List<Functionality> existingServices = [];
   _DevicePrototypes foundDevices = _DevicePrototypes();
 
+  late Future<bool> devicesInitiated;
+
   @override
   void initState() {
     super.initState();
 
     if (_createNewEstate()) {
       editedEstate = myEstates.candidateEstate();
+      myEstates.activateCandidate();
       editedEstate.init('',activeWifiName.activeWifiName);
       addElectricityPriceWithoutEditing(editedEstate);
+      devicesInitiated = Future.value(true);
     }
     else {
       editedEstate = myEstates.cloneCandidate(widget.estateName);
+      devicesInitiated = deviceInitializationDone();
+
     }
     availableServices.init(editedEstate);
 
     myEstateNameController.text = editedEstate.name;
-    foundDevices.init(editedEstate);
+    refresh();
+  }
+
+  Future<bool> deviceInitializationDone() async {
+    await editedEstate.initDevicesAndFunctionalities();
     updateExistingServices();
+    await foundDevices.refresh(editedEstate);
+    return true;
   }
 
   void updateExistingServices() {
@@ -162,11 +201,13 @@ class _EditEstateViewState extends State<EditEstateView> {
     );
   }
 
-
-  void refresh() {
+  void refresh() async {
+    /*
     updateExistingServices();
-    foundDevices.refresh(editedEstate);
+    await foundDevices.refresh(editedEstate);
     setState(() { });
+
+     */
   }
 
   @override
@@ -201,6 +242,7 @@ class _EditEstateViewState extends State<EditEstateView> {
                   if (doExit) {
                     _removeTemporaryDevicePrototypes();
                     editedEstate.removeData();
+                    myEstates.deactivateCandidate();
                     Navigator.of(context).pop();
                   }
                 }),
@@ -208,7 +250,8 @@ class _EditEstateViewState extends State<EditEstateView> {
               ? appIconAndTitle('Syötä', 'asunnon tiedot')
               : appIconAndTitle(widget.estateName, 'muuta tietoja'),
           ), // new line
-          body: SingleChildScrollView(
+          body:
+            SingleChildScrollView(
               child: Column(children: <Widget>[
                 Container(
                 margin: myContainerMargin,
@@ -259,41 +302,20 @@ class _EditEstateViewState extends State<EditEstateView> {
                   ])
                 ),
               ),
-                Container(
-                    margin: myContainerMargin,
-                    padding: myContainerPadding,
-                    child: InputDecorator(
-                        decoration: const InputDecoration(labelText: 'Laitteet'),
-                        child:
-                        Column(children: [
-                          devicesGrid(
-                              context,
-                              'käytössä olevat laitteet',
-                              Colors.blue,
-                              editedEstate,
-                              editedEstate.devices,
-                              refresh
-                          ),
-                          devicesGrid(context,
-                              'lisää uusia laitteita:',
-                              Colors.lightBlue,
-                              editedEstate,
-                              foundDevices.list,
-                              refresh
-                          ),
-                        ]
-                        )
-                    )
-                ),
 
-                operationModeHandling(
+              DeviceEditingWidget(
+                devicesInitiated: devicesInitiated,
+                estate: editedEstate,
+                prototypeDevices: foundDevices.protypeList,
+                callback: refresh
+              ),
+              operationModeHandling(
                   context,
                   editedEstate,
                   editedEstate.operationModes,
                   _estateOperationModes,
                   refresh
               ),
-
               Container(
                 margin: myContainerMargin,
                 padding: myContainerPadding,
@@ -312,8 +334,8 @@ class _EditEstateViewState extends State<EditEstateView> {
                                 margin: const EdgeInsets.all(10),
                                 child: ListTile(
                                   title: Text(
-                                      '${existingServices[index].myView().viewName()} ('
-                                      '${existingServices[index].myView().subtitle()})'),
+                                      '${existingServices[index].myView.viewName()} ('
+                                      '${existingServices[index].myView.subtitle()})'),
                                   trailing:
                                     Row(
                                         mainAxisSize: MainAxisSize.min,
@@ -322,20 +344,17 @@ class _EditEstateViewState extends State<EditEstateView> {
                                         icon: Icon(Icons.edit),
                                         tooltip: 'muokkaa toimintoa',
                                         onPressed: () async {
-                                          await  existingServices[index].editWidget(
+                                          await  existingServices[index].myEditingFunction()(
                                               context,
-                                              false,
                                               editedEstate,
                                               existingServices[index],
-                                              existingServices[index].connectedDevices[0]
+                                              () {refresh();}
                                           );
-                                          refresh();
                                         }),
                                       IconButton(
                                           icon: Icon(Icons.delete),
                                           tooltip: 'poista toiminto',
                                           onPressed: () async {
-                                            editedEstate.removeView(existingServices[index].myView());
                                             editedEstate.removeFunctionality(existingServices[index]);
                                             existingServices[index].remove();
                                             refresh();
@@ -424,12 +443,12 @@ class _Services {
   }
 
   void addConstServices(Estate estate) {
-    items.add(_ServiceItem('Säätila', estate.deviceExists('Säätila'), addWeatherForecast, [_networkCategory]));
-    items.add(_ServiceItem('Lämmitys', estate.deviceExists('Lämmitys'), addHeatingSystem, [_warmingCategory]));
+    items.add(_ServiceItem('Säätila', estate.deviceExists('Säätila'), createWeatherForecastSystem, [_networkCategory]));
+    items.add(_ServiceItem('Lämmitys', estate.deviceExists('Lämmitys'), notYetImplemented, [_warmingCategory]));
     items.add(_ServiceItem('Ilmalämpöpumppu', estate.deviceExists('Ilpo'), createAirHeatPumpSystem, [_warmingCategory, _deviceCategory]));
     items.add(_ServiceItem('Auton lataus', estate.deviceExists('Tesla'), addTesla, [_deviceCategory]));
-    items.add(_ServiceItem('Sähkökatkaisin', false, addPlugInFunctionality, [_socketCategory]));
-    items.add(_ServiceItem('Ajastinkatkaisin', false, addPlugInFunctionality, [_socketCategory]));
+    items.add(_ServiceItem('Sähkökatkaisin', false, createPlainSwitchSystem, [_socketCategory]));
+    items.add(_ServiceItem('Ajastinkatkaisin', false, createPlainSwitchSystem, [_socketCategory]));
     items.add(_ServiceItem('Lämpötila', false, notYetImplemented, [_socketCategory]));
     items.add(_ServiceItem('Lämminvesivaraaja', false, createBoilerWarmingSystem, [_warmingCategory]));
     items.add(_ServiceItem('Patterivesikierto', false, createNewRadiatorWaterCirculation, [_warmingCategory, _deviceCategory]));
@@ -512,9 +531,9 @@ Widget _categoryOfFunctionalities(BuildContext context, Estate estate, Function 
                     if (value != 0) {
                        var option = options[value - 1];
                       Function addingFunction = option.addFunction;
-                      Functionality functionality = await addingFunction(
-                          context, estate, option.serviceName);
-                      if (functionality.creationSuccessful()) {
+                      bool success = await addingFunction(
+                          context, estate);
+                      if (success) {
                         option.added = true;
                       }
                       dropDownContent.setIndex(0);
@@ -528,59 +547,6 @@ Widget _categoryOfFunctionalities(BuildContext context, Estate estate, Function 
     );
 }
 
-Future<Functionality> addPlugInFunctionality(BuildContext context, Estate estate, String serviceName) async {
-
-  PlainSwitchFunctionality plainSwitchFunctionality = PlainSwitchFunctionality();
-  await Navigator.push(
-      context, MaterialPageRoute(
-    builder: (context) {
-      return EditPlainSwitchView(
-          estate: estate,
-          createNew: true,
-          switchType: serviceName,
-          switchFunctionality: plainSwitchFunctionality,
-          callback: (newFunctionality) {plainSwitchFunctionality = newFunctionality;});
-    },
-  ));
-
-  return plainSwitchFunctionality;
-}
-
-Future<OumanDevice> getOuman(BuildContext context, Estate estate) async {
-
-  //check if I already have one
-  int index = estate.devices.indexWhere((e){return e.runtimeType == OumanDevice;} );
-  if (index >= 0) {
-    return estate.devices[index] as OumanDevice;
-  }
-  else {
-    bool success = await OumanDevice().editWidget(context, estate);
-    if (success) {
-      return await getOuman(context, estate);
-    }
-    else {
-      return OumanDevice.failed();
-    }
-  }
-}
-
-Future<MitsuHeatPumpDevice> getMitsu(BuildContext context, Estate estate) async {
-
-  //check if I already have one
-  int index = estate.devices.indexWhere((e){return e.runtimeType == MitsuHeatPumpDevice;} );
-  if (index < 0) {
-    bool status = await MitsuHeatPumpDevice().editWidget(context, estate);
-    if (status) {
-      index = estate.devices.indexWhere((e) {
-        return e.runtimeType == MitsuHeatPumpDevice;
-      });
-    }
-    else {
-      return MitsuHeatPumpDevice.failed();
-    }
-  }
-  return estate.devices[index] as MitsuHeatPumpDevice;
-}
 
 Future <void> addElectricityPriceWithoutEditing(Estate estate) async {
   Porssisahko spot = Porssisahko();
@@ -590,7 +556,6 @@ Future <void> addElectricityPriceWithoutEditing(Estate estate) async {
   ElectricityPrice electricityPrice = ElectricityPrice();
   electricityPrice.pair(spot);
   estate.addFunctionality(electricityPrice);
-  estate.addView(ElectricityGridBlock(electricityPrice));
 
   // these are not waited in the initialization:
   await spot.init();
@@ -598,68 +563,19 @@ Future <void> addElectricityPriceWithoutEditing(Estate estate) async {
 
 }
 
-Future<WeatherForecast> addWeatherForecast(BuildContext context, Estate estate, String serviceName) async {
-
-  await Navigator.push(
-      context, MaterialPageRoute(
-    builder: (context) {
-      return EditWeatherForecastView(
-        createNew: true,
-        estate: estate,
-        originalWeatherForecast: WeatherForecast()
-      );
-    },
-  ));
-  return WeatherForecast();
-}
-
-Future<HeatingSystem> addHeatingSystem(BuildContext context, Estate estate, String serviceName) async {
-  OumanDevice ouman = await getOuman(context, estate);
-  if (ouman.isOk()) {
-    MitsuHeatPumpDevice mitsu = await getMitsu(context, estate);
-
-    if (mitsu.isOk()) {
-      HeatingSystem heatingSystem = createNewHeatingSystem(ouman, mitsu);
-
-      if (heatingSystem.creationSuccessful()) {
-        estate.addFunctionality(heatingSystem);
-        estate.addView(HeatingSystemView(heatingSystem));
-        await heatingSystem.init();
-        return heatingSystem;
-      }
-    }
-  }
-  return HeatingSystem.failed();
-}
-/*
-Future<AirHeatPump> addMitsu(BuildContext context, Estate estate, String serviceName) async {
-  MitsuHeatPumpDevice mitsu = await getMitsu(context, estate);
-  if (mitsu.isNotOk()) {
-    return AirHeatPump.failed();
-  }
-  AirHeatPump airHeatPump = createNewAirHeatPump(mitsu);
-  estate.addFunctionality(airHeatPump);
-  estate.addView(AirHeatPumpView(airHeatPump));
-  await airHeatPump.init();
-  return airHeatPump;
-}
-*/
-Future<Functionality> addTesla(BuildContext context, Estate estate, String serviceName) async {
+Future<bool> addTesla(BuildContext context, Estate estate) async {
   Functionality vehicleCharging = VehicleCharging();
   Device teslaDevice = Vehicle();
   teslaDevice.name = 'Tesla';
   estate.addDevice(teslaDevice);
   estate.addFunctionality(vehicleCharging);
   vehicleCharging.pair(teslaDevice);
-
-  estate.addView(
-      VehicleChargingView(vehicleCharging));
-  await vehicleCharging.editWidget(context, true, estate, vehicleCharging, teslaDevice);
-  return (vehicleCharging);
+  bool success = await vehicleCharging.editWidget(context, true, estate, vehicleCharging, teslaDevice);
+  return success;
 }
 
-Future<Functionality> notYetImplemented(BuildContext context, Estate estate, String serviceName) async {
-  return Functionality.failed();
+Future<bool> notYetImplemented(BuildContext context, Estate estate) async {
+  return false;
 }
 
 Widget _estateOperationModes(
@@ -729,3 +645,95 @@ class _SelectionOption {
 Widget functionalitySelection(String title, List<_SelectionOption> selectionOptions) {
   return Text(title);
 }
+
+
+class DeviceEditingWidget extends StatefulWidget {
+  final Future<bool> devicesInitiated;
+  final Estate estate;
+  final List<Device> prototypeDevices;
+  final Function callback;
+  const DeviceEditingWidget(
+      {super.key, required this.devicesInitiated, required this.estate,
+        required this.prototypeDevices, required this.callback});
+
+  @override
+  State<DeviceEditingWidget> createState() => _DeviceEditingWidgetState();
+}
+
+class _DeviceEditingWidgetState extends State<DeviceEditingWidget> {
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: widget.devicesInitiated, // a previously-obtained Future<bool> or null
+      builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
+        List<Widget> children = [];
+        if (snapshot.hasData) {
+            return Container(
+                margin: myContainerMargin,
+                padding: myContainerPadding,
+                child: /* InputDecorator(
+                    decoration: const InputDecoration(labelText: 'laitteet'),
+                    child:
+
+                 */
+                      Column(
+                        // mainAxisSize: MainAxisSize.min,
+                        children: [
+                          devicesGrid(
+                            context,
+                            'käytössä olevat laitteet',
+                            Colors.blue,
+                            widget.estate,
+                            widget.estate.devices,
+                            widget.callback
+                          ),
+                          devicesGrid(
+                            context,
+                            'lisää uusia laitteita:',
+                            Colors.lightBlue,
+                            widget.estate,
+                            widget.prototypeDevices,
+                            widget.callback
+                          ),
+                       ]
+                      )
+            );
+        } else if (snapshot.hasError) {
+          children = <Widget>[
+            const Icon(
+              Icons.error_outline,
+              color: myPrimaryFontColor,
+              size: 60,
+            ),
+            const Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: Text('Hups, emme saa nyt yhteyttä verkkoon!'),
+            ),
+          ];
+        } else {
+          children = const <Widget>[
+            Padding(
+              padding: EdgeInsets.only(top: 16),
+              child: Text('Pieni hetki, tietoa haetaan laitteilta...\n'),
+            ),
+            SizedBox(
+              width: 60,
+              height: 60,
+              child: CircularProgressIndicator(),
+            ),
+
+          ];
+        }
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: children,
+          ),
+        );
+
+      },
+    );
+  }
+}
+

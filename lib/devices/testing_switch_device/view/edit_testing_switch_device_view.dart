@@ -101,12 +101,10 @@ class _EditTestingSwitchDeviceViewState extends State<EditTestingSwitchDeviceVie
                       ),
                     ),
                     readyWidget(() async {
-                      if (creatingNewDevice) {
-
-                      }
-                      else {
-                        widget.estate.removeDevice(widget.testingSwitchDevice.id);
-                      }
+                      // remove earlier version
+                      widget.estate.removeDevice(widget.testingSwitchDevice.id);
+                      widget.testingSwitchDevice.remove();
+                      // add the new version
                       await testingSwitchDevice.init();
                       widget.estate.addDevice(testingSwitchDevice);
                       log.info('${widget.estate.name}: laite tunnuksella "${testingSwitchDevice.id}" otettu käyttöön nimellä "${testingSwitchDevice.name}"');

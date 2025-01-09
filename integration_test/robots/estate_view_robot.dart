@@ -17,7 +17,7 @@ class EstateViewRobot {
 
   Future <void> goEditEstate() async {
     await tester.pumpAndSettle();
-    await tester.tap(find.byIcon(Icons.edit));
+    await tapIcon(tester, Icons.edit);
     await tester.pumpAndSettle();
   }
 

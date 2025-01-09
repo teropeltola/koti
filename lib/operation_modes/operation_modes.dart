@@ -6,6 +6,7 @@ import 'package:koti/logic/device_attribute_control.dart';
 import 'package:koti/operation_modes/conditional_operation_modes.dart';
 import 'package:koti/operation_modes/hierarcical_operation_mode.dart';
 import '../devices/device/device.dart';
+import '../devices/mixins/on_off_switch.dart';
 import '../logic/select_index.dart';
 import '../logic/services.dart';
 import '../look_and_feel.dart';
@@ -24,7 +25,7 @@ class OperationMode {
 
   OperationMode();
 
-  void init([OperationModes? initOperationModes]) {
+  void init(String estateName, [OperationModes? initOperationModes]) {
   }
 
   void clear() {
@@ -114,8 +115,8 @@ class BoolServiceOperationMode extends OperationMode {
   @override
   Future<void> select(ControlledDevice controlledDevice, OperationModes? operationModes) async {
     Device device = allDevices.findDevice(controlledDevice.deviceId);
-    RWDeviceService<bool> deviceService = device.services.getService(serviceName) as RWDeviceService<bool>;
-    deviceService.set(value);
+    DeviceServiceClass<OnOffSwitchService> deviceService = device.services.getService(serviceName) as DeviceServiceClass<OnOffSwitchService>;
+    await deviceService.services.set(value, caller:'toimintotila: "$_name"');
   }
 
   @override
@@ -217,8 +218,6 @@ class OperationModes {
 
   List <OperationMode> _modes = [];
   OperationModeTypes types = OperationModeTypes();
-  String estateName = '';
-  //Function selectFunction = _noFunction; XX
   ControlledDevice controlledDevice = ControlledDevice();
 
   SelectIndex _currentIndex = SelectIndex.empty();
@@ -234,7 +233,7 @@ class OperationModes {
               required Function getFunction }) {
 
     _currentIndex = SelectIndex('${estate.id}/${deviceId}');
-    estateName = estate.name;
+
     controlledDevice.initStructure(
       deviceId: deviceId,
       deviceAttributes: deviceAttributes,
@@ -243,7 +242,7 @@ class OperationModes {
     );
 
     for (var operationMode in _modes) {
-      operationMode.init(this);
+      operationMode.init(estate.name, this);
     }
   }
 

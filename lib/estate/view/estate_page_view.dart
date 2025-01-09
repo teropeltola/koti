@@ -31,8 +31,8 @@ class _EstatePageViewState extends State<EstatePageView> {
   }
 
   void dispose() {
-    super.dispose();
     controller.dispose();
+    super.dispose();
   }
 
   void _handlePageViewChanged(int currentPageIndex) {
