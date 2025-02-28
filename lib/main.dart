@@ -1,12 +1,18 @@
 
+import 'dart:io';
+import 'dart:ui';
+
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:koti/app_configurator.dart';
-import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
-import 'package:koti/logic/observation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
+
+import 'package:koti/app_configurator.dart';
+import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
+import 'package:koti/interfaces/foreground_interface.dart';
+import 'package:koti/logic/observation.dart';
 
 import 'package:koti/devices/wlan/connection_status_listener.dart';
 import 'devices/device/device.dart';
@@ -16,12 +22,44 @@ import 'devices/wlan/active_wifi_name.dart';
 import 'estate/estate.dart';
 import 'estate/view/edit_estate_view.dart';
 import 'estate/view/estate_page_view.dart';
-import 'estate/view/estate_view.dart';
 import 'functionalities/functionality/functionality.dart';
 import 'logic/events.dart';
+import 'my_task_handler.dart';
 import 'trend/trend.dart';
 import 'look_and_feel.dart';
 import 'operation_modes/operation_modes.dart';
+
+Future<void> _requestFlutterForegroundTaskPermissions() async {
+  // Android 13+, you need to allow notification permission to display foreground service notification.
+  //
+  // iOS: If you need notification, ask for permission.
+  final NotificationPermission notificationPermission =
+  await FlutterForegroundTask.checkNotificationPermission();
+  if (notificationPermission != NotificationPermission.granted) {
+    await FlutterForegroundTask.requestNotificationPermission();
+  }
+
+  if (Platform.isAndroid) {
+    // Android 12+, there are restrictions on starting a foreground service.
+    //
+    // To restart the service on device reboot or unexpected problem, you need to allow below permission.
+    if (!await FlutterForegroundTask.isIgnoringBatteryOptimizations) {
+      // This function requires `android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS` permission.
+      await FlutterForegroundTask.requestIgnoreBatteryOptimization();
+    }
+
+    // Use this utility only if you provide services that require long-term survival,
+    // such as exact alarm service, healthcare service, or Bluetooth communication.
+    //
+    // This utility requires the "android.permission.SCHEDULE_EXACT_ALARM" permission.
+    // Using this permission may make app distribution difficult due to Google policy.
+    if (!await FlutterForegroundTask.canScheduleExactAlarms) {
+      // When you call this function, will be gone to the settings page.
+      // So you need to explain to the user why set it.
+      await FlutterForegroundTask.openAlarmsAndRemindersSettings();
+    }
+  }
+}
 
 Future <void> getPermissions() async {
 
@@ -29,6 +67,8 @@ Future <void> getPermissions() async {
   Map<Permission, PermissionStatus> statuses = await [
     Permission.location,
   ].request();
+
+  await _requestFlutterForegroundTaskPermissions();
 }
 
 bool runningInSimulator = false;
@@ -40,22 +80,27 @@ Future <void> resetAllFatal() async {
   allFunctionalities.clear();
   allDevices.clear();
   log.cleanHistory();
-  FlutterSecureStorage().deleteAll();
+  const FlutterSecureStorage().deleteAll();
 
   applicationDeviceConfigurator.initConfiguration();
 }
 
 Future <void> appInitializationRoutines() async {
+  //DartPluginRegistrant.ensureInitialized();
   await initMySettings();
+  FlutterForegroundTask.initCommunicationPort();
   registerOperationModeTypes();
   await getPermissions();
   runningInSimulator = await isSimulator();
 
-  await shellyScan.init();
-
   await Hive.initFlutter();
+  FlutterForegroundTask.setTaskHandler(MyTaskHandler());
 
   applicationDeviceConfigurator.initConfiguration();
+
+  await foregroundInterface.init();
+
+  await shellyScan.init();
 
   await connectionStatusListener.initialize();
 
@@ -103,6 +148,20 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
 
   @override
+  void initState() {
+    super.initState();
+    // Add a callback to receive data sent from the TaskHandler.
+    //foregroundInterface.init();
+  }
+
+  @override
+  void dispose() {
+    // Remove a callback to receive data sent from the TaskHandler.
+    //foregroundInterface.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     if (myEstates.nbrOfEstates() == 0) {
       return FirstPage( callback: () {setState(() {});});
@@ -132,8 +191,8 @@ class _FirstPageState extends State<FirstPage> {
         body: SingleChildScrollView(
             child: Column(children: <Widget>[
               Container(
-                  margin: EdgeInsets.all(5),
-                  padding: EdgeInsets.all(5),
+                  margin: const EdgeInsets.all(5),
+                  padding: const EdgeInsets.all(5),
                   child: const InputDecorator(
                     decoration: InputDecoration(labelText: 'Tervetuloa!'),
                     child: Column(children: <Widget>[
@@ -165,7 +224,7 @@ class _FirstPageState extends State<FirstPage> {
                           onPressed: () async {
                             await Navigator.push(context, MaterialPageRoute(
                               builder: (context) {
-                                return EditEstateView(estateName: '');
+                                return const EditEstateView(estateName: '');
                               },
                             ));
                             widget.callback();
@@ -174,7 +233,7 @@ class _FirstPageState extends State<FirstPage> {
                             'Määrittele hallittava kohde',
                             maxLines: 1,
                             style: TextStyle(color: mySecondaryFontColor),
-                            textScaler: const TextScaler.linear(1.5),
+                            textScaler: TextScaler.linear(1.5),
                           )
                       ))),
             ])

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
-import 'package:koti/functionalities/air_heat_pump_functionality/view/air_heat_pump_overview.dart';
 import 'package:koti/functionalities/radiator_water_circulation/view/edit_radiator_water_circulation_view.dart';
 
 import '../../../estate/estate.dart';
@@ -45,13 +44,13 @@ class _RadiatorWaterCirculationOverviewState extends State<RadiatorWaterCirculat
           body: SingleChildScrollView(
               child: Column(children: <Widget>[
                 Container(
-                margin: EdgeInsets.fromLTRB(2,10,2,2),
+                margin: const EdgeInsets.fromLTRB(2,10,2,2),
                 padding: myContainerPadding,
                 //alignment: AlignmentDirectional.topStart,
                 child: InputDecorator(
                   decoration: const InputDecoration(labelText: 'Ouman EH-800 lämmönsäädin'), //k
                   child: myOuman.noData()
-                      ? Text('Oumanin tietoa ei ole vielä vastaanotettu')
+                      ? const Text('Oumanin tietoa ei ole vielä vastaanotettu')
                    : Row(children:<Widget> [
                     Expanded(
                       flex: 3,
@@ -61,7 +60,7 @@ class _RadiatorWaterCirculationOverviewState extends State<RadiatorWaterCirculat
                         color: observationSymbolColor(myOuman.observationLevel()),
                       ),
                     ),
-                  Expanded(
+                  const Expanded(
                       flex: 6,
                       child:
                       Column(

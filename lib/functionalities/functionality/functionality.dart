@@ -22,7 +22,7 @@ const String _functionalityFailure = 'functionalityFailure';
 FunctionalityList allFunctionalities = FunctionalityList();
 
 class FunctionalityList {
-  List<Functionality> _fl = [];
+  final List<Functionality> _fl = [];
 
   FunctionalityList() {
     Functionality empty = Functionality.empty();
@@ -37,12 +37,14 @@ class FunctionalityList {
   void remove(Functionality functionality) {
     _fl.remove(functionality);
   }
-
+/*
   FunctionalitnewFunctionality() {
     Functionality functionality = Functionality();
     _fl.add(functionality);
     return functionality;
   }
+
+ */
 
   void addFunctionality(Functionality newFunctionality) {
 

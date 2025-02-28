@@ -18,16 +18,16 @@ Widget boilerHeatingParameterSetting(
 {
   Widget myWidget;
   if (operationMode is ConstantOperationMode) {
-    ConstantOperationMode cOM = operationMode as ConstantOperationMode;
+    ConstantOperationMode cOM = operationMode;
     myWidget=temperatureSelectionForm(temperatureParameterId, cOM.parameters);
   }
   else if (operationMode is ConditionalOperationModes) {
     myWidget = ConditionalOperationView(
-        conditions: operationMode as ConditionalOperationModes
+        conditions: operationMode
     );
   }
   else {
-    myWidget=Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
+    myWidget=const Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
   }
   return myWidget;
 }

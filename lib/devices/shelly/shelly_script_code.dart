@@ -1,4 +1,3 @@
-import 'dart:convert' show utf8;
 import 'dart:math';
 
 const codeChunkMaxSize = 700;

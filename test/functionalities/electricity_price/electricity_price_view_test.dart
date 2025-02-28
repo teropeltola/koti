@@ -3,7 +3,6 @@ import 'package:koti/devices/my_device_info.dart';
 import 'package:koti/functionalities/electricity_price/view/electricity_price_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:koti/devices/porssisahko/porssisahko.dart';
 import 'package:koti/functionalities/electricity_price/electricity_price.dart';
 
 void main() {

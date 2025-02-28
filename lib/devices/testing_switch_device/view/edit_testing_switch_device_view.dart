@@ -73,7 +73,7 @@ class _EditTestingSwitchDeviceViewState extends State<EditTestingSwitchDeviceVie
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            Spacer(),
+                            const Spacer(),
                             TextField(
                               key: const Key('deviceName'),
                               decoration: const InputDecoration(
@@ -91,10 +91,10 @@ class _EditTestingSwitchDeviceViewState extends State<EditTestingSwitchDeviceVie
                               onEditingComplete: () {
                                 _focusNode.unfocus();
                             }),
-                            Spacer(),
+                            const Spacer(),
                             Row(children: <Widget>[
-                              Flexible(flex:1, child: Text('Tunnus: ')),
-                              Flexible(flex:5, child: AutoSizeText(testingSwitchDevice.id, style:TextStyle(fontSize:20,color:Colors.blue))),
+                              const Flexible(flex:1, child: Text('Tunnus: ')),
+                              Flexible(flex:5, child: AutoSizeText(testingSwitchDevice.id, style:const TextStyle(fontSize:20,color:Colors.blue))),
                             ]),
 
                         ]),

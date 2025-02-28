@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:koti/functionalities/vehicle_charging/view/vehicle_charging_view.dart';
 
 import '../functionality/functionality.dart';
-import '../functionality/view/functionality_view.dart';
 
 class VehicleCharging extends Functionality {
 

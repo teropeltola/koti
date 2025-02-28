@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:koti/devices/ouman/ouman_device.dart';
-import 'package:koti/functionalities/air_heat_pump_functionality/view/air_heat_pump_overview.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
@@ -42,11 +40,11 @@ class _GeneralAgentOverviewState extends State<GeneralAgentOverview> {
           body: SingleChildScrollView(
               child: Column(children: <Widget>[
                 Container(
-                margin: EdgeInsets.fromLTRB(2,10,2,2),
+                margin: const EdgeInsets.fromLTRB(2,10,2,2),
                 padding: myContainerPadding,
                 //alignment: AlignmentDirectional.topStart,
-                child: InputDecorator(
-                  decoration: const InputDecoration(labelText: 'Ouman EH-800 lämmönsäädin'), //k
+                child: const InputDecorator(
+                  decoration: InputDecoration(labelText: 'Ouman EH-800 lämmönsäädin'), //k
                   child: Row(children:<Widget> [
 
                   Expanded(

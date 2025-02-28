@@ -13,7 +13,6 @@ import '../../../look_and_feel.dart';
 import '../../../operation_modes/view/edit_generic_operation_modes_view.dart';
 import '../../../service_catalog.dart';
 import '../../../view/interrupt_editing_widget.dart';
-import '../../../view/my_dropdown_widget.dart';
 import '../../../view/no_needed_resources_widget.dart';
 import '../../../view/ready_widget.dart';
 import '../../boiler_heating/view/boiler_heating_parameter_setting.dart';
@@ -111,6 +110,6 @@ class _EditPlainSwitchViewState extends State<EditPlainSwitchView> {
 }
 
 String _resolvedBonsoirServiceDetailedData(ResolvedBonsoirService bsData) {
-  return 'IP-osoite: ${bsData.ip ?? '-'}, portti: ${bsData.port ?? '-'}\n'
+  return 'IP-osoite: ${bsData.host ?? '-'}, portti: ${bsData.port ?? '-'}\n'
   'attribuutit: ${bsData.attributes.toString()}';
 }

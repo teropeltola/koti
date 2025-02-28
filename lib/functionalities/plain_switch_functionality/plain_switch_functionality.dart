@@ -5,7 +5,6 @@ import 'package:koti/devices/mixins/on_off_switch.dart';
 import 'package:koti/functionalities/plain_switch_functionality/view/plain_switch_functionality_view.dart';
 
 import '../../devices/device/device.dart';
-import '../../devices/shelly_timer_switch/shelly_timer_switch.dart';
 import '../../estate/estate.dart';
 import '../../logic/device_attribute_control.dart';
 import '../../logic/services.dart';
@@ -14,7 +13,6 @@ import '../../operation_modes/conditional_operation_modes.dart';
 import '../../operation_modes/operation_modes.dart';
 import '../../service_catalog.dart';
 import '../functionality/functionality.dart';
-import '../functionality/view/functionality_view.dart';
 
 class PlainSwitchFunctionality extends Functionality {
 

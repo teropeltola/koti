@@ -4,7 +4,7 @@ const String _usernameKey = 'username';
 const String _passwordKey = 'password';
 
 class WebLoginData {
-  FlutterSecureStorage _secureStorage = FlutterSecureStorage();
+  FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
   String _url = '';
 
@@ -12,7 +12,7 @@ class WebLoginData {
   set url(String newUrl) { _url = newUrl; }
 
   WebLoginData([FlutterSecureStorage? secureStorage])
-      : _secureStorage = secureStorage ?? FlutterSecureStorage();
+      : _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   void initMock(FlutterSecureStorage secureStorage) {
     _secureStorage = secureStorage;

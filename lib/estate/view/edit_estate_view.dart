@@ -1,14 +1,10 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
-import 'package:koti/devices/ouman/ouman_device.dart';
 import 'package:koti/devices/shelly_blu_trv/shelly_blu_trv.dart';
 import 'package:koti/devices/wlan/active_wifi_name.dart';
-import 'package:koti/functionalities/boiler_heating/boiler_heating_functionality.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
 import 'package:koti/functionalities/general_agent/view/edit_general_agent_view.dart';
-import 'package:koti/functionalities/plain_switch_functionality/plain_switch_functionality.dart';
 import 'package:koti/functionalities/radiator_water_circulation/radiator_water_circulation.dart';
 import 'package:koti/logic/dropdown_content.dart';
 import 'package:koti/operation_modes/view/edit_operation_mode_view.dart';
@@ -21,17 +17,13 @@ import '../../devices/porssisahko/porssisahko.dart';
 import '../../devices/shelly/shelly_scan.dart';
 import '../../devices/shelly_blu_gw/shelly_blu_gw.dart';
 import '../../devices/vehicle/vehicle.dart';
-import '../../functionalities/air_heat_pump_functionality/air_heat_pump.dart';
 import '../../functionalities/air_heat_pump_functionality/view/create_air_heat_pump_view.dart';
 import '../../functionalities/boiler_heating/view/create_boiler_heating_view.dart';
 import '../../functionalities/electricity_price/electricity_price.dart';
 import '../../functionalities/electricity_price/view/edit_electricity_view.dart';
-import '../../functionalities/heating_system_functionality/heating_system.dart';
 import '../../functionalities/plain_switch_functionality/view/create_plain_switch_view.dart';
-import '../../functionalities/plain_switch_functionality/view/edit_plain_switch_view.dart';
 import '../../functionalities/vehicle_charging/vehicle_charging.dart';
 import '../../functionalities/weather_forecast/view/edit_weather_forecast_view.dart';
-import '../../functionalities/weather_forecast/weather_forecast.dart';
 import '../../operation_modes/conditional_operation_modes.dart';
 import '../../operation_modes/hierarcical_operation_mode.dart';
 import '../../operation_modes/operation_modes.dart';
@@ -86,7 +78,7 @@ class _DevicePrototypes {
 
     for (var d in estate.devices) {
       if (d is ShellyBluGw) {
-        ShellyBluGw gw = d as ShellyBluGw;
+        ShellyBluGw gw = d;
         await gw.updateConnectedDevices();
         for (var connectedDevice in gw.bluTrvStatusList) {
           String deviceId = connectedDevice.deviceId();
@@ -144,7 +136,7 @@ class _DevicePrototypes {
 
 class EditEstateView extends StatefulWidget {
    final String estateName;
-   EditEstateView({Key? key, required this.estateName}) : super(key: key);
+   const EditEstateView({Key? key, required this.estateName}) : super(key: key);
 
   @override
   _EditEstateViewState createState() => _EditEstateViewState();
@@ -193,21 +185,17 @@ class _EditEstateViewState extends State<EditEstateView> {
 
   void updateExistingServices() {
     existingServices.clear();
-    editedEstate.features.forEach((e) {
+    for (var e in editedEstate.features) {
       if (e.runtimeType.toString() != 'ElectricityPrice') {
         existingServices.add(e);
       }
     }
-    );
   }
 
   void refresh() async {
-    /*
     updateExistingServices();
     await foundDevices.refresh(editedEstate);
     setState(() { });
-
-     */
   }
 
   @override
@@ -341,7 +329,7 @@ class _EditEstateViewState extends State<EditEstateView> {
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
                                       IconButton(
-                                        icon: Icon(Icons.edit),
+                                        icon: const Icon(Icons.edit),
                                         tooltip: 'muokkaa toimintoa',
                                         onPressed: () async {
                                           await  existingServices[index].myEditingFunction()(
@@ -352,7 +340,7 @@ class _EditEstateViewState extends State<EditEstateView> {
                                           );
                                         }),
                                       IconButton(
-                                          icon: Icon(Icons.delete),
+                                          icon: const Icon(Icons.delete),
                                           tooltip: 'poista toiminto',
                                           onPressed: () async {
                                             editedEstate.removeFunctionality(existingServices[index]);
@@ -373,7 +361,7 @@ class _EditEstateViewState extends State<EditEstateView> {
                       labelText: 'Mahdolliset toiminnot'),
                     child:
                       Column(children: [
-                        Text('Lisää uusia toimintoja:'),
+                        const Text('Lisää uusia toimintoja:'),
                         for (var optionWidget in availableServices.optionWidgets(context, editedEstate, refresh))
                           optionWidget,
                       ]
@@ -409,13 +397,13 @@ class _EditEstateViewState extends State<EditEstateView> {
 class _ServiceItem {
   String serviceName = '';
   late Function addFunction;
-  Icon serviceIcon = Icon(Icons.abc);
+  Icon serviceIcon = const Icon(Icons.abc);
   bool added = false;
   bool dataEditing = false;
   bool multifunction = false;
   List <String> categories = [];
 
-  _ServiceItem(String initServiceName, bool initAdded, Function initAddFunction, List<String> initCategories,  {bool multiFunction = true, bool editData = false}) {
+  _ServiceItem(String initServiceName, bool initAdded, Function initAddFunction, List<String> initCategories,  {bool editData = false}) {
     serviceName = initServiceName;
     added = initAdded;
     dataEditing = editData;
@@ -431,7 +419,7 @@ const String _socketCategory = 'katkaisimet';
 
 class _Services {
   List <_ServiceItem> items = [];
-  List <String> _serviceCategories = [ _networkCategory, _warmingCategory, _deviceCategory, _socketCategory];
+  final List <String> _serviceCategories = [ _networkCategory, _warmingCategory, _deviceCategory, _socketCategory];
 
   void init(Estate estate) {
     clear();
@@ -444,14 +432,14 @@ class _Services {
 
   void addConstServices(Estate estate) {
     items.add(_ServiceItem('Säätila', estate.deviceExists('Säätila'), createWeatherForecastSystem, [_networkCategory]));
-    items.add(_ServiceItem('Lämmitys', estate.deviceExists('Lämmitys'), notYetImplemented, [_warmingCategory]));
+    // items.add(_ServiceItem('Lämmitys', estate.deviceExists('Lämmitys'), notYetImplemented, [_warmingCategory]));
     items.add(_ServiceItem('Ilmalämpöpumppu', estate.deviceExists('Ilpo'), createAirHeatPumpSystem, [_warmingCategory, _deviceCategory]));
     items.add(_ServiceItem('Auton lataus', estate.deviceExists('Tesla'), addTesla, [_deviceCategory]));
     items.add(_ServiceItem('Sähkökatkaisin', false, createPlainSwitchSystem, [_socketCategory]));
     items.add(_ServiceItem('Ajastinkatkaisin', false, createPlainSwitchSystem, [_socketCategory]));
     items.add(_ServiceItem('Lämpötila', false, notYetImplemented, [_socketCategory]));
     items.add(_ServiceItem('Lämminvesivaraaja', false, createBoilerWarmingSystem, [_warmingCategory]));
-    items.add(_ServiceItem('Patterivesikierto', false, createNewRadiatorWaterCirculation, [_warmingCategory, _deviceCategory]));
+    //items.add(_ServiceItem('Patterivesikierto', false, createNewRadiatorWaterCirculation, [_warmingCategory, _deviceCategory]));
     items.add(_ServiceItem('Yleinen', false, createGeneralAgent, [_warmingCategory, _deviceCategory, _socketCategory]));
 
   }
@@ -611,7 +599,7 @@ Widget _estateOperationModes(
               decoration: const InputDecoration(
                   labelText: 'Asunnon toimintotila määritys'),
               child: (featureTiles.isEmpty)
-                  ? Text('Asunnon toiminnoille ei ole määritelty toimintotiloja')
+                  ? const Text('Asunnon toiminnoille ei ole määritelty toimintotiloja')
                   : Column(children: [
                 ListView.builder(
                     scrollDirection: Axis.vertical,
@@ -629,7 +617,7 @@ Widget _estateOperationModes(
     }
   else if (operationMode is ConditionalOperationModes) {
     myWidget = ConditionalOperationView(
-      conditions: operationMode as ConditionalOperationModes
+      conditions: operationMode
     );
   }
   else {

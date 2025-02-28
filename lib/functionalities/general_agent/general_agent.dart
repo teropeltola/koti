@@ -9,7 +9,6 @@ import '../../look_and_feel.dart';
 import '../../operation_modes/conditional_operation_modes.dart';
 import '../../operation_modes/operation_modes.dart';
 import '../functionality/functionality.dart';
-import '../functionality/view/functionality_view.dart';
 
 class GeneralAgent extends Functionality {
 
@@ -68,7 +67,7 @@ class GeneralAgent extends Functionality {
         {
           return EditGeneralAgentView(
               estate: estate,
-              generalAgent: this as GeneralAgent
+              generalAgent: this
           );
         }
     ));

@@ -6,12 +6,14 @@ import 'package:koti/devices/shelly_timer_switch/shelly_timer_switch.dart';
 import 'package:koti/devices/testing_switch_device/testing_switch_device.dart';
 import 'package:koti/devices/vehicle/vehicle.dart';
 import 'package:koti/devices/weather_service_provider/weather_service_provider.dart';
+import 'package:koti/functionalities/electricity_price/trend_electricity.dart';
 import 'package:koti/trend/trend.dart';
 import 'package:koti/trend/trend_event.dart';
 import 'package:koti/trend/trend_switch.dart';
 
 import 'devices/device/device.dart';
 import 'devices/ouman/ouman_device.dart';
+import 'devices/ouman/ouman_workmanager.dart';
 import 'devices/ouman/trend_ouman.dart';
 import 'devices/porssisahko/porssisahko.dart';
 import 'devices/shelly_blu_gw/shelly_blu_gw.dart';
@@ -99,8 +101,29 @@ const String hiveTrendElectricityPriceName = 'trendElectricityPrice';
 const String hiveTrendOnOffSwitch = 'trendOnOffSwitch';
 
 void initHiveAdapters() {
-  Hive.registerAdapter(TrendDataAdapter());
-  Hive.registerAdapter(TrendEventAdapter());
-  Hive.registerAdapter(TrendOumanAdapter());
-  Hive.registerAdapter(TrendSwitchAdapter());
+  try {
+    Hive.registerAdapter(TrendDataAdapter());
+    Hive.registerAdapter(TrendEventAdapter());
+    Hive.registerAdapter(TrendOumanAdapter());
+    Hive.registerAdapter(TrendSwitchAdapter());
+    Hive.registerAdapter(TrendElectricityAdapter());
+  }
+  catch (e) {
+    print('Hive adapter registration failed: $e');
+  }
 }
+
+// workmanager structures
+// 1. add const task name
+// 2. add it to the workmanagerTasks
+// 3. add function that is called from workmanager
+
+const String oumanWorkmanagerTask = 'oumanWorkmanagerTask';
+
+const List<String> workmanagerTasks = [
+  oumanWorkmanagerTask
+];
+
+const List<Function> workmanagerFunctions = [
+  // oumanWorkmanagerFunction
+];

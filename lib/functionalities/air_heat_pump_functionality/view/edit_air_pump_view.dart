@@ -11,7 +11,6 @@ import '../../../logic/dropdown_content.dart';
 import '../../../look_and_feel.dart';
 import '../../../operation_modes/view/edit_generic_operation_modes_view.dart';
 import '../../../service_catalog.dart';
-import '../../../view/my_dropdown_widget.dart';
 import '../../../view/ready_widget.dart';
 import '../../boiler_heating/view/controlled_devices_widget.dart';
 import '../air_heat_pump.dart';

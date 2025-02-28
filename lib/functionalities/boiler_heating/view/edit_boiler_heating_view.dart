@@ -11,7 +11,6 @@ import '../../../look_and_feel.dart';
 import '../../../operation_modes/view/edit_generic_operation_modes_view.dart';
 import '../../../view/ready_widget.dart';
 import '../../../view/interrupt_editing_widget.dart';
-import '../../functionality/functionality.dart';
 import '../boiler_heating_functionality.dart';
 import 'boiler_heating_parameter_setting.dart';
 import 'controlled_devices_widget.dart';

@@ -9,7 +9,6 @@ import '../shelly/json/shelly_switch_config.dart';
 import '../shelly/json/switch_get_status.dart';
 import '../shelly/shelly_device.dart';
 
-
 enum ShellyPro2Id {
   id0,
   id1,
@@ -31,8 +30,7 @@ class ShellyPro2 extends ShellyDevice with OnOffSwitch {
     ]);
   }
 
-  ShellyPro2() {
-  }
+  ShellyPro2();
 
   ShellyPro2.failed() {
     setFailed();
@@ -96,7 +94,7 @@ class ShellyPro2 extends ShellyDevice with OnOffSwitch {
   }
 
   Future<bool> getFullPower() async {
-    return await switchStatus(ShellyPro2Id.both);
+    return switchStatus(ShellyPro2Id.both);
   }
 
   Future<void> setPower(ShellyPro2Id id, bool on) async {

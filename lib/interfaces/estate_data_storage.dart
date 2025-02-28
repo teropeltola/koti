@@ -6,9 +6,8 @@ import 'my_file_pathname.dart';
 
 class EstateDataStorage {
 
-  EstateDataStorage()  {
-  }
-  MyFilePathname _myPathname = MyFilePathname();
+  EstateDataStorage();
+  final MyFilePathname _myPathname = MyFilePathname();
 
   String _estateFileName = 'notInitializedObservationFileName';
   String _fullFileName = 'notInitializedFullFileName';
@@ -42,7 +41,7 @@ class EstateDataStorage {
     if (estateFile.existsSync()) {
       return estateFile.readAsStringSync();
     }
-    log.error('Estate file (${_fullFileName}) doesnt exist');
+    log.error('Estate file ($_fullFileName) doesnt exist');
     return '';
   }
 

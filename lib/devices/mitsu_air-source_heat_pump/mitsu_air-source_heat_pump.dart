@@ -2,23 +2,20 @@
 import 'dart:async';
 import 'dart:math';
 
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:html/parser.dart' as htmlParser;
 import 'package:koti/devices/mitsu_air-source_heat_pump/view/edit_mitsu_view.dart';
 
 import 'dart:convert' show jsonDecode, utf8;
 
 import '../../estate/estate.dart';
-import '../../functionalities/functionality/functionality.dart';
 import '../../logic/observation.dart';
 import '../../logic/services.dart';
 import '../../logic/unique_id.dart';
 import '../../service_catalog.dart';
-import '../device/device.dart';
 import '../../look_and_feel.dart';
 import '../device_with_login/device_with_login.dart';
+import '../mixins/on_off_switch.dart';
 import 'mea_data_json.dart';
 
 const _meaCloudUrl = 'https://app.melcloud.com/Mitsubishi.Wifi.Client';
@@ -48,10 +45,7 @@ return await resp.json()
  */
 const _mitsuFetchingIntervalInMinutes = 3;
 
-
-const double noValue = -99.9;
-
-class MitsuHeatPumpDevice extends DeviceWithLogin {
+class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
 
   //String urlString = _meaCloudUrl;
 
@@ -68,17 +62,16 @@ class MitsuHeatPumpDevice extends DeviceWithLogin {
   DateTime _latestDataFetched = DateTime(0);
   int _fetchCounter = 0;
 
-
-
   void _initOfferedServices() {
     services = Services([
       RODeviceService<double>(
           serviceName: outsideTemperatureDeviceService,
-          notWorkingValue: ()=> noValue,
+          notWorkingValue: ()=> noValueDouble,
           getFunction: outsideTemperature),
       AttributeDeviceService(attributeName: airHeatPumpService),
-      AttributeDeviceService(attributeName: deviceWithManualCreation)
+      AttributeDeviceService(attributeName: deviceWithManualCreation),
     ]);
+
   }
 
   MitsuHeatPumpDevice() {
@@ -110,6 +103,15 @@ class MitsuHeatPumpDevice extends DeviceWithLogin {
   @override
   Future<void> init() async {
     webLoginCredentials.url = _meaCloudUrl;
+    await initSwitch(
+        myEstate: myEstates.estateFromId(myEstateId),
+        device: this,
+        boxName: id,
+        getFunction: getPower,
+        setFunction: setPower,
+        peekFunction: peekPower
+    );
+    services.addService(onOffServiceDefinition());
     await fetchAndAnalyzeData();
   }
 
@@ -162,15 +164,15 @@ class MitsuHeatPumpDevice extends DeviceWithLogin {
   }
 
   double outsideTemperature() {
-    return _meaDevice.outdoorTemperature ?? noValue;
+    return _meaDevice.outdoorTemperature ?? noValueDouble;
   }
 
   double measuredTemperature() {
-    return _meaDevice.roomTemperature ?? noValue;
+    return _meaDevice.roomTemperature ?? noValueDouble;
   }
 
-  double setTemperature() {
-    return _meaDevice.setTemperature ?? noValue;
+  double targetTemperature() {
+    return _meaDevice.setTemperature ?? noValueDouble;
   }
 
   int fanSpeed() {
@@ -201,12 +203,13 @@ class MitsuHeatPumpDevice extends DeviceWithLogin {
     _latestDataFetched = DateTime.now();
   }
 
-  bool _useObservations = false;
-  double _observationAlarmTempDiff = 5.0;
-  double _observationWarningTempDiff = 2.5;
+  final bool _useObservations = false;
+  final double _observationAlarmTempDiff = 5.0;
+  final double _observationWarningTempDiff = 2.5;
 
-  double tempDiff() => setTemperature() - measuredTemperature();
+  double tempDiff() => targetTemperature() - measuredTemperature();
 
+  @override
   ObservationLevel observationLevel() {
     if (tempDiff() > _observationAlarmTempDiff) {
       return ObservationLevel.alarm;
@@ -319,20 +322,17 @@ class MitsuHeatPumpDevice extends DeviceWithLogin {
   }
 
   Future<void> setPower(bool value, String caller) async {
-    log.info('${myEstates.estateFromId(myEstateId).name}: ${name} setPower ${value? 'on' : 'off'}');
+    log.info('${myEstates.estateFromId(myEstateId).name}: $name setPower ${value? 'on' : 'off'}');
     // TODO: how to switch Mitsu on?
   }
 
   Future<bool> getPower() async {
-    log.info('${myEstates.estateFromId(myEstateId).name}: ${name} getPower');
-    //TODO: how to read the value from Mitsu
-    return false;
+    //TODO: fetch from device
+    return peekPower();
   }
 
   bool peekPower() {
-    log.info('${myEstates.estateFromId(myEstateId).name}: ${name} peekPower');
-    //TODO: how to read the value from Mitsu
-    return false;
+    return _meaDevice.power ?? false;
   }
 
   @override
@@ -389,8 +389,8 @@ class MitsuHeatPumpDevice extends DeviceWithLogin {
   @override
   MitsuHeatPumpDevice.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
-    _initOfferedServices();
     webLoginCredentials.url = _meaCloudUrl;
+    _initOfferedServices();
   }
 
   @override

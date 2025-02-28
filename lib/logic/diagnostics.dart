@@ -6,7 +6,6 @@ import 'package:koti/functionalities/functionality/functionality.dart';
 
 import '../app_configurator.dart';
 import '../devices/device/device.dart';
-import '../devices/wifi/wifi.dart';
 import '../estate/estate.dart';
 import '../look_and_feel.dart';
 
@@ -58,10 +57,10 @@ class DiagnosticsLog {
 
 class Diagnostics {
 
-  Estates _myEstates;
-  DeviceList _allDevices;
-  FunctionalityList _allFunctionalities;
-  ApplicationDeviceTypes _applicationDeviceConfigurator;
+  final Estates _myEstates;
+  final DeviceList _allDevices;
+  final FunctionalityList _allFunctionalities;
+  final ApplicationDeviceTypes _applicationDeviceConfigurator;
 
 
   DiagnosticsLog diagnosticsLog = DiagnosticsLog();
@@ -189,10 +188,6 @@ class Diagnostics {
   }
 
   bool _checkWifi(Estate estate) {
-    if (estate.myWifiDevice() is! Wifi) {
-      diagnosticsLog.add(['Estate "${estate.name}" wifi is ${estate.myWifiDevice().runtimeType.toString()}']);
-      return false;
-    }
     if (!estate.devices.contains(estate.myWifiDevice())) {
       diagnosticsLog.add(['Estate "${estate.name}" wifi is not in estate devices']);
       return false;
@@ -204,5 +199,5 @@ class Diagnostics {
 
 
 bool _nameNotCorrect(String name) {
-  return name.length == 0;
+  return name.isEmpty;
 }

@@ -13,7 +13,7 @@ enum ObservationLevel {
   final String description;
 
   static ObservationLevel? fromString(String name) => ObservationLevel.values.asNameMap()[name];
-  bool isLessSerious(ObservationLevel newLevel) => this.index < newLevel.index;
+  bool isLessSerious(ObservationLevel newLevel) => index < newLevel.index;
 }
 
 
@@ -64,7 +64,7 @@ class ObservationLog {
 
 class ObservationMonitor extends ChangeNotifier {
 
-  ObservationLog _oLog = ObservationLog();
+  final ObservationLog _oLog = ObservationLog();
   String name = '';
 
   ObservationLevel currentLevel() => _oLog.currentLevel();

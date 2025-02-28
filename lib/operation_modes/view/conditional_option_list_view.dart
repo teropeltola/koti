@@ -74,7 +74,7 @@ class ConditionalOperationViewState extends State<ConditionalOperationView> {
                     'Lisää uusi sääntö',
                     maxLines: 1,
                     style: TextStyle(color: mySecondaryFontColor),
-                    textScaler: const TextScaler.linear(2.0),
+                    textScaler: TextScaler.linear(2.0),
                   ),
                 ),
           ]),
@@ -111,7 +111,7 @@ class ConditionalOperationViewState extends State<ConditionalOperationView> {
 
             ),
             Card(
-              key: Key('Anchor'),
+              key: const Key('Anchor'),
               elevation: 6,
               margin: const EdgeInsets.all(1),
                 child:
@@ -136,7 +136,7 @@ Widget anchorCard(
   List<String> alternatives = findNames(condition);
   alternatives.remove(condition.name);
   if (alternatives.isEmpty) {
-    return Text('TYHJÄ');
+    return const Text('TYHJÄ');
   }
   else {
     if (condition.anchorConditionName.isEmpty) {
@@ -206,7 +206,7 @@ Widget _spotParameter(BuildContext context, SpotCondition spot, Function callbac
   switch (spot.myType) {
     case SpotPriceComparisonType.constant: {
       return TextFormField(
-        keyboardType:TextInputType.numberWithOptions(decimal: true),
+        keyboardType:const TextInputType.numberWithOptions(decimal: true),
         initialValue: spot.parameterValue.toString(),
         inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'(^\d*\.?\d*)'))],
         onChanged: (stringValue) {
@@ -259,7 +259,7 @@ ExpansionTile editConditionalOperationMode(
       title:
         Column(children: [
           Row(children: [
-            Expanded(
+            const Expanded(
               flex: 1,
               child: Text('Määrittele ehto:')),
             Expanded(flex: 1, child: MyDropdownWidget(
@@ -277,7 +277,7 @@ ExpansionTile editConditionalOperationMode(
       subtitle:
         Column(children: [
           Row(children: [
-            Expanded(flex: 1, child: Text('toimintotila:')),
+            const Expanded(flex: 1, child: Text('toimintotila:')),
             Expanded(
               flex: 1,
               child: MyDropdownWidget(
@@ -305,7 +305,7 @@ ExpansionTile editConditionalOperationMode(
             },
           )
         ],),
-        children: [
+        children: const [
 
       ]
     );
@@ -389,7 +389,7 @@ Widget _timeRange(BuildContext context, OperationCondition operationCondition, F
     child: Text(
       _timeRangeToString(operationCondition.timeRange),
       maxLines: 1,
-      style: TextStyle(color: mySecondaryFontColor),
+      style: const TextStyle(color: mySecondaryFontColor),
       textScaler: const TextScaler.linear(2.0),
     ),
   );

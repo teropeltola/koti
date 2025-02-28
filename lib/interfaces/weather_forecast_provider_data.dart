@@ -1,3 +1,4 @@
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
 import '../look_and_feel.dart';
@@ -139,7 +140,7 @@ class WeatherForecastProviderItem {
             child: Row(children: [
             Expanded(
                 flex: 2,
-                child: Text('${parameterKeys[index]}:')
+                child: AutoSizeText('${parameterKeys[index]}:', maxLines: 1,)
             ),
             Expanded(
               flex: 5,

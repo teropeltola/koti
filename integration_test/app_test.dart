@@ -65,7 +65,7 @@ Future <void> _firstTest(WidgetTester tester) async {
   EditOperationModeViewRobot editOperationModeViewRobot = EditOperationModeViewRobot(tester);
 
   await editOperationModeViewRobot.enterName('normi');
-  await editOperationModeViewRobot.addNewTimeRule(TimeOfDay(hour:10,minute:0),TimeOfDay(hour:11,minute:0),'Päällä');
+  await editOperationModeViewRobot.addNewTimeRule(const TimeOfDay(hour:10,minute:0),const TimeOfDay(hour:11,minute:0),'Päällä');
   await editOperationModeViewRobot.ready();
 
   await editBoilerHeatingViewRobot.ready();

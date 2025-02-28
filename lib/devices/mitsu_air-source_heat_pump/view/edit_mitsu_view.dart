@@ -112,10 +112,10 @@ class _EditMitsuViewState extends State<EditMitsuView> {
                                   onEditingComplete: () {
                                     _nameFocusNode.unfocus();
                                   }),
-                              Spacer(),
+                              const Spacer(),
                               Row(children: <Widget>[
-                                Flexible(flex:1, child: Text('Tunnus: ')),
-                                Flexible(flex:5, child: AutoSizeText(mitsuDevice.id, style:TextStyle(fontSize:20,color:Colors.blue))),
+                                const Flexible(flex:1, child: Text('Tunnus: ')),
+                                Flexible(flex:5, child: AutoSizeText(mitsuDevice.id, style:const TextStyle(fontSize:20,color:Colors.blue))),
                               ]),
 
                             ]),
@@ -134,7 +134,7 @@ class _EditMitsuViewState extends State<EditMitsuView> {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
+                                  const Expanded(
                                     flex: 4,
                                     child: Text('Käyttäjätunnus:'),
                                   ),
@@ -165,7 +165,7 @@ class _EditMitsuViewState extends State<EditMitsuView> {
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
+                                    const Expanded(
                                       flex: 4,
                                       child: Text('Salasana:'),
                                     ),

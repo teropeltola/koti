@@ -91,7 +91,7 @@ Widget appIconAndTitle(String estateName, String titleText) {
         flex: 5,
         child:
           AutoSizeText(
-            '$estateName',
+            estateName,
             //group: myAutoSizeGroup,
             maxLines: 1,
             presetFontSizes: _presetAppFontSizes,
@@ -101,7 +101,7 @@ Widget appIconAndTitle(String estateName, String titleText) {
             textAlign: TextAlign.right
           ),
     ),
-    Expanded(
+    const Expanded(
       flex: 1,
       child: Text(' '),
     ),
@@ -111,7 +111,7 @@ Widget appIconAndTitle(String estateName, String titleText) {
             'assets/images/main_image.png',
             fit: BoxFit.contain)
     ),
-    Expanded(
+    const Expanded(
       flex: 1,
       child: Text(' '),
     ),
@@ -119,7 +119,7 @@ Widget appIconAndTitle(String estateName, String titleText) {
         flex: 12,
         child:
           AutoSizeText(
-            '$titleText',
+            titleText,
             //group: myAutoSizeGroup,
             maxLines: 2,
             style: const TextStyle(color: Colors.blue),
@@ -274,5 +274,14 @@ String myTimeFormatter(int hour, int minutes) {
 String timestampToDateTimeString(int timestamp, {bool withoutYear=false}) {
   DateTime d = DateTime.fromMillisecondsSinceEpoch(timestamp);
   return myDateTimeFormatter(d,withoutYear:withoutYear);
+}
+
+String temperatureString(double temp) {
+  if (temp == noValueDouble) {
+    return '-';
+  }
+  else {
+    return '${temp.toStringAsFixed(1)}$degree';
+  }
 }
 

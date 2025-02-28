@@ -1,6 +1,10 @@
 
 import 'dart:convert';
 
+import 'package:koti/look_and_feel.dart';
+
+import '../../../functionalities/electricity_price/trend_electricity.dart';
+
 class PorssisahkoData {
 
   late List<Price> prices = [];
@@ -20,6 +24,49 @@ class PorssisahkoData {
     return data;
   }
 
+  // convert the current object to a List<TrendElectricity object
+  List<TrendElectricity> convert()
+  {
+    if (prices.isEmpty) {
+      return [TrendElectricity(0, noValueDouble)];
+    }
+    List<TrendElectricity> result = [];
+    int earlierSlotEndingTimestamp = prices[0].startDate.millisecondsSinceEpoch;
+    double earlierPrice = 0.0;
+
+    for (Price price in prices) {
+      if (earlierSlotEndingTimestamp < price.startDate.millisecondsSinceEpoch) {
+        // gap between slots
+        result.add(TrendElectricity(
+          earlierSlotEndingTimestamp,
+          noValueDouble,
+        ));
+        earlierSlotEndingTimestamp = price.startDate.millisecondsSinceEpoch;
+        earlierPrice = noValueDouble;
+      }
+      if (earlierSlotEndingTimestamp == price.startDate.millisecondsSinceEpoch) {
+        if (earlierPrice == price.price) {
+          earlierSlotEndingTimestamp = price.endDate.millisecondsSinceEpoch;
+        }
+        else {
+          result.add(TrendElectricity(
+            price.startDate.millisecondsSinceEpoch,
+            price.price,
+          ));
+          earlierSlotEndingTimestamp = price.endDate.millisecondsSinceEpoch;
+          earlierPrice = price.price;
+        }
+      } else if (earlierSlotEndingTimestamp > price.startDate.millisecondsSinceEpoch) {
+        print('Error in data in PorssisahkoData.convert');
+      }
+    }
+    result.add(TrendElectricity(
+      earlierSlotEndingTimestamp,
+      noValueDouble,
+    ));
+    return result;
+  }
+
   bool isEmpty() {
     return prices.isEmpty;
   }
@@ -32,13 +79,15 @@ class PorssisahkoData {
       return prices[0].startDate;
     }
   }
-
+/*
   PorssisahkoData copyWith({
     List<Price>? prices,
   }) =>
       PorssisahkoData(
         prices: prices ?? this.prices,
       );
+
+ */
 }
 
 class Price {
@@ -61,25 +110,18 @@ class Price {
       price = x.toDouble();
     }
 
-    //startDate = DateTime.parse(json['startDate']).toLocal();
-    // todo: clean this
-    DateTime t1 = DateTime.parse(json['startDate']);
-    var name = t1.timeZoneName;
-    var offset = t1.timeZoneOffset.inHours;
-    startDate = t1.toLocal();
-    var name2 = startDate.timeZoneName;
-    var offset2 = startDate.timeZoneOffset.inHours;
+    startDate = DateTime.parse(json['startDate']).toLocal();
     endDate = DateTime.parse(json['endDate']).toLocal();
   }
 
   Map<String, dynamic> toJson() {
     final data = <String, dynamic>{};
     data['price'] = price;
-    data['startDate'] = jsonEncode(startDate.toIso8601String());
-    data['endDate'] = jsonEncode(endDate.toIso8601String());
+    data['startDate'] = startDate.toIso8601String();
+    data['endDate'] = endDate.toIso8601String();
     return data;
   }
-
+/*
   Price copyWith({
     double? price,
     DateTime? startDate,
@@ -91,5 +133,6 @@ class Price {
         endDate: endDate ?? this.endDate,
       );
 
+ */
 }
 

@@ -29,15 +29,16 @@ class ShellyInputConfig {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['name'] = name;
-    _data['type'] = type;
-    _data['enable'] = enable;
-    _data['invert'] = invert;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['type'] = type;
+    data['enable'] = enable;
+    data['invert'] = invert;
+    return data;
   }
 
+  @override
   String toString() {
     if (id == -1) {
       return '-';

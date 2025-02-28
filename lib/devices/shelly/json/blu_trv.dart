@@ -27,7 +27,7 @@ class BluTrvStatus {
     lastUpdatedTs = 0;
     paired = false;
     rpc = false;
-    rsv = 0;;
+    rsv = 0;
   }
 
   bool isEmpty() { return id == -75; }
@@ -44,16 +44,16 @@ class BluTrvStatus {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['rssi'] = rssi;
-    _data['battery'] = battery;
-    _data['packet_id'] = packetId;
-    _data['last_updated_ts'] = lastUpdatedTs;
-    _data['paired'] = paired;
-    _data['rpc'] = rpc;
-    _data['rsv'] = rsv;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['rssi'] = rssi;
+    data['battery'] = battery;
+    data['packet_id'] = packetId;
+    data['last_updated_ts'] = lastUpdatedTs;
+    data['paired'] = paired;
+    data['rpc'] = rpc;
+    data['rsv'] = rsv;
+    return data;
   }
 }
 
@@ -100,16 +100,16 @@ class BluTrvConfig {
     meta = '';
   }
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['addr'] = addr;
-    _data['name'] = name;
-    _data['key'] = key;
-    _data['trv'] = trv;
-    _data['temp_sensors'] = tempSensors;
-    _data['dw_sensors'] = dwSensors;
-    _data['meta'] = meta;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['addr'] = addr;
+    data['name'] = name;
+    data['key'] = key;
+    data['trv'] = trv;
+    data['temp_sensors'] = tempSensors;
+    data['dw_sensors'] = dwSensors;
+    data['meta'] = meta;
+    return data;
   }
 }
 
@@ -136,11 +136,11 @@ class BluTrvRemoteDeviceInfo {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['v'] = v;
-    _data['ts'] = ts;
-    _data['device_info'] = deviceInfo.toJson();
-    return _data;
+    final data = <String, dynamic>{};
+    data['v'] = v;
+    data['ts'] = ts;
+    data['device_info'] = deviceInfo.toJson();
+    return data;
   }
 }
 
@@ -187,16 +187,16 @@ class DeviceInfo {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['mac'] = mac;
-    _data['fw_id'] = fwId;
-    _data['bl_ver'] = blVer;
-    _data['app'] = app;
-    _data['model'] = model;
-    _data['batch'] = batch;
-    _data['ver'] = ver;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['mac'] = mac;
+    data['fw_id'] = fwId;
+    data['bl_ver'] = blVer;
+    data['app'] = app;
+    data['model'] = model;
+    data['batch'] = batch;
+    data['ver'] = ver;
+    return data;
   }
 }
 
@@ -211,8 +211,8 @@ class BluTrvRemoteStatus {
   late final BluTrvStatusInfo status;
 
   BluTrvRemoteStatus.empty(){
-    v = -1;;
-    ts = -1;;
+    v = -1;
+    ts = -1;
     status = BluTrvStatusInfo.empty();
   }
 
@@ -223,11 +223,11 @@ class BluTrvRemoteStatus {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['v'] = v;
-    _data['ts'] = ts;
-    _data['status'] = status.toJson();
-    return _data;
+    final data = <String, dynamic>{};
+    data['v'] = v;
+    data['ts'] = ts;
+    data['status'] = status.toJson();
+    return data;
   }
 }
 
@@ -254,11 +254,11 @@ class BluTrvStatusInfo {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['sys'] = sys.toJson();
-    _data['temperature0'] = temperature0.toJson();
-    _data['trv0'] = trv0.toJson();
-    return _data;
+    final data = <String, dynamic>{};
+    data['sys'] = sys.toJson();
+    data['temperature0'] = temperature0.toJson();
+    data['trv0'] = trv0.toJson();
+    return data;
   }
 }
 
@@ -305,16 +305,16 @@ class Sys {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['time'] = time;
-    _data['unixtime'] = unixtime;
-    _data['offset'] = offset;
-    _data['uptime'] = uptime;
-    _data['ram_size'] = ramSize;
-    _data['ram_free'] = ramFree;
-    _data['cfg_rev'] = cfgRev;
-    _data['state_rev'] = stateRev;
-    return _data;
+    final data = <String, dynamic>{};
+    data['time'] = time;
+    data['unixtime'] = unixtime;
+    data['offset'] = offset;
+    data['uptime'] = uptime;
+    data['ram_size'] = ramSize;
+    data['ram_free'] = ramFree;
+    data['cfg_rev'] = cfgRev;
+    data['state_rev'] = stateRev;
+    return data;
   }
 }
 
@@ -345,12 +345,12 @@ Temperature_0.fromJson(Map<String, dynamic> json){
 }
 
 Map<String, dynamic> toJson() {
-final _data = <String, dynamic>{};
-_data['id'] = id;
-_data['tC'] = tC;
-_data['tF'] = tF;
-_data['errors'] = errors;
-return _data;
+final data = <String, dynamic>{};
+data['id'] = id;
+data['tC'] = tC;
+data['tF'] = tF;
+data['errors'] = errors;
+return data;
 }
 }
 
@@ -397,16 +397,16 @@ errors = List.castFrom<dynamic, String>(json['errors']);
 }
 
 Map<String, dynamic> toJson() {
-final _data = <String, dynamic>{};
-_data['id'] = id;
-_data['pos'] = pos;
-_data['steps'] = steps;
-_data['current_C'] = currentC;
-_data['target_C'] = targetC;
-_data['override'] = override.toJson();
-_data['schedule_rev'] = scheduleRev;
-_data['errors'] = errors;
-return _data;
+final data = <String, dynamic>{};
+data['id'] = id;
+data['pos'] = pos;
+data['steps'] = steps;
+data['current_C'] = currentC;
+data['target_C'] = targetC;
+data['override'] = override.toJson();
+data['schedule_rev'] = scheduleRev;
+data['errors'] = errors;
+return data;
 }
 }
 
@@ -425,9 +425,9 @@ class Override {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['started_at'] = startedAt;
-    return _data;
+    final data = <String, dynamic>{};
+    data['started_at'] = startedAt;
+    return data;
   }
 }
 

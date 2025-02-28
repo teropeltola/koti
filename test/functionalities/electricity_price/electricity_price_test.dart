@@ -11,24 +11,6 @@ void main() {
     await initMySettings();
   });
 
-  group('ElectricityPriceTable', () {
-    test('findIndex returns -1 if myTime is before startingTime', () {
-      final table = ElectricityPriceTable();
-      table.startingTime = DateTime(2024, 2, 8, 10);
-      expect(table.findIndex(DateTime(2024, 2, 8, 9)), equals(-1));
-    });
-
-    // Add more tests for findIndex with valid and edge cases
-
-    test('isEmpty returns true if slotPrices is empty', () {
-      final table = ElectricityPriceTable();
-      expect(table.isEmpty(), isTrue);
-    });
-
-    // Add more tests for isEmpty with different scenarios
-
-    // Add more tests for other methods in ElectricityPriceTable
-  });
 
   group('ElectricityTariff', () {
     test('toJson converts tariff to JSON', () {
@@ -53,6 +35,28 @@ void main() {
         'nightTariff': 0.0,
         'electricityTax': 2.0,
       }));
+
+    });
+
+    test('nextTariffChange tests', () {
+      final d = ElectricityDistributionPrice();
+      d.setTimeOfDayParameters('Name', 7,22,20.0, 10.0, 2.0);
+
+      expect(d.constantTariff(), isFalse);
+      expect(d.dayTime(7), isTrue);
+      expect(d.dayTime(22), isFalse);
+
+      expect(d.currentTransferTariff(8), equals(20.0));
+      expect(d.currentTransferTariff(6), equals(10.0));
+
+      expect(d.price(8), equals(22.0));
+      expect(d.price(6), equals(12.0));
+
+      int nextChange = d.previousTariffChange(DateTime(2025,2,14,8).millisecondsSinceEpoch);
+      expect(nextChange, equals(DateTime(2025,2,14,7).millisecondsSinceEpoch));
+      expect(d.previousTariffChange(nextChange), nextChange);
+      expect(d.previousTariffChange(nextChange-1), DateTime(2025,2,13,22).millisecondsSinceEpoch);
+
     });
 
     // Add more tests for other methods in ElectricityDistributionPrice

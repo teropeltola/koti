@@ -47,8 +47,8 @@ class _EditHeatingSystemViewState extends State<EditHeatingSystemView> {
           Container(
             margin: myContainerMargin,
             padding: myContainerPadding,
-            child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'Toimintovalinnat'),
+            child: const InputDecorator(
+              decoration: InputDecoration(labelText: 'Toimintovalinnat'),
                 child: Column(children: <Widget>[
                   Text('laadidaa')
                 ]

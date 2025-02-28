@@ -39,7 +39,7 @@ Widget noNeededResources(BuildContext context, String resourceProblemText) {
                               'Ok',
                               maxLines: 1,
                               style: TextStyle(color: mySecondaryFontColor),
-                              textScaler: const TextScaler.linear(2.2),
+                              textScaler: TextScaler.linear(2.2),
                             ),
                           ))),
                 ]

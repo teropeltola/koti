@@ -39,9 +39,9 @@ class EditOperationModeViewRobot  {
     // TODO: find a way to command the visual edit - now we update the data without user interface
     _hackTimeSelection(startTime, endTime);
     await selectDropdownItem(tester, 'possibleOperationModes0', targetOpMode);
-    await tester.pumpAndSettle(Duration(seconds:5));
+    await tester.pumpAndSettle(const Duration(seconds:5));
     await tapTextContaining(tester, 'OK');
-    await tester.pumpAndSettle(Duration(seconds:5));
+    await tester.pumpAndSettle(const Duration(seconds:5));
   }
 
   void _hackTimeSelection(TimeOfDay start, TimeOfDay end) {

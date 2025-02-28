@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:koti/devices/weather_service_provider/weather_service_provider.dart';
-import 'package:koti/functionalities/weather_forecast/view/weather_forecast_view.dart';
 import 'package:koti/interfaces/weather_forecast_provider_data.dart';
 
 import '../../../estate/estate.dart';
@@ -42,7 +40,7 @@ class _WeatherServices {
   }
 
   void delete(int index) {
-    items.removeAt(index);;
+    items.removeAt(index);
   }
 
   String serviceName(int index) {
@@ -114,7 +112,7 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
             weatherForecast.remove();
             widget.callback();
           }),
-          title: appIconAndTitle(widget.estate.name, 'muokkaa sääsivuja'),
+          title: appIconAndTitle('muokkaa', 'sääsivuja'),
         ), // new line
         body: SingleChildScrollView(
             child: Column(children: <Widget>[
@@ -164,7 +162,7 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
                                   title: Text(weatherForecast.connectedDevices[index].name),
                                   subtitle: Text((weatherForecast.connectedDevices[index] as WeatherServiceProvider).locationName),
                                   trailing: IconButton(
-                                      icon: Icon(Icons.delete),
+                                      icon: const Icon(Icons.delete),
                                       tooltip: 'poista sääpalvelu',
                                       onPressed: () async {
                                         var weatherService = weatherForecast.connectedDevices.removeAt(index) as WeatherServiceProvider;
@@ -194,7 +192,7 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
                                   title: Text(availableServices.items[index].name),
                                   //initiallyExpanded: true,
                                   trailing: IconButton(
-                                      icon: Icon(Icons.add),
+                                      icon: const Icon(Icons.add),
                                       tooltip: 'Lisää sääpalvelu',
                                       onPressed: () async {
                                         WeatherServiceProvider weatherServiceProvider =

@@ -45,13 +45,13 @@ class _HeatingOverviewState extends State<HeatingOverview> {
           body: SingleChildScrollView(
               child: Column(children: <Widget>[
                 Container(
-                margin: EdgeInsets.fromLTRB(2,10,2,2),
+                margin: const EdgeInsets.fromLTRB(2,10,2,2),
                 padding: myContainerPadding,
                 //alignment: AlignmentDirectional.topStart,
                 child: InputDecorator(
                   decoration: const InputDecoration(labelText: 'Ouman EH-800 lämmönsäädin'), //k
                   child: myOuman.noData()
-                      ? Text('Oumanin tietoa ei ole vielä vastaanotettu')
+                      ? const Text('Oumanin tietoa ei ole vielä vastaanotettu')
                    : Row(children:<Widget> [
                     Expanded(
                       flex: 3,
@@ -61,7 +61,7 @@ class _HeatingOverviewState extends State<HeatingOverview> {
                         color: observationSymbolColor(myOuman.observationLevel()),
                       ),
                     ),
-                  Expanded(
+                  const Expanded(
                       flex: 6,
                       child:
                       Column(

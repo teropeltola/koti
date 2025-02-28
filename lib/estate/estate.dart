@@ -141,7 +141,7 @@ class Estate extends Environment {
   }
 
   void addDevice(Device newDevice) {
-    newDevice.myEstateId = this.id;
+    newDevice.myEstateId = id;
 
     if ( !deviceExists(newDevice.id)) {
       devices.add(newDevice);
@@ -214,7 +214,9 @@ class Estate extends Environment {
  */
   List<String> operationModeNames() {
     List<String> names = operationModes.operationModeNames();
-    features.forEach((e)=>names += e.operationModes.operationModeNames());
+    for (var e in features) {
+      names += e.operationModes.operationModeNames();
+    }
     names.sort();
     return names;
   }

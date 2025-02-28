@@ -1,12 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:koti/devices/device/device.dart';
-import 'package:koti/devices/vehicle/vehicle.dart';
 import 'package:koti/devices/wifi/wifi.dart';
 import 'package:koti/estate/estate.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
 import 'package:koti/functionalities/plain_switch_functionality/plain_switch_functionality.dart';
 import 'package:koti/logic/diagnostics.dart';
-import 'package:koti/look_and_feel.dart'; // Change this to the correct import path
+// Change this to the correct import path
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:koti/devices/my_device_info.dart';
@@ -21,10 +20,10 @@ void main() {
 
   group('Diagnostics empty tests', () {
     test('Empty data structures', () {
-      Estates _myEstates = Estates();
-      List <Device> _allDevices = [];
-      FunctionalityList _allFunctionalities = FunctionalityList();
-      Diagnostics diagnostics = Diagnostics(_myEstates, _allDevices, _allFunctionalities);
+      Estates myEstates = Estates();
+      List <Device> allDevices = [];
+      FunctionalityList allFunctionalities = FunctionalityList();
+      Diagnostics diagnostics = Diagnostics(myEstates, allDevices, allFunctionalities);
 
       expect(diagnostics.diagnosticsOk(), true);
     });
@@ -32,11 +31,11 @@ void main() {
 
   group('Diagnostics basic tests', () {
     test('Simple data', () {
-      Estates _myEstates = Estates();
-      List <Device> _allDevices = [];
-      FunctionalityList _allFunctionalities = FunctionalityList();
-      _initTest(_myEstates, _allDevices, _allFunctionalities);
-      Diagnostics diagnostics = Diagnostics(_myEstates, _allDevices, _allFunctionalities);
+      Estates myEstates = Estates();
+      List <Device> allDevices = [];
+      FunctionalityList allFunctionalities = FunctionalityList();
+      _initTest(myEstates, allDevices, allFunctionalities);
+      Diagnostics diagnostics = Diagnostics(myEstates, allDevices, allFunctionalities);
 
       bool status = diagnostics.diagnosticsOk();
       expect(diagnostics.diagnosticsLog.lastDiagnosticLogTitle(),'');
@@ -44,11 +43,11 @@ void main() {
     });
 
     test('Simple data2', () {
-      Estates _myEstates = Estates();
-      List <Device> _allDevices = [];
-      FunctionalityList _allFunctionalities = FunctionalityList();
-      _initTest(_myEstates, _allDevices, _allFunctionalities);
-      Diagnostics diagnostics = Diagnostics(_myEstates, _allDevices, _allFunctionalities);
+      Estates myEstates = Estates();
+      List <Device> allDevices = [];
+      FunctionalityList allFunctionalities = FunctionalityList();
+      _initTest(myEstates, allDevices, allFunctionalities);
+      Diagnostics diagnostics = Diagnostics(myEstates, allDevices, allFunctionalities);
 
       expect(diagnostics.diagnosticsLog.lastDiagnosticLogTitle(),'');
       // expect(diagnostics.diagnosticsOk(), true);

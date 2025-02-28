@@ -106,7 +106,7 @@ class ShellyScriptAnalysis {
 
     await s.script.clear();
 
-    int scriptIndex = await s.script.create('newCode${_scriptNameIndex}');
+    int scriptIndex = await s.script.create('newCode$_scriptNameIndex');
     _scriptNameIndex++;
 
     await s.script.list();

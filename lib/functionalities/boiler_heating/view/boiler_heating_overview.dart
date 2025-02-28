@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:koti/devices/shelly/json/blu_trv.dart';
 import 'package:koti/devices/shelly_blu_trv/shelly_blu_trv.dart';
 import 'package:koti/devices/shelly_pro2/shelly_pro2.dart';
 import 'package:koti/functionalities/boiler_heating/boiler_heating_functionality.dart';
 import 'package:koti/functionalities/boiler_heating/view/edit_boiler_heating_view.dart';
-import 'package:koti/functionalities/heating_system_functionality/view/edit_heating_system_view.dart';
 import 'package:koti/logic/services.dart';
 import 'package:koti/view/temperature_setting_widget.dart';
 import '../../../devices/mixins/on_off_switch.dart';
@@ -18,7 +16,6 @@ import '../../../service_catalog.dart';
 import '../../../trend/trend.dart';
 import '../../../trend/trend_switch.dart';
 import '../../../view/battery_level_widget.dart';
-import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 
 class BoilerHeatingOverview extends StatefulWidget {
@@ -71,7 +68,7 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
   }
 
   void refresh() async {
-    oumanTrendList = oumanDevice.trendBox.getAll();
+    oumanTrendList = await oumanDevice.getHistoryData();
     switchTrendList = mySwitch.services.trendBox().getAll();
     boilerTrendList = [...oumanTrendList.cast<TrendData>(), ... switchTrendList.cast<TrendData>()];
     boilerTrendList.sort((a,b) => b.timestamp - a.timestamp);
@@ -114,10 +111,10 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
                 callback: () {setState(() {}); }
             ),
             _powerOn()
-            ? Icon(Icons.electric_bolt)
-            : Icon(Icons.flash_off),
+            ? const Icon(Icons.electric_bolt)
+            : const Icon(Icons.flash_off),
             Container(
-                margin: EdgeInsets.fromLTRB(2,10,2,2),
+                margin: const EdgeInsets.fromLTRB(2,10,2,2),
                 padding: myContainerPadding,
                 //alignment: AlignmentDirectional.topStart,
                 child: InputDecorator(
@@ -127,7 +124,7 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
                         children: [
                           for (var thermostat in thermostatList)
                             Container(
-                              margin: EdgeInsets.fromLTRB(2,10,2,2),
+                              margin: const EdgeInsets.fromLTRB(2,10,2,2),
                               padding: myContainerPadding,
                               //alignment: AlignmentDirectional.topStart,
                               child: InputDecorator(
@@ -148,7 +145,7 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
                 )
             ),
             Container(
-              margin: EdgeInsets.fromLTRB(2,10,2,2),
+              margin: const EdgeInsets.fromLTRB(2,10,2,2),
               padding: myContainerPadding,
               //alignment: AlignmentDirectional.topStart,
               child: InputDecorator(
@@ -165,14 +162,14 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
               )
             ),
             Container(
-              margin: EdgeInsets.fromLTRB(2,10,2,2),
+              margin: const EdgeInsets.fromLTRB(2,10,2,2),
               padding: myContainerPadding,
               child: InputDecorator(
                 decoration: const InputDecoration(labelText: 'historia'), //
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Text('päiväys veden lämpö haluttu lämpö venttiili ulkolämpö', textScaleFactor: 0.9),
+                    const Text('päiväys veden lämpö haluttu lämpö venttiili ulkolämpö', textScaleFactor: 0.9),
                     for (var boilerTrendItem in boilerTrendList)
                       boilerTrendItem.showInLine(),
                   ]
@@ -225,56 +222,56 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
 
 Widget boilerHeatingSummary(ShellyPro2 shellyPro2) {
   return Container(
-    margin: EdgeInsets.fromLTRB(2,10,2,2),
+    margin: const EdgeInsets.fromLTRB(2,10,2,2),
     padding: myContainerPadding,
     //alignment: AlignmentDirectional.topStart,
     child: InputDecorator(
       decoration: const InputDecoration(labelText: 'Lämminvesivaraaja ohjaus'), //k
       child: ! shellyPro2.connected()
-          ? Text('Tietoa ei ole vielä vastaanotettu')
+          ? const Text('Tietoa ei ole vielä vastaanotettu')
           : Column(children:<Widget> [
-              Text('SwitchConfig'),
+              const Text('SwitchConfig'),
               Row(children:<Widget> [
                 Expanded(
                     flex: 8,
                     child:
-                    Text('${shellyPro2.switchConfigList[0].toString()}'
+                    Text(shellyPro2.switchConfigList[0].toString()
                     )
                 ),
                 Expanded(
                     flex: 8,
                     child:
-                    Text('${shellyPro2.switchConfigList[1].toString()}'
+                    Text(shellyPro2.switchConfigList[1].toString()
                     )
                 )
               ]),
-              Text('SwitchStatus'),
+              const Text('SwitchStatus'),
               Row(children:<Widget> [
                 Expanded(
                   flex: 8,
                   child:
-                    Text('${shellyPro2.switchStatusList[0].toString()}'
+                    Text(shellyPro2.switchStatusList[0].toString()
                     )
                 ),
                 Expanded(
                   flex: 8,
                   child:
-                    Text('${shellyPro2.switchStatusList[1].toString()}'
+                    Text(shellyPro2.switchStatusList[1].toString()
                       )
                 )
               ]),
-              Text('InputStatus'),
+              const Text('InputStatus'),
               Row(children:<Widget> [
                 Expanded(
                     flex: 8,
                     child:
-                    Text('${shellyPro2.inputConfigList[0].toString()}'
+                    Text(shellyPro2.inputConfigList[0].toString()
                     )
                 ),
                 Expanded(
                     flex: 8,
                     child:
-                    Text('${shellyPro2.inputConfigList[1].toString()}'
+                    Text(shellyPro2.inputConfigList[1].toString()
                     )
                 )
               ])
@@ -339,7 +336,7 @@ Widget showOumanEvent(TrendOuman oumanEvent) {
   }
   catch (e, st) {
     log.error('Unvalid oumanEvent', e, st);
-    return Text('Sisäinen virhe tietojen tulostuksessa',textScaleFactor:0.8);
+    return const Text('Sisäinen virhe tietojen tulostuksessa',textScaleFactor:0.8);
   }
 }
 
@@ -441,9 +438,9 @@ class _FutureXState extends State<XTemperatureSettingWidget> {
                         returnValue: widget.returnValue);
                   }
                   else if (snapshot2.hasError) {
-                    return Text('VIRHE2');
+                    return const Text('VIRHE2');
                   } else {
-                    return SizedBox(
+                    return const SizedBox(
                       width: 20,
                       height: 20,
                       child: CircularProgressIndicator(),
@@ -452,9 +449,9 @@ class _FutureXState extends State<XTemperatureSettingWidget> {
                 }
             );
           } else if (snapshot.hasError) {
-            return Text('VIRHE');
+            return const Text('VIRHE');
           } else {
-            return SizedBox(
+            return const SizedBox(
               width: 20,
               height: 20,
               child: CircularProgressIndicator(),
@@ -485,9 +482,9 @@ class _FutureDoubleState extends State<FutureDouble> {
           return Text('${_doubleToString(snapshot.data!)} $celsius'
           );
         } else if (snapshot.hasError) {
-          return Text('VIRHE');
+          return const Text('VIRHE');
         } else {
-          return SizedBox(
+          return const SizedBox(
             width: 20,
             height: 20,
             child: CircularProgressIndicator(),

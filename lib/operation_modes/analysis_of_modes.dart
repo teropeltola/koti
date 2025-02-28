@@ -1,5 +1,4 @@
 import '../look_and_feel.dart';
-import 'operation_modes.dart';
 
 class AnalysisItem {
   DateTime start;
@@ -33,7 +32,7 @@ class AnalysisOfModes {
   void add(DateTime start, int durationInMinutes, String operationModeName) {
 
     if (items.isNotEmpty) {
-      if (! items.last.end.add(Duration(minutes: 1)).isAtSameMomentAs(start)) {
+      if (! items.last.end.add(const Duration(minutes: 1)).isAtSameMomentAs(start)) {
         log.error('AnalysisOfModes add error: not back to back time slots');
         return;
       }

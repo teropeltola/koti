@@ -1,6 +1,4 @@
-import 'dart:convert' show utf8;
 
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:koti/devices/shelly/shelly_script_code.dart';
 

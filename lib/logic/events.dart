@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hive/hive.dart';
 import 'package:koti/trend/trend.dart';
 import 'package:koti/trend/trend_event.dart';
 
@@ -88,7 +87,7 @@ Widget showEvent(TrendEvent trendEvent) {
   }
   catch (e, st) {
     log.error('Unvalid trendEvent', e, st);
-    return Text('Sisäinen virhe tietojen tulostuksessa');
+    return const Text('Sisäinen virhe tietojen tulostuksessa');
   }
 
 }

@@ -49,17 +49,17 @@ class ShellyGetDeviceInfo {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['mac'] = mac;
-    _data['model'] = model;
-    _data['gen'] = gen;
-    _data['fw_id'] = fwId;
-    _data['ver'] = ver;
-    _data['app'] = app;
-    _data['auth_en'] = authEn;
-    _data['auth_domain'] = authDomain;
-    _data['discoverable'] = discoverable;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['mac'] = mac;
+    data['model'] = model;
+    data['gen'] = gen;
+    data['fw_id'] = fwId;
+    data['ver'] = ver;
+    data['app'] = app;
+    data['auth_en'] = authEn;
+    data['auth_domain'] = authDomain;
+    data['discoverable'] = discoverable;
+    return data;
   }
 }

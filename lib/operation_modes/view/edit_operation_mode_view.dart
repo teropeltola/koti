@@ -25,10 +25,12 @@ class _opModeStructure {
 
 class _PossibleOpModes {
   List <_opModeStructure> list = [];
-  OperationModes _operationModes;
+  final OperationModes _operationModes;
 
   _PossibleOpModes(List<String> possibleTypes, this._operationModes) {
-    possibleTypes.forEach((e)=>list.add(_opModeStructure(e)));
+    for (var e in possibleTypes) {
+      list.add(_opModeStructure(e));
+    }
   }
 
   void addOpMode(String name, OperationMode opMode ) {
@@ -307,7 +309,7 @@ class _OperationModeNameForm extends StatelessWidget {
       {
         fieldTextEditingController.text = modeName;
         return TextField(
-          key: Key('operationModeName'),
+          key: const Key('operationModeName'),
           controller: fieldTextEditingController,
           focusNode: fieldFocusNode,
           decoration: const InputDecoration(labelText: 'Toimintotilan nimi') ,
@@ -351,7 +353,7 @@ Widget operationModeHandling(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             operationModes.nbrOfModes() == 0
-                ? Text('Toimintotiloja ei määritelty')
+                ? const Text('Toimintotiloja ei määritelty')
                 : OperationModesEditingView(
                     estate: estate,
                     operationModes: operationModes,
@@ -387,7 +389,7 @@ Widget operationModeHandling(
                       'Luo uusi',
                       maxLines: 1,
                       style: TextStyle(color: mySecondaryFontColor),
-                      textScaler: const TextScaler.linear(2.0),
+                      textScaler: TextScaler.linear(2.0),
                     ),
                   ),
           ]),
@@ -405,17 +407,17 @@ Widget airPumpParameterSetting(
 {
   Widget myWidget;
   if (operationMode is ConstantOperationMode) {
-    ConstantOperationMode cOM = operationMode as ConstantOperationMode;
+    ConstantOperationMode cOM = operationMode;
     myWidget=temperatureSelectionForm(temperatureParameterId, cOM.parameters);
   }
   else if (operationMode is ConditionalOperationModes) {
-    ConditionalOperationModes conditionalModes = operationMode as ConditionalOperationModes;
+    ConditionalOperationModes conditionalModes = operationMode;
     myWidget = ConditionalOperationView(
-        conditions: operationMode as ConditionalOperationModes
+        conditions: operationMode
     );
   }
   else {
-    myWidget=Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
+    myWidget=const Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
   }
   return myWidget;
 }

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../../../logic/observation.dart';
-import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 
 import '../air_heat_pump.dart';
@@ -43,7 +42,7 @@ class AirHeatPumpView extends FunctionalityView {
                   style: const TextStyle(
                       fontSize: 12)),
               shortOperationModeText(),
-              Icon(
+              const Icon(
                 Icons.heat_pump_rounded,
                 size: 50,
                 color: Colors.white,

@@ -14,8 +14,7 @@ class FunctionalityView {
 
   late Functionality _myFunctionality;
 
-  FunctionalityView() {
-  }
+  FunctionalityView();
 
   void setFunctionality(Functionality functionality) {
     _myFunctionality = functionality;
@@ -40,7 +39,7 @@ class FunctionalityView {
   }
 
   Widget shortOperationModeText() {
-    Functionality functionality = myFunctionality() as Functionality;
+    Functionality functionality = myFunctionality();
     if (functionality.operationModes.showCurrent())  {
       return Container(
         padding: const EdgeInsets.all(3.0), // Adjust padding as needed

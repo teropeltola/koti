@@ -1,27 +1,33 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
+import 'package:koti/app_configurator.dart';
+import 'package:koti/foreground_configurator.dart';
 
 import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
+import 'package:koti/functionalities/electricity_price/trend_electricity.dart';
 import 'package:koti/functionalities/electricity_price/view/electricity_price_view.dart';
+import 'package:koti/interfaces/foreground_interface.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../devices/porssisahko/porssisahko.dart';
 import '../../estate/estate.dart';
 import '../../functionalities/functionality/functionality.dart';
 import '../../devices/porssisahko/json/porssisahko_data.dart';
+import '../../logic/electricity_price_data.dart';
 import '../../logic/my_change_notifier.dart';
 import '../../look_and_feel.dart';
-import '../functionality/view/functionality_view.dart';
 
 int constantSlotSize = 60; // constant parameter that can be patched
                            // eg. testing 1 or in future 15
 
-class ElectricityPriceTable {
+class XElectricityPriceTable {
   DateTime startingTime = DateTime(0);
   int slotSizeInMinutes = constantSlotSize;
   List <double> slotPrices = [];
 
-  ElectricityPriceTable();
-
+  XElectricityPriceTable();
+/*
   int findIndex(DateTime myTime) {
     Duration diff = myTime.difference(startingTime);
 
@@ -60,15 +66,16 @@ class ElectricityPriceTable {
     ElectricityChartData e = ElectricityChartData();
 
     for (int i=0; i<slotPrices.length; i++) {
-      if (slotPrices[i] < e.minPrice) {
-        e.minPrice = slotPrices[i];
-        e.minPriceTime = DateTime(startingTime.year, startingTime.month, startingTime.day, startingTime.hour+i);
+      if (slotPrices[i] < e.minPrice.price) {
+        e.minPrice.price = slotPrices[i];
+        e.minPrice.time = DateTime(startingTime.year, startingTime.month, startingTime.day, startingTime.hour+i);
       }
-      if (slotPrices[i] > e.maxPrice) {
-        e.maxPrice = slotPrices[i];
-        e.maxPriceTime = DateTime(startingTime.year, startingTime.month, startingTime.day, startingTime.hour+i);
+      if (slotPrices[i] > e.maxPrice.price) {
+        e.maxPrice.price = slotPrices[i];
+        e.maxPrice.time = DateTime(startingTime.year, startingTime.month, startingTime.day, startingTime.hour+i);
       }
     }
+    e.min2hourPeriod = min
     for (int i=0; i<slotPrices.length-1; i++) {
       double x = (slotPrices[i]+slotPrices[i+1])/2;
       if (x < e.min2hourPeriodPrice) {
@@ -159,7 +166,7 @@ class ElectricityPriceTable {
   int nbrOfMinutes() {
     return slotPrices.length*slotSizeInMinutes;
   }
-
+*/
 }
 
 enum PriceChange {decline, flat, increase}
@@ -178,7 +185,7 @@ class ElectricityTariff {
   ElectricityTariff();
 
   String get name => _name;
-  set name(String newName) { this._name = newName; }
+  set name(String newName) { _name = newName; }
 
 
   void setValue (String newName, TariffType newType, double newParameter) {
@@ -225,7 +232,7 @@ class ElectricityDistributionPrice {
   ElectricityDistributionPrice();
 
   String get name => _name;
-  set name(String newName) { this._name = newName; }
+  set name(String newName) { _name = newName; }
 
   void setTimeOfDayParameters(String newName,
                               int dayTimeStarting,
@@ -271,6 +278,25 @@ class ElectricityDistributionPrice {
     return currentTransferTariff(hour) + _electricityTax;
   }
 
+  // returns a timestamp of the time when the previous tariff change will
+  // occur earlier than the given timestamp
+  int previousTariffChange(int timestamp) {
+    if (constantTariff()) {
+      return 0;
+    }
+    else {
+      DateTime d = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      int hour = d.hour;
+      if (dayTime(hour)) {
+        return DateTime(d.year, d.month, d.day, _dayTimeStartingHour).millisecondsSinceEpoch;
+      }
+      else {
+        int day = (d.hour < _dayTimeStartingHour) ? d.day-1 : d.day;
+        return DateTime(d.year, d.month, day, _dayTimeEndingHour).millisecondsSinceEpoch;
+      }
+    }
+  }
+
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
     json['name'] = _name;
@@ -295,12 +321,15 @@ class ElectricityDistributionPrice {
 
 }
 
-class ElectricityPriceDataNotifier extends MyChangeNotifier<ElectricityPriceTable> {
+
+class ElectricityPriceDataNotifier extends MyChangeNotifier<ElectricityPriceData> {
   ElectricityPriceDataNotifier(super.initData);
 }
 
-class ElectricityPriceListener extends BroadcastListener<ElectricityPriceTable>{
+class ElectricityPriceListener extends BroadcastListener<ElectricityPriceData>{
 }
+
+
 
 
 class ElectricityPrice extends Functionality {
@@ -309,9 +338,9 @@ class ElectricityPrice extends Functionality {
 
   DateTime loadingTime = DateTime(0);
 
-  StockPriceListener stockPriceListener = StockPriceListener();
+  //StockPriceListener stockPriceListener = StockPriceListener();
 
-  ElectricityPriceDataNotifier electricity = ElectricityPriceDataNotifier(ElectricityPriceTable());
+  ElectricityPriceDataNotifier electricity = ElectricityPriceDataNotifier(ElectricityPriceData());
   BasicElectricityParameters parameters = BasicElectricityParameters();
   ElectricityTariff tariff = ElectricityTariff();
   ElectricityDistributionPrice distributionPrice = ElectricityDistributionPrice();
@@ -325,58 +354,18 @@ class ElectricityPrice extends Functionality {
     return loadingTime.year != 0;
   }
 
-  ElectricityPriceDataNotifier myBroadcaster() {
-    return electricity;
+  Future<void> updateElectricity() async {
+    List <TrendElectricity> trendElectricityData = await getAllTrendData();
+    electricity.data.storeElectricityPrice(trendElectricityData);
+    electricity.data.storeTransferPrice(distributionPrice);
+    electricity.poke();
   }
 
-  void updateStockData(PorssisahkoData stockData) {
-
-    if (stockData.prices.isNotEmpty) {
-      ElectricityPriceTable data = ElectricityPriceTable();
-
-      loadingTime = DateTime.now();
-
-      electricity.data.slotPrices.clear();
-      // todo: stockData.prices can be empty => how to avoid range error
-      electricity.data.startingTime =
-          electricity.data.crop(stockData.prices[0].startDate);
-
-      for (int i = 0; i < stockData.prices.length; i++) {
-        electricity.data.slotPrices.add(
-            tariff.price(stockData.prices[i].price) +
-                distributionPrice.price(data.startingTime.hour + i));
-      }
-
-      electricity.poke();
-
-      log.info(
-          'Pörssisähkön hintatiedot päivitetty (${connectedDevices[0].name})');
-    }
-    else {
-      log.error('Error in stockData - empty prices');
-    }
-  }
-/*
-  ElectricityPriceTable initData() {
-
-    ElectricityPriceTable data = ElectricityPriceTable();
-
-    loadingTime = DateTime.now();
-
-    data.startingTime = electricity.data.crop(stockPriceListener.data.prices[0].startDate);
-    electricity.data.slotPrices.clear();
-
-    for (int i=0; i<stockPriceListener.data.prices.length; i++) {
-      data.slotPrices.add(
-          tariff.price(stockPriceListener.data.prices[i].price)+
-              distributionPrice.price(data.startingTime.hour+i));
-    }
-
-    return data;
+  Future <String> _trendDirectoryPath() async {
+    var directory = await getApplicationDocumentsDirectory();
+    return directory.path;
   }
 
-
- */
   @override
   Future <void> init() async {
     if (connectedDevices.isEmpty) {
@@ -384,9 +373,16 @@ class ElectricityPrice extends Functionality {
     }
     else {
       Porssisahko stockElectricity = (connectedDevices[0] as Porssisahko);
-      stockPriceListener.start(
-          stockElectricity.myBroadcaster(), updateStockData);
+
+      await foregroundInterface.defineDailyRecurringService(
+          electricityPriceForegroundService,
+          TimeOfDay(hour: stockElectricity.fetchingStartHour, minute: stockElectricity.fetchingStartMinutes),
+          {internetPageKey : stockElectricity.internetPage,
+                      boxPathKey : await _trendDirectoryPath()});
+
       initOperationModes();
+
+      await updateElectricity();
     }
   }
 
@@ -403,23 +399,40 @@ class ElectricityPrice extends Functionality {
   }
 
 
-  ElectricityPriceTable get([DateTime? startingTimeParameter]) {
+  TrendElectricity _noTrendData() {
+    return TrendElectricity(0, noValueDouble);
+  }
 
-    // either use user given starting time or starting time of the whole data
-    DateTime startingTime = startingTimeParameter ?? electricity.data.startingTime;
-    ElectricityPriceTable e = ElectricityPriceTable();
-    int startingIndex = electricity.data.findIndex(startingTime);
+  Future <List<TrendElectricity>> trendDataSince(DateTime since) async  {
+    List<TrendElectricity> fullList = await getAllTrendData();
+    int sinceTimestamp = since.millisecondsSinceEpoch;
 
-    e.startingTime = electricity.data.crop(startingTime);
-
-    if (startingIndex < 0) {
-      return e;
+    for (int i=fullList.length-1; i>0; i--) {
+      if (fullList[i].timestamp > sinceTimestamp) {
+        return fullList.sublist(i);
+      }
     }
+    return fullList;
+  }
 
-    for (int i=startingIndex;i<electricity.data.slotPrices.length; i++) {
-      e.slotPrices.add(electricity.data.slotPrices[i]);
-    }
-    return e;
+  Future <List<TrendElectricity>> getAllTrendData() async {
+    var box = await Hive.openBox<TrendElectricity>(hiveTrendElectricityPriceName,
+        path: await _trendDirectoryPath()
+    );
+
+    // print('box.length: ${box.length}, path: ${box.path}');
+
+    List<TrendElectricity> list = box.values.toList();
+
+    await box.close();
+
+    return list;
+  }
+
+  ElectricityPriceData  getElectricityData ([DateTime? startingTimeParameter])  {
+
+    return electricity.data.getData(startingTimeParameter);
+
   }
 
   double currentPrice() {
@@ -471,16 +484,10 @@ const double notAvailablePrice = 999999.0;
 
 
 class ElectricityChartData {
-  double minPrice = notAvailablePrice;
-  double min2hourPeriodPrice = notAvailablePrice;
-  double min3hourPeriodPrice = notAvailablePrice;
-
-  DateTime minPriceTime = DateTime(0);
-  DateTime min2hourPeriod = DateTime(0);
-  DateTime min3hourPeriod = DateTime(0);
-
-  double maxPrice = -notAvailablePrice;
-  DateTime maxPriceTime = DateTime(0);
+  PriceAndTime minPrice = PriceAndTime();
+  PriceAndTime min2hourPeriod = PriceAndTime();
+  PriceAndTime min3hourPeriod = PriceAndTime();
+  PriceAndTime maxPrice = PriceAndTime();
 
   double yAxisInterval = 1.0;
   double yAxisMax = 10.0;

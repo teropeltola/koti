@@ -17,11 +17,11 @@ class TrendEventAdapter extends TypeAdapter<TrendEvent> {
       for (int i = 0; i < numOfFields; i++) reader.readByte(): reader.read(),
     };
     return TrendEvent(
-      fields[0] as int,
-      fields[1] as String,
-      fields[2] as String,
-      ObservationLevel.values[fields[3]],
-      fields[4] as String
+        fields[0] as int,
+        fields[1] as String,
+        fields[2] as String,
+        ObservationLevel.values[fields[3]],
+        fields[4] as String
     );
   }
 
@@ -47,7 +47,7 @@ class TrendEventAdapter extends TypeAdapter<TrendEvent> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      other is TrendEventAdapter &&
-          runtimeType == other.runtimeType &&
-          typeId == other.typeId;
+          other is TrendEventAdapter &&
+              runtimeType == other.runtimeType &&
+              typeId == other.typeId;
 }

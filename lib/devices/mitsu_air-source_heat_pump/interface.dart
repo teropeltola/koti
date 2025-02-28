@@ -1,4 +1,3 @@
-import 'dart:async';
 
 class AtaDevice {
   static const String OPERATION_MODE_HEAT = 'heat';

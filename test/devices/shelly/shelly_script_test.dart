@@ -6,8 +6,6 @@ import 'package:bonsoir/bonsoir.dart';
 
 import 'package:koti/devices/shelly/shelly_device.dart';
 import 'package:koti/devices/shelly/shelly_scan.dart';
-import 'package:koti/look_and_feel.dart';
-import 'package:koti/main.dart';
 
 
 
@@ -27,8 +25,8 @@ void main() {
 
     test('Test testEnvironment setup', () async {
 
-      String s1 = 'let greeting=\'Terve\'; let g2=\"G2\";print(greeting);';
-      String s2 = "Script.PutCode?id=1&code=\x22${s1}\x22&append=false";
+      String s1 = 'let greeting=\'Terve\'; let g2="G2";print(greeting);';
+      String s2 = "Script.PutCode?id=1&code=\x22$s1\x22&append=false";
       String s3 = _cmd(s2);
       Uri u = Uri.parse(s3);
       String s4 = u.query;
@@ -41,7 +39,7 @@ void main() {
   test('Test testEnvironment trick 2', () async {
 
     String s1 = 'let greeting=\'Terve\';\nprint(greeting);';
-    String s2 = "Script.PutCode?id=1&code=\\x22${s1}\\x22&append=false";
+    String s2 = "Script.PutCode?id=1&code=\\x22$s1\\x22&append=false";
     String s3 = _cmd(s2);
     Uri u = Uri.parse(s3);
     String s4 = u.query;
@@ -56,7 +54,7 @@ const _myTestPlugName = 'shellyplusplugs-b0b21c110aa0';
 
 Future <ShellyDevice> _initTestEnvironment() async {
   await shellyScan.init();
-  await Future.delayed(Duration(seconds: 1));
+  await Future.delayed(const Duration(seconds: 1));
 
   /*
   List<String> shellyServices = shellyScan.listPossibleServices();

@@ -158,7 +158,7 @@ class _EditOumanViewState extends State<EditOumanView> {
                               child: Row(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Expanded(
+                                  const Expanded(
                                     flex: 5,
                                     child: Text('Käyttäjätunnus:'),
                                   ),
@@ -189,7 +189,7 @@ class _EditOumanViewState extends State<EditOumanView> {
                                 child: Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Expanded(
+                                    const Expanded(
                                       flex: 5,
                                       child: Text('Salasana:'),
                                     ),
@@ -261,13 +261,18 @@ class _EditOumanViewState extends State<EditOumanView> {
                               myPasswordController.text);
                         await oumanDevice.init();
                         events.write(widget.estate.id, oumanDevice.id, ObservationLevel.informatic, 'laite luotu');
+                        /*
                         if (widget.estate.myWifiIsActive) {
                           bool connectionSucceeded = await oumanDevice
                             .initSuccessInCreation(widget.estate);
                           if (connectionSucceeded) {
+
+                         */
                             showSnackbarMessage('Ouman-laitteen tietoja päivitetty!');
                             Navigator.pop(context, true);
+                          /*
                           }
+
                           else {
                             await informMatterToUser(
                               context,
@@ -283,6 +288,8 @@ class _EditOumanViewState extends State<EditOumanView> {
                           showSnackbarMessage('Ouman-laitteen tietoja päivitetty!');
                           Navigator.pop(context, true);
                         }
+
+                           */
                       }
                     }),
                   ])

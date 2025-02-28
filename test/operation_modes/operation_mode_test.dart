@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:koti/devices/device/device.dart';
 import 'package:koti/estate/estate.dart';
-import 'package:koti/look_and_feel.dart';
 import 'package:koti/operation_modes/operation_modes.dart';
 
 OperationMode _operationMode(String n1) {

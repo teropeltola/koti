@@ -28,10 +28,6 @@ class Vehicle extends Device {
     return json;
   }
 
-  @override
-  void fromJson(Map<String, dynamic> json){
-    super.fromJson(json);
-  }
 
   @override
   Vehicle.fromJson(Map<String, dynamic> json) {

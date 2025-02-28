@@ -52,7 +52,7 @@ void main() {
       expect(testLog.log[0].observationLevel, level);
 
       // Test adding an item with the same level
-      DateTime later = now.add(Duration(minutes: 5));
+      DateTime later = now.add(const Duration(minutes: 5));
       ObservationLogItem logItem2 = ObservationLogItem(later, level);
       expect(testLog.add(logItem2), isFalse);
       expect(testLog.log.length, 1);

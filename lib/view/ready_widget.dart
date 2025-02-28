@@ -27,7 +27,7 @@ Widget readyWidget(
               'Valmis',
               maxLines: 1,
               style: TextStyle(color: mySecondaryFontColor),
-              textScaler: const TextScaler.linear(2.2),
+              textScaler: TextScaler.linear(2.2),
             ),
           )));
 }

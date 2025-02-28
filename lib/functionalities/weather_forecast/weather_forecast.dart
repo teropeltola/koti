@@ -3,11 +3,9 @@ import 'package:koti/functionalities/weather_forecast/view/edit_weather_forecast
 
 import 'package:koti/functionalities/weather_forecast/view/weather_forecast_view.dart';
 import '../../devices/device/device.dart';
-import '../../devices/weather_service_provider/weather_service_provider.dart';
 import '../../estate/estate.dart';
 import '../../look_and_feel.dart';
 import '../functionality/functionality.dart';
-import '../functionality/view/functionality_view.dart';
 
 double _noTemperature() {
   return noValueDouble;
@@ -79,7 +77,7 @@ class WeatherForecast extends Functionality {
       headline: functionalityName,
       textLines: [
           'tunnus: $id',
-          'paikka: ${locationName}',
+          'paikka: $locationName',
       ],
       widgets: [
         dumpDataMyDevices(formatterWidget: formatterWidget)

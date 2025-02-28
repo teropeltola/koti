@@ -1,4 +1,3 @@
-import '../look_and_feel.dart';
 import 'my_permanent_variable.dart';
 
 const String _delimiter = '#';

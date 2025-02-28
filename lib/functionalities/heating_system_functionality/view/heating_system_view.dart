@@ -1,10 +1,7 @@
 
 import 'package:flutter/material.dart';
-import 'package:webview_flutter/webview_flutter.dart';
 
-import '../../../devices/ouman/ouman_device.dart';
 import '../../../logic/observation.dart';
-import '../../../look_and_feel.dart';
 
 import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
@@ -41,12 +38,12 @@ class HeatingSystemView extends FunctionalityView {
         },
         onLongPress: () {
         },
-        child: Column(
+        child: const Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Text(
                   'Lämmitys',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 12)),
               Icon(
                 Icons.cabin,

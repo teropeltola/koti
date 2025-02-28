@@ -1,44 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:hive/hive.dart';
 import 'dart:async';
-import 'dart:math';
 
-import 'package:http/http.dart' as http;
 import 'package:koti/devices/ouman/trend_ouman.dart';
 import 'package:koti/devices/ouman/view/edit_ouman_view.dart';
+import 'package:koti/foreground_configurator.dart';
+import 'package:koti/interfaces/foreground_interface.dart';
 import 'package:koti/service_catalog.dart';
-
-import 'dart:convert' show utf8;
 
 import '../../app_configurator.dart';
 import '../../estate/estate.dart';
 import '../../logic/observation.dart';
 import '../../logic/services.dart';
 import '../../logic/state_broker.dart';
-import '../../trend/trend.dart';
 import '../../logic/unique_id.dart';
 import '../../look_and_feel.dart';
 import '../device_with_login/device_with_login.dart';
+import 'ouman_foreground.dart';
 
 const String _oumanName = 'Ouman';
 
-const _oumanFetchingIntervalInMinutes = 2;
-const _trendUpdateIntevalInMinutes = 20;
-
-const Map <String, String> oumanCodes = {
-  'OutsideTemperature': 'S_227_85',
-  'L1MeasuredWaterTemperature': 'S_259_85',
-  'L1RequestedWaterTemperature': 'S_275_85',
-  'L1Valve': 'S_272_85',
-  'TrendSampleInterval' : 'S_26_85',
-  'L1TempDrop' : 'S_89_85',
-  'L1BigTempDrop' : 'S_90_85',
-  'L1minTemperature' : 'S_54_85',
-  'L1maxTemperature' : 'S_55_85',
-  'L1Curve-20' :   'S_61_85',
-  'L1Curve0' :   'S_63_85',
-  'L1Curve+20' :   'S_65_85',
-
-};
+const _oumanFetchingIntervalInMinutes = 15;
+const _initialWaitingTimeInSeconds = 15;
 
 class OumanDevice extends DeviceWithLogin {
 
@@ -51,19 +34,12 @@ class OumanDevice extends DeviceWithLogin {
     return 'http://$ipAddress';
   }
 
-  late Timer _timer;
-
-  Map <String, String> requestResult = {};
-
-  StateDoubleNotifier _outsideTemperature = StateDoubleNotifier(noValueDouble);
-  StateDoubleNotifier _measuredWaterTemperature = StateDoubleNotifier(noValueDouble);
-  StateDoubleNotifier _requestedWaterTemperature = StateDoubleNotifier(noValueDouble);
-  StateDoubleNotifier _valve = StateDoubleNotifier(noValueDouble);
+  final StateDoubleNotifier _outsideTemperature = StateDoubleNotifier(noValueDouble);
+  final StateDoubleNotifier _measuredWaterTemperature = StateDoubleNotifier(noValueDouble);
+  final StateDoubleNotifier _requestedWaterTemperature = StateDoubleNotifier(noValueDouble);
+  final StateDoubleNotifier _valve = StateDoubleNotifier(noValueDouble);
   double _heaterEstimatedTemperature = noValueDouble;
   DateTime _latestDataFetched = DateTime(0);
-  DateTime _latestTrendUpdateTime = DateTime(0);
-
-  late TrendBox<TrendOuman> trendBox;
 
   void _initOfferedServices() {
     services = Services([
@@ -96,36 +72,25 @@ class OumanDevice extends DeviceWithLogin {
     return _latestDataFetched.year == 0;
   }
 
-  Future<bool> initSuccessInCreation(Estate estate) async {
-    bool success = false;
-    try {
-      if (estate.myWifiIsActive) {
-        success = await login();
-        if (success) {
-          success = await getData();
-          if (success) {
-            success = await logout();
-          }
-        }
-      }
-    }
-    catch (e, st) {
-      log.error('OumanDevice init exception', e, st);
-      success = false;
-    }
-    _setupTimer();
-    return success;
-  }
-
   @override
   Future<void> init() async {
     Estate myEstate = myEstates.estateFromId(myEstateId);
 
-    await trend.initBox<TrendOuman>(hiveTrendOumanName);
-    trendBox = trend.open(hiveTrendOumanName);
-
-    await initSuccessInCreation(myEstate);
     webLoginCredentials.url = _oumanUrl();
+
+    foregroundInterface.defineRecurringService(
+      oumanForegroundService,
+      _oumanFetchingIntervalInMinutes,
+      OumanForeground(
+          estateId: myEstateId,
+          deviceId: id,
+          username: await webLoginCredentials.username(),
+          password: await webLoginCredentials.password(),
+          url: webLoginCredentials.url,
+          wifiName: myEstate.myWifi).toJson(),
+    );
+
+    await readData();
 
     myEstate.stateBroker.initNotifyingDoubleStateInformer(
         device: this,
@@ -153,44 +118,6 @@ class OumanDevice extends DeviceWithLogin {
 
   }
 
-  Future<bool> fetchAndAnalyzeData() async {
-    bool success = true;
-
-    if (myEstates.estateFromId(myEstateId).myWifiIsActive) {
-      if ((await login()) && (await getData()) && (await logout())) {
-        setNormalObservation();
-      }
-      else {
-        observationMonitor.add(ObservationLogItem(DateTime.now(), ObservationLevel.informatic));
-        success = false;
-      }
-    }
-    else {
-      success = true;
-    }
-    _setupTimer();
-    return success;
-  }
-
-  void _setupTimer() {
-    const Duration delay =  Duration(
-      minutes: _oumanFetchingIntervalInMinutes,
-    );
-
-    // Schedule the daily task at given time
-    _timer = Timer(delay, () async {
-      await init();
-    });
-  }
-
-  String parameterValue(String paramName) {
-    return requestResult[oumanCodes[paramName] ?? ''] ?? '';
-  }
-
-  String oumanDataCodes() {
-    return 'S_227_85;S_135_85;S_1000_0;S_259_85;S_275_85;S_134_85;S_272_85;S_26_85;S_89_85;S_90_85;S_54_85;S_55_85;S_61_85;S_63_85;S_65_85;S_260_85;S_258_85;S_286_85;S_92_85;S_59_85;S_1004_85;S_330_85;';
-  }
-
   double outsideTemperature() {
     return _outsideTemperature.data;
   }
@@ -215,42 +142,58 @@ class OumanDevice extends DeviceWithLogin {
     return _latestDataFetched;
   }
 
-  double getValue(String key) {
-    String result = requestResult[oumanCodes[key] ?? ''] ?? '-99.9';
-    return double.parse(result);
+
+  TrendOuman _noTrendData() {
+    return TrendOuman(
+        DateTime.now().millisecondsSinceEpoch,
+        myEstateId,
+        id,
+        noValueDouble, noValueDouble, noValueDouble,noValueDouble);
   }
 
-  void analyseRequest() {
-    _outsideTemperature.data = getValue('OutsideTemperature');
-    _measuredWaterTemperature.data = getValue('L1MeasuredWaterTemperature');
-    _requestedWaterTemperature.data = getValue('L1RequestedWaterTemperature');
-    _valve.data = getValue('L1Valve');
+  Future<TrendOuman> latestData() async {
+    var box = await Hive.openBox<TrendOuman>(hiveTrendOumanName);
+
+    TrendOuman trendOuman = box.length == 0 ? _noTrendData() : box.getAt(box.length-1) ?? _noTrendData();
+
+    await box.close();
+
+    return trendOuman;
+  }
+
+  Future <List<TrendOuman>> getHistoryData() async {
+    var box = await Hive.openBox<TrendOuman>(hiveTrendOumanName);
+
+    List<TrendOuman> list = box.values.toList();
+
+    await box.close();
+
+    return list;
+  }
+
+
+  Future<void> readData() async {
+
+    TrendOuman data = await latestData();
+
+    _outsideTemperature.data = data.outsideTemperature;
+    _measuredWaterTemperature.data = data.measuredWaterTemperature;
+    _requestedWaterTemperature.data = data.requestedWaterTemperature;
+    _valve.data = data.valve;
     _heaterEstimatedTemperature = _measuredWaterTemperature.data * 100 / _valve.data;
-    _latestDataFetched = DateTime.now();
-
-    if (_latestDataFetched.difference(_latestTrendUpdateTime).inMinutes > _trendUpdateIntevalInMinutes) {
-      trendBox.add(TrendOuman(
-          _latestDataFetched.millisecondsSinceEpoch,
-          myEstateId,
-          id,
-          _outsideTemperature.data,
-          _measuredWaterTemperature.data,
-          _requestedWaterTemperature.data,
-          _valve.data
-      ));
-      _latestTrendUpdateTime = _latestDataFetched;
-    }
+    _latestDataFetched = DateTime.fromMillisecondsSinceEpoch(data.timestamp);
   }
 
-  bool _useObservations = false;
-  double _observationAlarmValveLimit = 99.0;
-  double _observationAlarmTempDiff = 0.5;
-  double _observationWarningValveLimit = 95.0;
-  double _observationWarningTempDiff = 0.0;
-  double _observationInfoValveLimit = 90.0;
+  final bool _useObservations = false;
+  final double _observationAlarmValveLimit = 99.0;
+  final double _observationAlarmTempDiff = 0.5;
+  final double _observationWarningValveLimit = 95.0;
+  final double _observationWarningTempDiff = 0.0;
+  final double _observationInfoValveLimit = 90.0;
 
   double waterTempDiff() => _requestedWaterTemperature.data - _measuredWaterTemperature.data;
 
+  @override
   ObservationLevel observationLevel() {
     if ((_valve.data > _observationAlarmValveLimit) &&
         (waterTempDiff() > _observationAlarmTempDiff)) {
@@ -272,69 +215,7 @@ class OumanDevice extends DeviceWithLogin {
     observationMonitor.add(ObservationLogItem(DateTime.now(),observationLevel()));
   }
 
-  Future<bool> login() async {
-    String username = await webLoginCredentials.username();
-    String password = await webLoginCredentials.password();
 
-    String myLoginRequest = '${webLoginCredentials.url}/login?uid=$username;pwd=$password;';
-    try {
-      final url = Uri.parse(myLoginRequest); // Replace with your server's URL.
-      final response = await http.get(url);
-
-      if (response.statusCode == 200) {
-        return true;
-      } else {
-        log.error('Ouman kirjautuminen epäonnistui. Virhekoodi: ${response
-            .statusCode}');
-        return false;
-      }
-    }
-    catch(e,st) {
-      log.error('OumanDevice login exception: "$myLoginRequest" failed',e,st);
-      return false;
-    }
-  }
-
-  Future<bool> logout() async {
-    String myLogout = '${webLoginCredentials.url}/logout?';
-    final url = Uri.parse(myLogout);
-    final response = await http.get(url);
-
-    if (response.statusCode == 200) {
-      return true;
-    } else {
-      log.error('Ouman uloskirjautuminen epäonnistui. Virhekoodi: ${response.statusCode}');
-      return false;
-    }
-  }
-
-  Future<bool> getData() async {
-    final htmlResponse = await http.get(Uri.parse('${webLoginCredentials.url}/eh800.html'));
-    if (htmlResponse.statusCode != 200) {
-      log.error('Ouman datan haku epäonnistui. Virhekoodi: ${htmlResponse.statusCode}');
-      return false;
-    }
-    var mainPage = utf8.decode(htmlResponse.bodyBytes);
-
-    final jsResponse = await http.get(Uri.parse('${webLoginCredentials.url}/eh800.js'));
-    if (jsResponse.statusCode != 200) {
-      log.error('Ouman javaScriptin haku epäonnistui. Virhekoodi: ${jsResponse.statusCode}');
-      return false;
-    }
-
-    String request = oumanDataCodes();
-    final dataResponse =
-      await http.get( Uri.parse( '${webLoginCredentials.url}/request?$request'));
-    if (dataResponse.statusCode != 200) {
-      log.error('Ouman datan haku epäonnistui. Virhekoodi: ${dataResponse.statusCode}');
-      return false;
-    }
-    String mainPageData = utf8.decode(dataResponse.bodyBytes);
-    requestResult = parseDeviceData(mainPageData);
-    analyseRequest();
-
-    return true;
-  }
 
   @override
   double temperatureFunction() {
@@ -369,7 +250,6 @@ class OumanDevice extends DeviceWithLogin {
         headline: name,
         textLines: [
           'tunnus: $id',
-          _timer.isActive ? 'Ajastin aktiivinen' : 'Ajastin pois päältä',
           'datan hakuaika: ${dumpTimeString(fetchingTime())}',
           'IP-osoite: $_ipAddress',
         ],
@@ -382,7 +262,6 @@ class OumanDevice extends DeviceWithLogin {
   @override
   void dispose() {
     //super.dispose();
-    _timer.cancel();
   }
 
   @override
@@ -405,41 +284,3 @@ class OumanDevice extends DeviceWithLogin {
   }
 }
 
-Map<String, String> parseDeviceData(String deviceData) {
-  Map<String, String> result = {};
-
-  // Check if the string has the expected format
-  if (!deviceData.startsWith('request?')) {
-    // Handle invalid format
-    log.error('Ouman ParseDeviceData - Invalid data format : "${deviceData.substring(0,min(20,deviceData.length))}"');
-    return result;
-  }
-
-  // Extract the parameters part of the string
-  String paramsString = deviceData.substring('request?'.length);
-
-  // Split the parameters by semicolon
-  List<String> params = paramsString.split(';');
-
-  // Iterate over each parameter and extract key-value pairs
-  for (String param in params) {
-    // Split each parameter by equals sign
-    List<String> keyValue = param.trim().split('=');
-
-    // Ensure there are two parts (key and value)
-    if (keyValue.length == 2) {
-      String key = keyValue[0].trim();
-      String value = keyValue[1].trim();
-      result[key] = value;
-    }
-    /*
-    else {
-      // Handle invalid parameter format
-      log.error('Ouman ParseDeviceData - Invalid parameter: $param');
-    }
-
-     */
-  }
-
-  return result;
-}

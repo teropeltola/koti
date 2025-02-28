@@ -2,12 +2,10 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:koti/functionalities/boiler_heating/view/boiler_heating_overview.dart';
-import 'package:koti/look_and_feel.dart';
 import 'package:koti/service_catalog.dart';
 
 import '../../../devices/mixins/on_off_switch.dart';
 import '../../../logic/services.dart';
-import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../boiler_heating_functionality.dart';
 
@@ -26,17 +24,12 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
 
   BoilerHeatingFunctionality myBoilerFunctionality() => myFunctionality() as BoilerHeatingFunctionality;
 
-  BoilerHeatingFunctionalityView()  {
-  }
+  BoilerHeatingFunctionalityView();
 
   BoilerHeatingFunctionalityView.fromJson(Map<String, dynamic> json)  {
     super.fromJson(json);
   }
 
-  @override
-  void setFunctionality(Functionality functionality) {
-    super.setFunctionality(functionality);
-  }
 
   @override
   Widget gridBlock(BuildContext context, Function callback) {
@@ -58,8 +51,10 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            Text(
+            AutoSizeText(
               myBoilerFunctionality().connectedDevices[0].name,
+              stepGranularity:0.5,
+              maxLines: 1,
               style: const TextStyle(
                 fontSize: 12)),
             _currentOperationModeWidget(
@@ -86,14 +81,14 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
 
 Icon _heaterIcon(bool heating) {
   if (heating) {
-    return Icon(
+    return const Icon(
       Icons.heat_pump_outlined,
       size: 40,
       color: Colors.yellowAccent
     );
   }
   else {
-    return Icon(
+    return const Icon(
       Icons.not_interested,
       size: 40,
       color: Colors.white
@@ -115,7 +110,7 @@ Widget _currentOperationModeWidget(String opModeName, bool heating) {
         foregroundColor: heating
             ? Colors.white
             : Colors.white,
-        side: BorderSide(
+        side: const BorderSide(
             color: Colors.white
         ),
         shape: RoundedRectangleBorder(
@@ -123,7 +118,7 @@ Widget _currentOperationModeWidget(String opModeName, bool heating) {
       ),
       child: AutoSizeText(
           opModeName,
-        style: TextStyle(fontSize: 10, color: Colors.white),
+        style: const TextStyle(fontSize: 10, color: Colors.white),
         minFontSize: 8,
           maxLines: 1,
           )));

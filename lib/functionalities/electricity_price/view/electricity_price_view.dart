@@ -5,9 +5,10 @@ import 'package:koti/look_and_feel.dart';
 import 'package:syncfusion_flutter_charts/charts.dart';
 
 import '../../../estate/estate.dart';
-import '../../../functionalities/functionality/functionality.dart';
 import '../../../functionalities/functionality/view/functionality_view.dart';
+import '../../../logic/electricity_price_data.dart';
 import '../electricity_price.dart';
+import '../trend_electricity.dart';
 
 class ElectricityPriceView extends StatefulWidget {
   final ElectricityPrice electricityPrice;
@@ -55,18 +56,23 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
   }
 
   void regenerateData()  {
-    ElectricityPriceTable prices = widget.electricityPrice.get(DateTime.now());
+    ElectricityPriceData prices = widget.electricityPrice.getElectricityData(DateTime.now());
 
     electricityChartData = prices.analyse();
-    barColor.init(electricityChartData.minPrice, electricityChartData.maxPrice);
+    barColor.init(electricityChartData.minPrice.price, electricityChartData.maxPrice.price);
 
     chartData.clear();
 
-    for (int i=0; i<prices.slotPrices.length; i++) {
-      chartData.add(ChartData(
-          DateTime(prices.startingTime.year, prices.startingTime.month, prices.startingTime.day, prices.startingTime.hour+i),
-          prices.slotPrices[i],
-          barColor.get(prices.slotPrices[i])));
+    for (var item in prices.prices) {
+      DateTime time = DateTime.fromMillisecondsSinceEpoch(item.timestamp);
+      double price = item.totalPrice;
+      if (price != noValueDouble) {
+        print ('${time.day}. ${time.hour}:${time.minute} ${item.totalPrice}');
+        chartData.add(ChartData(
+            time,
+            item.totalPrice,
+            barColor.get(item.totalPrice)));
+      }
     }
 
     currentPrice = prices.currentPrice();
@@ -119,29 +125,58 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
           Padding(
             padding: const EdgeInsets.all(5),
             child: Text('- Edullisin tunti: '
-                '${_timePeriodFormat(electricityChartData.minPriceTime, 1)} '
-                '(${electricityChartData.minPrice.toStringAsFixed(2)} c/kWh)',
+                '${_timePeriodFormat(electricityChartData.minPrice.time, 1)} '
+                '(${electricityChartData.minPrice.price.toStringAsFixed(2)} c/kWh)',
                 textScaler: const TextScaler.linear(1.2),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(5),
             child: Text('- Kaksituntinen: '
-                '${_timePeriodFormat(electricityChartData.min2hourPeriod,2)}'
-                ' (${electricityChartData.min2hourPeriodPrice.toStringAsFixed(2)} c/kWh)',
+                '${_timePeriodFormat(electricityChartData.min2hourPeriod.time,2)}'
+                ' (${electricityChartData.min2hourPeriod.price.toStringAsFixed(2)} c/kWh)',
                 textScaler: const TextScaler.linear(1.2),
             ),
           ),
           Padding(
             padding: const EdgeInsets.all(5),
             child: Text('- Kolmituntinen: '
-                '${_timePeriodFormat(electricityChartData.min3hourPeriod,3)}'
-                ' (${electricityChartData.min3hourPeriodPrice.toStringAsFixed(2)} c/kWh)',
+                '${_timePeriodFormat(electricityChartData.min3hourPeriod.time,3)}'
+                ' (${electricityChartData.min3hourPeriod.price.toStringAsFixed(2)} c/kWh)',
                 textScaler: const TextScaler.linear(1.2),
             ),
           ),
-        ])
-        )
+        ]),
+        ),
+        bottomNavigationBar: Container(
+          height: bottomNavigatorHeight,
+          alignment: AlignmentDirectional.topCenter,
+          color: myPrimaryColor,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    IconButton(
+                        icon: const Icon(
+                            Icons.list_alt,
+                            color: myPrimaryFontColor,
+                            size: 40),
+                        tooltip: 'kaikki spot tiedot',
+                        onPressed: () async {
+                          await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context)  {
+
+                                  return ElectricityPriceDumpView(
+                                      electricityPrice: widget.electricityPrice
+                                  );
+                                },
+                              )
+                          );
+                        }
+                    ),
+                  ]),
+            )
     );
   }
 }
@@ -227,12 +262,12 @@ class ElectricityGridBlock extends FunctionalityView {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-              Text(
+              const Text(
                 ElectricityPrice.functionalityName,
                 style: TextStyle(
                   fontSize: 10)),
               Text(
-                  '${currencyCentInText(electricityPrice.currentPrice())}',
+                  currencyCentInText(electricityPrice.currentPrice()),
                   textScaler: const TextScaler.linear(1.2),
                   textAlign: TextAlign.center,
               ),
@@ -248,5 +283,81 @@ class ElectricityGridBlock extends FunctionalityView {
     );
   }
 }
+
+
+
+class ElectricityPriceDumpView extends StatefulWidget {
+  final ElectricityPrice electricityPrice;
+  const ElectricityPriceDumpView({Key? key, required this.electricityPrice}) : super(key: key);
+
+  @override
+  State<ElectricityPriceDumpView> createState() => _ElectricityPriceDumpViewState();
+}
+
+
+class _ElectricityPriceDumpViewState extends State<ElectricityPriceDumpView> {
+
+  ElectricityPriceData electricityPriceData = ElectricityPriceData();
+
+  @override
+  void initState() {
+    super.initState();
+    electricityPriceData = widget.electricityPrice.getElectricityData();
+  }
+
+  Widget _displayElectricityPrice(ElectricityTotalPriceItem electricityPriceItem) {
+    if (electricityPriceItem.totalPrice == noValueDouble) {
+      return Row(children: <Widget>[
+        Text('${dumpTimeString(DateTime.fromMillisecondsSinceEpoch(
+          electricityPriceItem.timestamp))}: -')
+      ]);
+    }
+    else {
+      return Row(children: <Widget>[
+        Text(dumpTimeString(DateTime.fromMillisecondsSinceEpoch(
+            electricityPriceItem.timestamp))),
+        Text(': ${currencyCentInText(electricityPriceItem.totalPrice)} '),
+        Text('(${currencyCentInText(
+            electricityPriceItem.electricityPrice)} + ${currencyCentInText(
+            electricityPriceItem.transferPrice)})'),
+      ]
+      );
+    }
+  }
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: appIconAndTitle('Sähkön hinta','listaus'),
+        backgroundColor: myPrimaryColor,
+        iconTheme: const IconThemeData(color:myPrimaryFontColor)
+      ),// new line
+      body: SingleChildScrollView( child: Column(children: <Widget>[
+        for (int index=1; index<electricityPriceData.prices.length; index++)
+          _displayElectricityPrice(electricityPriceData.prices[index]),
+      ]
+        )
+      ),
+      bottomNavigationBar: Container(
+              height: bottomNavigatorHeight,
+              alignment: AlignmentDirectional.topCenter,
+              color: myPrimaryColor,
+              child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: <Widget>[
+                    IconButton(
+                        icon: const Icon(Icons.share,
+                            color:myPrimaryFontColor,
+                            size:40),
+                        tooltip: 'jaa näyttö somessa',
+                        onPressed: () async {}
+                    ),
+                  ]),
+            )
+    );
+  }
+}
+
+
 
 

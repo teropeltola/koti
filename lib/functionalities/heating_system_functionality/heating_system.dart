@@ -7,7 +7,6 @@ import '../../devices/device/device.dart';
 import '../../devices/ouman/ouman_device.dart';
 import '../../estate/estate.dart';
 import '../functionality/functionality.dart';
-import '../functionality/view/functionality_view.dart';
 
 class HeatingSystem extends Functionality {
 

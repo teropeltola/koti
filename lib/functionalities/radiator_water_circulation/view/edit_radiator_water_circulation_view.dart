@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../devices/device/device.dart';
 import '../../../devices/device/view/short_device_view.dart';
 import '../../../devices/ouman/ouman_device.dart';
 import '../../../estate/estate.dart';
@@ -9,7 +8,6 @@ import '../../../look_and_feel.dart';
 import '../../../operation_modes/view/edit_operation_mode_view.dart';
 import '../../../view/my_dropdown_widget.dart';
 import '../../../view/ready_widget.dart';
-import '../../functionality/functionality.dart';
 import '../radiator_water_circulation.dart';
 
 class EditRadiatorWaterCirculationView extends StatefulWidget {
@@ -65,7 +63,7 @@ class _EditRadiatorWaterCirculationViewState extends State<EditRadiatorWaterCirc
           ),
           readyWidget(() async {
             String name = RadiatorWaterCirculation.functionalityName;
-            log.info('${widget.estate.name}: ${name} luotu');
+            log.info('${widget.estate.name}: $name luotu');
             showSnackbarMessage('Ouman-laitteen tietoja päivitetty!');
             Navigator.pop(context, true);
           }),
@@ -84,7 +82,7 @@ Widget _categoryOfDevices(BuildContext context, Estate estate, RadiatorWaterCirc
   DropdownContent dropDownContent = DropdownContent(optionNames, '', 0);
   return Row(
         children: [
-          Expanded(
+          const Expanded(
               flex: 1,
               child: Text('Valitse laitetyyppi:')
           ),

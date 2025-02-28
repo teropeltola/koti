@@ -28,8 +28,7 @@ class ShellyBluTrv extends Device {
     id = initId;
   }
 
-  ShellyBluTrv.empty() {
-  }
+  ShellyBluTrv.empty();
 
   void _initOfferedServices() {
     services = Services([
@@ -72,12 +71,12 @@ class ShellyBluTrv extends Device {
 
   // sets the TRV target temperature
 
-  OverloadGuard<int> _overloadGuard = OverloadGuard(-100, Duration(seconds:10));
+  final OverloadGuard<int> _overloadGuard = OverloadGuard(-100, const Duration(seconds:10));
 
   Future <void> _setTargetTemperature(int newTarget, String caller) async {
 
     if (_overloadGuard.updateIsAllowed(newTarget)) {
-      events.write(myEstateId, this.id, ObservationLevel.ok,
+      events.write(myEstateId, id, ObservationLevel.ok,
           'patterin lämpötilaksi asetettu $newTarget$celsius ($caller)');
       await myGw.bluTrvCall(
           idNumber, 'TRV.SetTarget', '{"id":0,"target_C":$newTarget}');

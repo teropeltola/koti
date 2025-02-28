@@ -1,11 +1,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:koti/functionalities/radiator_water_circulation/view/radiator_water_circulation_overview.dart';
-import '../../../devices/device/device.dart';
 import '../../../devices/ouman/ouman_device.dart';
 import '../../../logic/observation.dart';
 
-import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../radiator_water_circulation.dart';
 
@@ -46,7 +44,7 @@ class RadiatorWaterCirculationView extends FunctionalityView {
                   viewName(),
                   style: const TextStyle(
                       fontSize: 12)),
-              Icon(
+              const Icon(
                 Icons.cabin,
                 size: 50,
                 color: Colors.white,

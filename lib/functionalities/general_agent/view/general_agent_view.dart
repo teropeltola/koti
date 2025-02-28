@@ -32,12 +32,12 @@ class GeneralAgentView extends FunctionalityView {
         },
         onLongPress: () {
         },
-        child: Column(
+        child: const Column(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
               Text(
                   'Lämmitys',
-                  style: const TextStyle(
+                  style: TextStyle(
                       fontSize: 12)),
               Icon(
                 Icons.cabin,

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 import 'package:koti/functionalities/radiator_water_circulation/view/edit_radiator_water_circulation_view.dart';
 import 'package:koti/functionalities/radiator_water_circulation/view/radiator_water_circulation_view.dart';
 import '../../devices/device/device.dart';
@@ -11,7 +10,6 @@ import '../../look_and_feel.dart';
 import '../../operation_modes/conditional_operation_modes.dart';
 import '../../operation_modes/operation_modes.dart';
 import '../functionality/functionality.dart';
-import '../functionality/view/functionality_view.dart';
 
 const String radiatorParameterFunction = 'radiatorParameterFunction';
 const String temperatureParameterId = 'temperature';

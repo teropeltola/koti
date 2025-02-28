@@ -1,7 +1,6 @@
 
 import 'package:flutter/material.dart';
 
-import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 
 class VehicleChargingView extends FunctionalityView {
@@ -28,7 +27,7 @@ class VehicleChargingView extends FunctionalityView {
             Text(
               viewName(),
               style: const TextStyle(fontSize: 12)),
-            Icon(
+            const Icon(
               Icons.electric_car_outlined,
               size: 50,
               color: Colors.white,

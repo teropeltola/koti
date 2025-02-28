@@ -18,7 +18,7 @@ Widget editCode(BuildContext context, ShellyScriptCode code, Function setValue) 
                   margin: const EdgeInsets.fromLTRB(5,5,5,5),
                   padding: const EdgeInsets.all(5),
                   child: InputDecorator(
-                    decoration: InputDecoration(labelText: 'Shelly Script'),
+                    decoration: const InputDecoration(labelText: 'Shelly Script'),
                     child: TextField(
                         key: const Key('codeField'),
                         focusNode: focusNode,

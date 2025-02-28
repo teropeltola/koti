@@ -2,7 +2,6 @@
 import 'package:bonsoir/bonsoir.dart';
 import 'package:koti/devices/wlan/bonsoir_discovery.dart';
 
-import '../device/device.dart';
 
 const String shellyBonsoirService = '_shelly._tcp';
 
@@ -76,7 +75,7 @@ class ShellyScan {
   ResolvedBonsoirService resolveServiceData(String serviceName) {
     BonsoirService dyn = _getServiceData(serviceName);
     if (dyn.runtimeType != ResolvedBonsoirService) {
-      dyn = const ResolvedBonsoirService(name:'#not found#',type: '', port: 0, ip: '', attributes: {});
+      dyn =  ResolvedBonsoirService(name:'#not found#',type: '', host: '', port: 0,  attributes: {});
     }
     return dyn as ResolvedBonsoirService;
   }
@@ -84,7 +83,7 @@ class ShellyScan {
   BonsoirService _getServiceData(serviceName) {
     BonsoirService? bs = bonsoirDiscoveryModel.getServiceData(serviceName);
     if (bs == null) {
-      return const ResolvedBonsoirService(name:'#not found#',type: '', port: 0, ip: '', attributes: {});
+      return  ResolvedBonsoirService(name:'#not found#',type: '', host: '', port: 0,  attributes: {});
     }
     return bs;
   }

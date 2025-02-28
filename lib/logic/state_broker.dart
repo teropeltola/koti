@@ -88,7 +88,7 @@ class StateInformer {
         headline: '',
         textLines: [
           'Laite: ${device.name}',
-          'Palvelu: ${serviceName}',
+          'Palvelu: $serviceName',
           notifierUsed() ? 'Tiedotus suoraan laitteelta' : 'kyselyväli: $pollFrequencyInMinutes minuuttia'
           'Seuraajien lukumäärä: ${followers.length}'
         ],
@@ -143,7 +143,7 @@ class StateFollower {
     return formatterWidget(
         headline: 'vois olla joku nimiparametri',
         textLines: [
-          'Tila: ${currentState}',
+          'Tila: $currentState',
           'Tilaehtojen lukumäärä: ${states.length}'
         ],
         widgets: [

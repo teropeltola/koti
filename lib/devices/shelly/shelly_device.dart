@@ -68,7 +68,7 @@ class ShellyDevice extends Device {
     );
 
     // Schedule the daily task at given time
-    Timer _timer = Timer(delay, () async {
+    Timer timer = Timer(delay, () async {
       await init();
     });
   }
@@ -78,7 +78,7 @@ class ShellyDevice extends Device {
     script = ShellyScript(myDevice);
   }
   void initFromScan(ResolvedBonsoirService bSData) {
-    ipAddress = bSData.ip ?? '';
+    ipAddress = bSData.host ?? '';
     port = bSData.port;
     shellyType = bSData.type;
     attributes = bSData.attributes ?? {};
@@ -114,7 +114,7 @@ class ShellyDevice extends Device {
         if (response.statusCode != 500) {
           // status code 500 is a normal response with non existence service
           log.error(
-              '${name}/$commandName/rpcCall error: $errorClarification, ${x
+              '$name/$commandName/rpcCall error: $errorClarification, ${x
                   .toString()}');
           log.info(uri.toString());
         }
@@ -253,6 +253,7 @@ class ShellyDevice extends Device {
 
   }
 
+  @override
   String detailsDescription() {
     return 'IP-osoite: $ipAddress, portti: $port\n'
            'attribuutit: ${attributes.toString()}';
@@ -264,7 +265,7 @@ class ShellyDevice extends Device {
     newDevice.name = name;
     newDevice.id = id;
     newDevice.state = state.clone();
-    connectedFunctionalities.forEach((e){newDevice.connectedFunctionalities.add(e);});
+    for (var e in connectedFunctionalities) {newDevice.connectedFunctionalities.add(e);}
     newDevice.ipAddress = ipAddress;
     newDevice.errorClarification = errorClarification;
     newDevice.port = port;

@@ -33,7 +33,7 @@ class _OperationModesSelectionViewState extends State<OperationModesSelectionVie
       return emptyWidget();
     }
     return Container(
-        margin: EdgeInsets.all(2),
+        margin: const EdgeInsets.all(2),
         height: 50,
         child:
          ListView(
@@ -99,14 +99,14 @@ class _OperationModesSelectionViewState2 extends State<OperationModesSelectionVi
       widget.returnSelectedModeName('');
       return emptyWidget();
     }
-    return Container(
+    return SizedBox(
         height: 50,
         child: ListView(
           scrollDirection: Axis.horizontal,
           children: [ListView.builder(
               itemCount: widget.operationModes.nbrOfModes(),
               shrinkWrap: true,
-              padding: EdgeInsets.all(2),
+              padding: const EdgeInsets.all(2),
               scrollDirection: Axis.horizontal,
               itemBuilder: (context, index) {
                 bool indexIsCurrentMode = widget.operationModes.modeName(index) == currentSelectionName;

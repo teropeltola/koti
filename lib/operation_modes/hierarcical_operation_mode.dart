@@ -2,7 +2,6 @@ import 'package:koti/functionalities/functionality/functionality.dart';
 
 import '../estate/estate.dart';
 import '../logic/device_attribute_control.dart';
-import '../main.dart';
 import 'operation_modes.dart';
 import '../../../look_and_feel.dart';
 

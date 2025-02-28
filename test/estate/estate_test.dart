@@ -5,7 +5,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:koti/devices/device/device.dart';
 import 'package:koti/devices/ouman/ouman_device.dart';
-import 'package:koti/devices/wlan/active_wifi_name.dart';
 import 'package:koti/estate/estate.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
 import 'package:koti/functionalities/heating_system_functionality/heating_system.dart';

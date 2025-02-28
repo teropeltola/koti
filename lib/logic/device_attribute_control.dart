@@ -28,7 +28,9 @@ class ControlledDevice {
 
   void initStructure( {required String deviceId, required List<DeviceAttributeCapability> deviceAttributes, required Function setFunction, required Function getFunction }) {
     this.deviceId = deviceId;
-    deviceAttributes.forEach((e)=>attributes.setCapability(e));
+    for (var e in deviceAttributes) {
+      attributes.setCapability(e);
+    }
     _externalGetValuesFunction = getFunction;
     _externalSetValuesFunction = setFunction;
   }

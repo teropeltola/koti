@@ -61,23 +61,24 @@ class ShellySwitchConfig {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['name'] = name;
-    _data['in_mode'] = inMode;
-    _data['initial_state'] = initialState;
-    _data['auto_on'] = autoOn;
-    _data['auto_on_delay'] = autoOnDelay;
-    _data['auto_off'] = autoOff;
-    _data['auto_off_delay'] = autoOffDelay;
-    _data['autorecover_voltage_errors'] = autorecoverVoltageErrors;
-    _data['power_limit'] = powerLimit;
-    _data['voltage_limit'] = voltageLimit;
-    _data['undervoltage_limit'] = undervoltageLimit;
-    _data['current_limit'] = currentLimit;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['in_mode'] = inMode;
+    data['initial_state'] = initialState;
+    data['auto_on'] = autoOn;
+    data['auto_on_delay'] = autoOnDelay;
+    data['auto_off'] = autoOff;
+    data['auto_off_delay'] = autoOffDelay;
+    data['autorecover_voltage_errors'] = autorecoverVoltageErrors;
+    data['power_limit'] = powerLimit;
+    data['voltage_limit'] = voltageLimit;
+    data['undervoltage_limit'] = undervoltageLimit;
+    data['current_limit'] = currentLimit;
+    return data;
   }
 
+  @override
   String toString() {
     if (id == -1) {
       return '-';
@@ -85,8 +86,8 @@ class ShellySwitchConfig {
     else {
       return 'switch id:$id, name: $name, inMode:$inMode\n'
           'initialState: $initialState \n'
-          '${autoOn ? 'autoOn at ${autoOnDelay}': 'no autoOn'}\n'
-          '${autoOff ? 'autoOff at ${autoOffDelay}': 'no autoOff'}\n'
+          '${autoOn ? 'autoOn at $autoOnDelay': 'no autoOn'}\n'
+          '${autoOff ? 'autoOff at $autoOffDelay': 'no autoOff'}\n'
       '${autorecoverVoltageErrors ? 'autorecoveryVoltageErrors' : 'no autorecoveryVoltageErrors'}'
       'powerLimit: $powerLimit \n'
       'voltageLimit: $voltageLimit \n'

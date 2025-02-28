@@ -6,6 +6,7 @@ import 'package:time_range_picker/time_range_picker.dart';
 import '../estate/estate.dart';
 import '../functionalities/electricity_price/electricity_price.dart';
 import '../logic/device_attribute_control.dart';
+import '../logic/electricity_price_data.dart';
 import '../look_and_feel.dart';
 import 'analysis_of_modes.dart';
 import 'operation_modes.dart';
@@ -15,7 +16,7 @@ const String dynamicOperationModeText = 'Vaihtuva';
 enum OperationComparisons {less, greater, equal, lessOrEqual, greaterOrEqual;
   static const comparisonText = ['pienempi kuin', 'suurempi kuin', 'yhtäsuuri kuin', 'pienempi tai yhtäsuuri kuin', 'suurempi tai yhtäsuuri kuin' ];
   static const jsonText = ['<','>','==','<=','>=' ];
-  String text() => comparisonText[this.index];
+  String text() => comparisonText[index];
 
   bool comparisonValue(double par1, double par2) {
     switch (this) {
@@ -41,7 +42,7 @@ enum OperationComparisons {less, greater, equal, lessOrEqual, greaterOrEqual;
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
 
-    json['comparison'] = jsonText[this.index];
+    json['comparison'] = jsonText[index];
 
     return json;
   }
@@ -55,7 +56,7 @@ enum SpotPriceComparisonType {
   static const typeText = ['vakio','mediaani', '%-piste'];
   static const jsonText = ['const','median', 'percentile'];
 
-  String text() => typeText[this.index];
+  String text() => typeText[index];
 
   SpotPriceComparisonType fromJson(Map<String, dynamic> json){
     int myIndex = jsonText.indexOf(json['spotPriceType'] ?? '');
@@ -71,7 +72,7 @@ enum SpotPriceComparisonType {
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
 
-    json['spotPriceType'] = jsonText[this.index];
+    json['spotPriceType'] = jsonText[index];
 
     return json;
   }
@@ -85,7 +86,7 @@ class SpotCondition {
 
   SpotCondition();
 
-  bool isTrue(double spotPrice, ElectricityPriceTable eTable) {
+  bool isTrue(double spotPrice, ElectricityPriceData eTable) {
     switch (myType) {
       case SpotPriceComparisonType.constant: return comparison.comparisonValue(spotPrice, parameterValue);
       case SpotPriceComparisonType.median: {
@@ -180,7 +181,7 @@ class DeviceVariableData  {
 
     final json = <String, dynamic>{};
 
-    json['deviceName'] = deviceName;;
+    json['deviceName'] = deviceName;
     json['serviceName'] = serviceName;
     return json;
   }
@@ -201,8 +202,8 @@ TimeOfDay _timeOfDayDecode(Map<String, dynamic> json) {
 
 class OperationCondition {
   OperationConditionType conditionType = OperationConditionType.notDefined;
-  MyTimeRange timeRange = MyTimeRange(startTime: TimeOfDay(hour: 0, minute: 0),
-      endTime: TimeOfDay(hour: 23, minute: 59));
+  MyTimeRange timeRange = MyTimeRange(startTime: const TimeOfDay(hour: 0, minute: 0),
+      endTime: const TimeOfDay(hour: 23, minute: 59));
   SpotCondition spot = SpotCondition();
 
   OperationCondition();
@@ -288,11 +289,11 @@ class ConditionalOperationMode {
     return condition.parametersOK();
   }
 
-  bool matchSpotIndex(int spotIndex, ElectricityPriceTable electricityPriceTable) {
-    return match(electricityPriceTable.slotStartingTime(spotIndex),electricityPriceTable.slotPrices[spotIndex], electricityPriceTable);
+  bool matchSpotIndex(int spotIndex, ElectricityPriceData electricityPriceData) {
+    return match(electricityPriceData.slotStartingTime(spotIndex),electricityPriceData.prices[spotIndex].totalPrice, electricityPriceData);
   }
 
-  bool match(DateTime dateTime, double price, ElectricityPriceTable electricityPriceTable) {
+  bool match(DateTime dateTime, double price, ElectricityPriceData electricityPriceData) {
     switch (condition.conditionType) {
       case OperationConditionType.notDefined:
         return false;
@@ -315,7 +316,7 @@ class ConditionalOperationMode {
         // TODO: not implemented
         return false; // condition.deviceIfno
       case OperationConditionType.spotPrice: {
-        return condition.spot.isTrue(price,electricityPriceTable);
+        return condition.spot.isTrue(price,electricityPriceData);
       }
 
       case OperationConditionType.spotDiff:
@@ -354,19 +355,21 @@ class ConditionalOperationModes extends OperationMode {
 
   ElectricityPriceListener electricityPriceListener = ElectricityPriceListener();
 
-  ConditionalOperationModes() {
-  }
+  ConditionalOperationModes();
 
   @override
   void init(String estateName, [OperationModes? initOperationModes]) {
     operationModes = initOperationModes!;
+    /*
     electricityPriceListener.start(
         myEstates.estate(estateName).myDefaultElectricityPrice().myBroadcaster(),
         updateCurrentAnalysis);
+
+     */
   }
 
   //called whenever there are updates to listened electricityPriceTable
-  void updateCurrentAnalysis(ElectricityPriceTable electricityPriceTable) {
+  void updateCurrentAnalysis(ElectricityPriceData electricityPriceData) {
     DateTime dateTime = DateTime.now();
 
     currentAnalysis = _analyse(electricityPriceListener.data,dateTime);
@@ -382,9 +385,9 @@ class ConditionalOperationModes extends OperationMode {
     return conditions.removeAt(index);
   }
 
-  String getOperationModeName(int spotIndex, ElectricityPriceTable electricityPriceTable) {
+  String getOperationModeName(int spotIndex, ElectricityPriceData electricityPriceData) {
     for (var c in conditions) {
-      if (c.matchSpotIndex(spotIndex, electricityPriceTable)) {
+      if (c.matchSpotIndex(spotIndex, electricityPriceData)) {
         return c.result.operationModeName;
       }
     }
@@ -421,8 +424,7 @@ class ConditionalOperationModes extends OperationMode {
 
   List<String> simulate() {
 
-//    ElectricityPriceTable electricityPriceTable = myEstates.estate(operationModes.estateName).myDefaultElectricityPrice().get();
-    DateTime startingTime = electricityPriceListener.data.startingTime;
+    DateTime startingTime = electricityPriceListener.data.startingTime();
 
     AnalysisOfModes analysis = AnalysisOfModes();
 
@@ -440,11 +442,11 @@ class ConditionalOperationModes extends OperationMode {
     return analysis.toStringList();
   }
 
-  AnalysisOfModes _analyse(ElectricityPriceTable electricityPriceTable, DateTime startingTime) {
+  AnalysisOfModes _analyse(ElectricityPriceData electricityPriceData, DateTime startingTime) {
     AnalysisOfModes analysis = AnalysisOfModes();
 
-    for (int i=0; i<electricityPriceTable.nbrOfMinutes(); i++) {
-      analysis.add(startingTime.add(Duration(minutes: i)),1,getOperationModeName(i ~/ electricityPriceTable.slotSizeInMinutes, electricityPriceTable));
+    for (int i=0; i<electricityPriceData.nbrOfMinutes(); i++) {
+      analysis.add(startingTime.add(Duration(minutes: i)),1,getOperationModeName(i ~/ electricityPriceData.slotSizeInMinutes, electricityPriceData));
     }
     analysis.compress();
 

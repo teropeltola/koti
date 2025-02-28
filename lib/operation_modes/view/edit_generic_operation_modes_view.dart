@@ -1,8 +1,6 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:koti/functionalities/air_heat_pump_functionality/view/air_heat_pump_view.dart';
-import 'package:thermostat/thermostat.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
@@ -11,7 +9,6 @@ import '../../logic/dropdown_content.dart';
 import '../../view/ready_widget.dart';
 import '../conditional_operation_modes.dart';
 import '../operation_modes.dart';
-import 'conditional_option_list_view.dart';
 import 'edit_operation_mode_view.dart';
 import 'operation_modes_selection_view.dart';
 
@@ -25,10 +22,12 @@ class _opModeStructure {
 
 class _PossibleOpModes {
   List <_opModeStructure> list = [];
-  OperationModes _operationModes;
+  final OperationModes _operationModes;
 
   _PossibleOpModes(List<String> possibleTypes, this._operationModes) {
-    possibleTypes.forEach((e)=>list.add(_opModeStructure(e)));
+    for (var e in possibleTypes) {
+      list.add(_opModeStructure(e));
+    }
   }
 
   void addOpMode(String name, OperationMode opMode ) {
@@ -354,7 +353,7 @@ Widget operationModeHandling2(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
             operationModes.nbrOfModes() == 0
-                ? Text('Toimintotiloja ei määritelty')
+                ? const Text('Toimintotiloja ei määritelty')
                 : OperationModesEditingView(
                 estate: estate,
                 operationModes: operationModes,
@@ -390,7 +389,7 @@ Widget operationModeHandling2(
                 'Luo uusi',
                 maxLines: 1,
                 style: TextStyle(color: mySecondaryFontColor),
-                textScaler: const TextScaler.linear(2.0),
+                textScaler: TextScaler.linear(2.0),
               ),
             ),
           ]),

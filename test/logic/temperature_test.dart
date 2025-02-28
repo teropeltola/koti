@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:koti/devices/device/device.dart';
 import 'package:koti/logic/temperature.dart';
-import 'package:koti/look_and_feel.dart';
 
 class TestDevice extends Device {
   double _x = 1.0;

@@ -39,11 +39,11 @@ class TrendSwitch extends TrendData {
                     ),
                     Expanded(
                         flex: 1,
-                        child: on ? Icon(Icons.power) : Icon(Icons.power_off)
+                        child: on ? const Icon(Icons.power) : const Icon(Icons.power_off)
                     ),
                     Expanded(
                         flex: 4,
-                        child: Text(' ${initiator}')
+                        child: Text(' $initiator')
                     )
                   ]
 

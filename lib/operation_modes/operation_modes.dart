@@ -1,4 +1,3 @@
-import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
 import 'package:koti/estate/estate.dart';
@@ -184,7 +183,9 @@ class OperationModeTypes {
 
   List<String> alternatives() {
     List<String> list = [];
-    _types.forEach((e)=>list.add(e.name));
+    for (var e in _types) {
+      list.add(e.name);
+    }
     return list;
   }
 
@@ -222,8 +223,7 @@ class OperationModes {
 
   SelectIndex _currentIndex = SelectIndex.empty();
 
-  OperationModes() {
-  }
+  OperationModes();
 
   void initModeStructure({ required Estate estate,
               required String parameterSettingFunctionName,
@@ -232,7 +232,7 @@ class OperationModes {
               required Function setFunction,
               required Function getFunction }) {
 
-    _currentIndex = SelectIndex('${estate.id}/${deviceId}');
+    _currentIndex = SelectIndex('${estate.id}/$deviceId');
 
     controlledDevice.initStructure(
       deviceId: deviceId,
@@ -425,7 +425,7 @@ class OperationModes {
           'Toimintotilojen lukumäärä: ${nbrOfModes()}',
           'Nykyinen tila: ${currentModeName()}',
         ],
-        widgets: [Text('')]
+        widgets: [const Text('')]
           //for (int i=0; i<nbrOfModes(); i++)
          //   _dumpOperationMode(getModeAt(i)),
 

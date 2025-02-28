@@ -8,7 +8,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:koti/devices/porssisahko/porssisahko.dart';
 import 'package:koti/estate/estate.dart';
 import 'package:koti/functionalities/electricity_price/electricity_price.dart';
-import 'package:koti/main.dart';
 import 'package:koti/operation_modes/operation_modes.dart';
 import 'package:koti/look_and_feel.dart';
 
@@ -94,8 +93,8 @@ void main() {
       test('time test', () async {
         OperationCondition o = OperationCondition();
         o.conditionType = OperationConditionType.timeOfDay;
-        o.timeRange = MyTimeRange(startTime: TimeOfDay(hour:1,minute:1),
-                                  endTime: TimeOfDay(hour:1, minute:1));
+        o.timeRange = MyTimeRange(startTime: const TimeOfDay(hour:1,minute:1),
+                                  endTime: const TimeOfDay(hour:1, minute:1));
 
         ConditionalOperationMode c = ConditionalOperationMode(o, ResultOperationMode('result'));
         expect(c.match(DateTime(2024,6,16,1,1),0.0,ElectricityPriceTable()),true);
@@ -121,16 +120,16 @@ void main() {
         // Create ConditionalOperationMode instances with mock conditions and results.
         var condition1 = OperationCondition();
         condition1.conditionType = OperationConditionType.timeOfDay;
-        condition1.timeRange.startTime = TimeOfDay(hour:2,minute:0);
-        condition1.timeRange.endTime = TimeOfDay(hour:2,minute:59);
+        condition1.timeRange.startTime = const TimeOfDay(hour:2,minute:0);
+        condition1.timeRange.endTime = const TimeOfDay(hour:2,minute:59);
         var condition2 = OperationCondition();
         condition2.conditionType = OperationConditionType.timeOfDay;
-        condition2.timeRange.startTime = TimeOfDay(hour:4,minute:0);
-        condition2.timeRange.endTime = TimeOfDay(hour:4,minute:59);
+        condition2.timeRange.startTime = const TimeOfDay(hour:4,minute:0);
+        condition2.timeRange.endTime = const TimeOfDay(hour:4,minute:59);
         var condition3 = OperationCondition();
         condition3.conditionType = OperationConditionType.timeOfDay;
-        condition3.timeRange.startTime = TimeOfDay(hour:0,minute:0);
-        condition3.timeRange.endTime = TimeOfDay(hour:23,minute:59);
+        condition3.timeRange.startTime = const TimeOfDay(hour:0,minute:0);
+        condition3.timeRange.endTime = const TimeOfDay(hour:23,minute:59);
         var mode1 = ConditionalOperationMode(condition1, resultMode1);
         mode1.draft = false;
         var mode2 = ConditionalOperationMode(condition2, resultMode2);
@@ -178,16 +177,16 @@ void main() {
         // Create ConditionalOperationMode instances with mock conditions and results.
         var condition1 = OperationCondition();
         condition1.conditionType = OperationConditionType.timeOfDay;
-        condition1.timeRange.startTime = TimeOfDay(hour:2,minute:0);
-        condition1.timeRange.endTime = TimeOfDay(hour:2,minute:59);
+        condition1.timeRange.startTime = const TimeOfDay(hour:2,minute:0);
+        condition1.timeRange.endTime = const TimeOfDay(hour:2,minute:59);
         var condition2 = OperationCondition();
         condition2.conditionType = OperationConditionType.timeOfDay;
-        condition2.timeRange.startTime = TimeOfDay(hour:4,minute:0);
-        condition2.timeRange.endTime = TimeOfDay(hour:4,minute:59);
+        condition2.timeRange.startTime = const TimeOfDay(hour:4,minute:0);
+        condition2.timeRange.endTime = const TimeOfDay(hour:4,minute:59);
         var condition3 = OperationCondition();
         condition3.conditionType = OperationConditionType.timeOfDay;
-        condition3.timeRange.startTime = TimeOfDay(hour:0,minute:0);
-        condition3.timeRange.endTime = TimeOfDay(hour:23,minute:59);
+        condition3.timeRange.startTime = const TimeOfDay(hour:0,minute:0);
+        condition3.timeRange.endTime = const TimeOfDay(hour:23,minute:59);
         var mode1 = ConditionalOperationMode(condition1, resultMode1);
         mode1.draft = false;
         var mode2 = ConditionalOperationMode(condition2, resultMode2);
@@ -226,8 +225,8 @@ void main() {
         // Create ConditionalOperationMode instances with mock conditions and results.
         var condition3 = OperationCondition();
         condition3.conditionType = OperationConditionType.timeOfDay;
-        condition3.timeRange.startTime = TimeOfDay(hour:0,minute:0);
-        condition3.timeRange.endTime = TimeOfDay(hour:23,minute:59);
+        condition3.timeRange.startTime = const TimeOfDay(hour:0,minute:0);
+        condition3.timeRange.endTime = const TimeOfDay(hour:23,minute:59);
         var mode3 = ConditionalOperationMode(condition3, resultMode3);
         mode3.draft = false;
 
@@ -260,7 +259,7 @@ void main() {
 
     test('OperationComparisons', () {
       log.cleanHistory();
-      OperationComparisons.values.forEach((e) {expect(e,e.fromJson(e.toJson()));});
+      for (var e in OperationComparisons.values) {expect(e,e.fromJson(e.toJson()));}
       expect(log.history.length, 0);
       OperationComparisons o = OperationComparisons.greater;
       expect(o.fromJson({'comparison': '44'}),OperationComparisons.less);
@@ -272,7 +271,7 @@ void main() {
 
     test('SpotPriceComparisonType', () {
       log.cleanHistory();
-      SpotPriceComparisonType.values.forEach((e) {expect(e,e.fromJson(e.toJson()));});
+      for (var e in SpotPriceComparisonType.values) {expect(e,e.fromJson(e.toJson()));}
       expect(log.history.length, 0);
       SpotPriceComparisonType o = SpotPriceComparisonType.constant;
       expect(o.fromJson({'spotPriceType': '44'}),SpotPriceComparisonType.constant);
@@ -298,7 +297,7 @@ void main() {
 
     test('OperationConditionType', () {
       log.cleanHistory();
-      OperationConditionType.values.forEach((e) {expect(e,e.fromJson(e.toJson()));});
+      for (var e in OperationConditionType.values) {expect(e,e.fromJson(e.toJson()));}
       expect(log.history.length, 0);
       OperationConditionType o = OperationConditionType.spotPrice;
       expect(o.fromJson({'spotPriceType': '44'}),OperationConditionType.notDefined);
@@ -309,7 +308,7 @@ void main() {
     });
 
     test('MyTimeRange', () {
-      MyTimeRange m = MyTimeRange(startTime: TimeOfDay(hour: 1, minute:2), endTime: TimeOfDay(hour:3, minute:4));
+      MyTimeRange m = MyTimeRange(startTime: const TimeOfDay(hour: 1, minute:2), endTime: const TimeOfDay(hour:3, minute:4));
       var j = m.toJson();
       var m2 = m.fromJson(j);
       expect(m2.startTime.hour, 1);
@@ -381,22 +380,24 @@ void main() {
     test('basic test', () async {
 
       OperationModes o = await _testTimerInitOperationModes(1);
-      await Future.delayed(Duration( seconds: 2));
+      await Future.delayed(const Duration( seconds: 2));
 
       var conditions = o.getMode('conditional') as ConditionalOperationModes;
       var modes = conditions.simulate();
-      modes.forEach((s)=>log.info(s));
+      for (var s in modes) {
+        log.info(s);
+      }
 
       await o.selectNameAndSetParentInfo('conditional', o);
       expect(o.currentModeName(),'conditional');
       expect(conditions.currentActiveConditionName(),'Mode 0');
       AnalysisItem next = conditions.nextSelectItem();
       expect(next.operationModeName, 'Mode 1');
-      await Future.delayed(Duration(minutes: 2, seconds: 5));
+      await Future.delayed(const Duration(minutes: 2, seconds: 5));
       expect(conditions.currentActiveConditionName(),'Mode 1');
       next = conditions.nextSelectItem();
       expect(next.operationModeName, 'Mode 0');
-      await Future.delayed(Duration(minutes: 8, seconds: 5));
+      await Future.delayed(const Duration(minutes: 8, seconds: 5));
 
     });
 

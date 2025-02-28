@@ -1,10 +1,8 @@
-import 'package:http/http.dart' as http;
 
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 import '../../../look_and_feel.dart';
-import '../ouman_device.dart';
 
 const String networkServiceProblemInfo = 'Emme saa yhteyttä oumaniin, joten tätä palvelua ei voi käyttää.';
 
@@ -36,7 +34,7 @@ class OumanExplorer extends StatelessWidget {
     );
   }
 }
-
+/*
 class OumanView extends StatelessWidget {
   const OumanView({Key? key}) : super(key: key);
 
@@ -100,3 +98,4 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 }
 
+*/

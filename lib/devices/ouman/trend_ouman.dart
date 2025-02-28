@@ -64,7 +64,7 @@ Widget showOumanEvent(TrendOuman oumanEvent) {
   }
   catch (e, st) {
     log.error('Unvalid oumanEvent', e, st);
-    return Text('Sisäinen virhe tietojen tulostuksessa',textScaleFactor:0.8);
+    return const Text('Sisäinen virhe tietojen tulostuksessa',textScaleFactor:0.8);
   }
 }
 

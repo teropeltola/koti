@@ -24,11 +24,11 @@ class ShellyScriptConfig {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['name'] = name;
-    _data['enable'] = enable;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['enable'] = enable;
+    return data;
   }
 }
 
@@ -53,11 +53,11 @@ class ShellyScriptStatus {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['running'] = running;
-    _data['errors'] = errors;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['running'] = running;
+    data['errors'] = errors;
+    return data;
   }
 
   String _errorList() {
@@ -81,9 +81,9 @@ class ShellyScriptId {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    return data;
   }
 }
 
@@ -98,9 +98,9 @@ class ShellyScriptLength {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['len'] = len;
-    return _data;
+    final data = <String, dynamic>{};
+    data['len'] = len;
+    return data;
   }
 }
 
@@ -115,9 +115,9 @@ class ShellyScriptRunning {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['was_running'] = wasRunning;
-    return _data;
+    final data = <String, dynamic>{};
+    data['was_running'] = wasRunning;
+    return data;
   }
 }
 
@@ -136,9 +136,9 @@ class ShellyScriptList {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['scripts'] = scripts.map((e)=>e.toJson()).toList();
-    return _data;
+    final data = <String, dynamic>{};
+    data['scripts'] = scripts.map((e)=>e.toJson()).toList();
+    return data;
   }
 }
 
@@ -162,14 +162,15 @@ class Scripts {
   }
 
   Map<String, dynamic> toJson() {
-    final _data = <String, dynamic>{};
-    _data['id'] = id;
-    _data['name'] = name;
-    _data['enable'] = enable;
-    _data['running'] = running;
-    return _data;
+    final data = <String, dynamic>{};
+    data['id'] = id;
+    data['name'] = name;
+    data['enable'] = enable;
+    data['running'] = running;
+    return data;
   }
 
+  @override
   String toString() {
     return '$id: "$name" ${enable ? 'enabled' : 'not enabled'} & ${running ? 'running' : 'not running'}';
   }

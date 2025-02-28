@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../devices/device/view/short_device_view.dart';
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
 import '../../../operation_modes/conditional_operation_modes.dart';
@@ -9,7 +8,6 @@ import '../../../operation_modes/view/conditional_option_list_view.dart';
 import '../../../operation_modes/view/edit_operation_mode_view.dart';
 import '../../../view/ready_widget.dart';
 import '../../air_heat_pump_functionality/view/air_heat_pump_view.dart';
-import '../../functionality/functionality.dart';
 import '../general_agent.dart';
 
 class EditGeneralAgentView extends StatefulWidget {
@@ -53,8 +51,8 @@ class _EditGeneralAgentViewState extends State<EditGeneralAgentView> {
           Container(
             margin: myContainerMargin,
             padding: myContainerPadding,
-            child: InputDecorator(
-              decoration: const InputDecoration(labelText: 'Näyttövalinnat'),
+            child: const InputDecorator(
+              decoration: InputDecoration(labelText: 'Näyttövalinnat'),
                 child: Column(children: <Widget>[
                   Text('laadidaa')
                 ]
@@ -120,17 +118,17 @@ Widget generalParameterSetting(
 {
   Widget myWidget;
   if (operationMode is ConstantOperationMode) {
-    ConstantOperationMode cOM = operationMode as ConstantOperationMode;
+    ConstantOperationMode cOM = operationMode;
     myWidget=temperatureSelectionForm(temperatureParameterId, cOM.parameters);
   }
   else if (operationMode is ConditionalOperationModes) {
-    ConditionalOperationModes conditionalModes = operationMode as ConditionalOperationModes;
+    ConditionalOperationModes conditionalModes = operationMode;
     myWidget = ConditionalOperationView(
-        conditions: operationMode as ConditionalOperationModes
+        conditions: operationMode
     );
   }
   else {
-    myWidget=Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
+    myWidget=const Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
   }
   return myWidget;
 }

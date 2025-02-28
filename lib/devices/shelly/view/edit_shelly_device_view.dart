@@ -1,19 +1,10 @@
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:koti/devices/wlan/active_wifi_name.dart';
-import 'package:koti/functionalities/plain_switch_functionality/plain_switch_functionality.dart';
-import 'package:provider/provider.dart';
 
 import '../../../estate/estate.dart';
-import '../../../functionalities/boiler_heating/boiler_heating_functionality.dart';
-import '../../../functionalities/functionality/functionality.dart';
-import '../../../logic/dropdown_content.dart';
 import '../../../look_and_feel.dart';
-import '../../../view/my_dropdown_widget.dart';
 import '../../../view/ready_widget.dart';
-import '../../shelly_pro2/shelly_pro2.dart';
-import '../../shelly_timer_switch/shelly_timer_switch.dart';
 import '../shelly_device.dart';
 import '../shelly_scan.dart';
 /*
@@ -135,12 +126,12 @@ class _EditShellyDeviceViewState extends State<EditShellyDeviceView> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            Spacer(),
+                            const Spacer(),
                             Row(children: <Widget>[
-                              Flexible(flex:1, child: Text('Tunnus: ')),
-                              Flexible(flex:5, child: AutoSizeText(shellyDevice.id, style:TextStyle(fontSize:20,color:Colors.blue))),
+                              const Flexible(flex:1, child: Text('Tunnus: ')),
+                              Flexible(flex:5, child: AutoSizeText(shellyDevice.id, style:const TextStyle(fontSize:20,color:Colors.blue))),
                             ]),
-                            Spacer(),
+                            const Spacer(),
                             TextField(
                               key: const Key('deviceName'),
                               decoration: const InputDecoration(
@@ -193,6 +184,6 @@ class _EditShellyDeviceViewState extends State<EditShellyDeviceView> {
 }
 
 String _resolvedBonsoirServiceDetailedData(ResolvedBonsoirService bsData) {
-  return 'IP-osoite: ${bsData.ip ?? '-'}, portti: ${bsData.port ?? '-'}\n'
+  return 'IP-osoite: ${bsData.host ?? '-'}, portti: ${bsData.port ?? '-'}\n'
   'attribuutit: ${bsData.attributes.toString()}';
 }

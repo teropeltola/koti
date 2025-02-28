@@ -3,8 +3,6 @@ import 'package:flutter/material.dart';
 
 import 'dart:math';
 
-import 'package:hive/hive.dart';
-
 import 'package:hive_flutter/hive_flutter.dart';
 
 import '../app_configurator.dart';
@@ -17,9 +15,6 @@ Trend trend = Trend();
 class Trend {
 
   List<BoxInformation> boxes = [];
-
-  Future<void> _registerBoxes() async {
-  }
 
   Future<void> initBox<T>(String boxName) async {
     int index = boxes.indexWhere((e)=>e.name  == boxName);
@@ -74,6 +69,57 @@ class BoxInformation {
   BoxInformation(this.name, this.typeName);
 }
 
+class TrendHelper<T> {
+
+  List <T> getAll(Box<T> myBox) {
+    return myBox.values.toList(); // list;
+  }
+
+  TrendData asTrendData(T item) {
+    return item as TrendData;
+  }
+
+  List <T> getBetween(Box<T> myBox, DateTime startingTime, DateTime endingTime) {
+    List <T> all = getAll(myBox);
+    List <T> list = [];
+    int startTimeInMSSinceEpoch = startingTime.millisecondsSinceEpoch;
+    int endingTimeInMSSinceEpoch = endingTime.millisecondsSinceEpoch;
+    int index = 0;
+    // todo: this algorithm is not efficient for this purpose...
+    while (index < all.length) {
+      if (asTrendData(all[index]).timestamp >= startTimeInMSSinceEpoch) {
+        if (asTrendData(all[index]).timestamp <= endingTimeInMSSinceEpoch) {
+          list.add(all[index]);
+        }
+        else {
+          return list;
+        }
+      }
+      index++;
+    }
+    return list;
+  }
+
+  List <T> getSublist(Box<T> myBox, int startIndex, int lastIndex) {
+    List <T> list = [];
+    for (int index = startIndex; index<= lastIndex; index++) {
+      T? item = myBox.getAt(index);
+      if (item != null) {
+        list.add(item);
+      }
+    }
+    return list;
+  }
+
+  int boxSize (Box<T> myBox) {
+    return myBox.length;
+  }
+
+  List <T> getLastItems(Box<T> myBox, int itemCount) {
+    return getSublist(myBox, max(0, boxSize(myBox)-itemCount), boxSize(myBox)-1);
+  }
+
+}
 class TrendBox<T> {
   late int index;
   late Box<T> myBox;
@@ -159,10 +205,10 @@ class TrendData {
   }
 
   Widget showTitle() {
-    return Text('title not implemented', style: TextStyle(color:Colors.red));
+    return const Text('title not implemented', style: TextStyle(color:Colors.red));
   }
   Widget showInLine() {
-    return Text('not implemented', style: TextStyle(color:Colors.red));
+    return const Text('not implemented', style: TextStyle(color:Colors.red));
   }
 }
 

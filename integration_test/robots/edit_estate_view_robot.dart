@@ -69,7 +69,7 @@ class EditEstateViewRobot {
     await tester.pumpAndSettle();
     expect(find.textContaining('Yhteyttä laitteiseen'), findsOneWidget);
     await tapTextContaining(tester, 'OK');
-    await tester.pumpAndSettle(Duration(seconds:5));
+    await tester.pumpAndSettle(const Duration(seconds:5));
   }
 
   Future goAddNewFunctionality(String functionalityType, String functionalityName) async {

@@ -14,7 +14,7 @@ class testDevice {
   }
 
   Future<bool> get() async {
-    return await myValue;
+    return myValue;
   }
 
   bool peek() {

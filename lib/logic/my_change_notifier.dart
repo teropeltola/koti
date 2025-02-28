@@ -39,7 +39,7 @@ abstract class MyChangeNotifier<T> extends ChangeNotifier{
 
   T get data => _data;
 
-  void set data (T newData) => changeData(newData);
+  set data (T newData) => changeData(newData);
 
   Stream<T> get stream => _controller.stream.asBroadcastStream();
 }

@@ -1,11 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:talker_flutter/talker_flutter.dart';
 
-import '../../app_configurator.dart';
-import '../../devices/device/device.dart';
-import '../../functionalities/functionality/functionality.dart';
-import '../../logic/diagnostics.dart';
-import '../../look_and_feel.dart';
 import '../estate.dart';
 import 'estate_view.dart';
 
@@ -30,6 +24,7 @@ class _EstatePageViewState extends State<EstatePageView> {
     super.initState();
   }
 
+  @override
   void dispose() {
     controller.dispose();
     super.dispose();

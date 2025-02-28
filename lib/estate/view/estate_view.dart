@@ -103,7 +103,7 @@ class _EstateViewState extends State<EstateView> {
                   topHierarchy: true,
                   callback: () {setState(() {}); }
                 ),
-                Container(
+                SizedBox(
                     height: 400,
                     child: GridView.count(
                       crossAxisCount: 3,

@@ -14,10 +14,9 @@ class BoolNotifier extends MyChangeNotifier<bool> {
 
 class TestFunc extends Functionality {
   late Timer _timer;
-  BoolNotifier _broadcastBool = BoolNotifier(false);
+  final BoolNotifier _broadcastBool = BoolNotifier(false);
 
-  TestFunc() {
-  }
+  TestFunc();
 
   BoolNotifier myBroadcaster() {
     return _broadcastBool;
@@ -73,7 +72,7 @@ void main() {
       expect(l1.data, false);
       expect(l4counter, 0);
       expect(l4bool, false);
-      await Future.delayed(Duration(milliseconds: 5));
+      await Future.delayed(const Duration(milliseconds: 5));
       expect(l4counter, 1);
       expect(l4bool, false);
       t.update(true);
@@ -81,14 +80,14 @@ void main() {
       expect(l1.data, false);
       expect(l4counter, 1);
       expect(l4bool, false);
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
       expect(l1.data, true);
       expect(l2.data, true);
       expect(l3.data, true);
       expect(l4counter, 2);
       expect(l4bool, true);
       t.data = false;
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
       expect(l1.data, false);
       expect(l2.data, false);
       expect(l3.data, false);
@@ -96,7 +95,7 @@ void main() {
       expect(l4bool, false);
       l2.cancel();
       t.data = true;
-      await Future.delayed(Duration(seconds: 2));
+      await Future.delayed(const Duration(seconds: 2));
       expect(l1.data, true);
       expect(l2.data, false);
       expect(l3.data, true);

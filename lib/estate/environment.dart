@@ -7,7 +7,7 @@ class Environment extends ChangeNotifier {
   String _name = '';
   Temperature temperature = Temperature();
 
-  List<Environment> _environments = [];
+  final List<Environment> _environments = [];
 
   String get name {
     return _name;

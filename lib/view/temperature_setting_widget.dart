@@ -66,7 +66,7 @@ class _TemperatureSettingWidgetState extends State<TemperatureSettingWidget> {
     return Stack(
       children: [
         SfSliderTheme(
-          data: SfSliderThemeData(
+          data: const SfSliderThemeData(
             activeTrackColor: Colors.white,
             inactiveTrackColor: Colors.white,
               thumbColor:Colors.white,
@@ -92,7 +92,7 @@ class _TemperatureSettingWidgetState extends State<TemperatureSettingWidget> {
           enableTooltip: true,
           labelFormatterCallback: _labelFormatterCallback,
           tooltipTextFormatterCallback: _tooltipTextFormatterCallback,
-          thumbIcon: Icon(
+          thumbIcon: const Icon(
             Icons.thermostat,
             color: Colors.blue,
             size: 15.0),
@@ -103,8 +103,8 @@ class _TemperatureSettingWidgetState extends State<TemperatureSettingWidget> {
           top: 8,
           child: Column( children: [
             Text('${widget.currentTemperature.toStringAsFixed(1)}$degree',
-                 style: TextStyle(fontSize:8)),
-            Icon(
+                 style: const TextStyle(fontSize:8)),
+            const Icon(
               Icons.device_thermostat_sharp,
               color: Colors.green,
               size: 12

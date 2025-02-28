@@ -32,8 +32,8 @@ class _CreateAirHeatPumpViewState extends State<CreateAirHeatPumpView> {
   @override
   void initState() {
     super.initState();
-    airHeatPump.addPredefinedOperationMode('Päällä', "powerOnOffService" , true);
-    airHeatPump.addPredefinedOperationMode('Pois', "powerOnOffService" , false);
+    airHeatPump.addPredefinedOperationMode('Päällä', powerOnOffWaitingService , true);
+    airHeatPump.addPredefinedOperationMode('Pois', powerOnOffWaitingService , false);
     refresh();
   }
 

@@ -11,7 +11,6 @@ import '../../logic/device_attribute_control.dart';
 import '../../look_and_feel.dart';
 import '../../operation_modes/conditional_operation_modes.dart';
 import '../functionality/functionality.dart';
-import '../functionality/view/functionality_view.dart';
 
 class AirHeatPump extends Functionality {
 
@@ -48,15 +47,6 @@ class AirHeatPump extends Functionality {
   MitsuHeatPumpDevice myPumpDevice() {
     return connectedDevices[0] as MitsuHeatPumpDevice;
   }
-
-  /*
-  @override
-  FunctionalityView myView() {
-    return AirHeatPumpView(this.id);
-  }
-
-   */
-
 
   @override
   Widget dumpData({required Function formatterWidget}) {
@@ -95,7 +85,7 @@ class AirHeatPump extends Functionality {
 
   Map<String, dynamic> getFunction() {
     Map<String, dynamic> map = {};
-    map[temperatureParameterId] = myPumpDevice().setTemperature();
+    map[temperatureParameterId] = myPumpDevice().targetTemperature();
     return map;
   }
 

@@ -88,7 +88,7 @@ class Device {
   }
 
   Device clone2() {
-    final json = this.toJson();
+    final json = toJson();
 
     Device newDevice = extendedDeviceFromJson(json);
 
@@ -266,8 +266,7 @@ Device deviceFromTypeName(String typeName) {
     case  'ShellyBluGw':
       return ShellyBluGw();
     case 'ShellyBluTrv':
-      return ShellyBluTrv.empty();
-      ;
+      return ShellyBluTrv.empty(); {}
 
   }
   log.error('unknown type name "$typeName"');

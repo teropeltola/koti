@@ -59,6 +59,7 @@ class ShellySwitchStatus {
     return data;
   }
 
+  @override
   String toString() {
     return 'source: $source\n'
         'power(W): $apowerInWatts\n'
@@ -93,6 +94,7 @@ class Aenergy {
     return data;
   }
 
+  @override
   String toString() {
     DateTime dateTime = DateTime.fromMillisecondsSinceEpoch(minuteTs*1000);
     String s = 'Aenergy ${dateTime.day}.${dateTime.month}. ${dateTime.hour}:${dateTime.minute} total(W):$totalInWattHours\n  -last minutes(mW):';

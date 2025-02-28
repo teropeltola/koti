@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
-import 'package:koti/functionalities/functionality/functionality.dart';
 import 'package:koti/operation_modes/view/operation_modes_selection_view.dart';
-import 'package:provider/provider.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
@@ -20,12 +18,14 @@ class AirHeatPumpOverview extends StatefulWidget {
 
 class _AirHeatPumpState extends State<AirHeatPumpOverview> {
   late MitsuHeatPumpDevice myAirHeatPumpDevice;
+  String estateName = '';
 
   @override
   void initState() {
     super.initState();
 
     myAirHeatPumpDevice = widget.airHeatPump.myPumpDevice();
+    estateName = myEstates.estateFromId(myAirHeatPumpDevice.myEstateId).name;
 
     refresh();
   }
@@ -49,7 +49,7 @@ class _AirHeatPumpState extends State<AirHeatPumpOverview> {
                   widget.callback();
                   Navigator.pop(context, true);
                 }),
-            title: appTitleOld(myAirHeatPumpDevice.name),
+            title: appIconAndTitle(estateName, myAirHeatPumpDevice.name),
           ), // new line
           body: SingleChildScrollView(
               child: Column(children: <Widget>[
@@ -93,14 +93,15 @@ class _AirHeatPumpState extends State<AirHeatPumpOverview> {
 }
 
 Widget airHeatPumpSummary(MitsuHeatPumpDevice myAirHeatPumpDevice) {
+  String labelText = '${myAirHeatPumpDevice.name} ${AirHeatPump.functionalityName}';
   return Container(
-    margin: EdgeInsets.fromLTRB(2,10,2,2),
+    margin: const EdgeInsets.fromLTRB(2,10,2,2),
     padding: myContainerPadding,
     //alignment: AlignmentDirectional.topStart,
     child: InputDecorator(
-      decoration: const InputDecoration(labelText: 'Ilpo ilmalämpöpumppu'), //k
+      decoration: const InputDecoration(labelText: 'lpo ilmalämpöpumppu'), //k
       child: myAirHeatPumpDevice.noData()
-          ? Text('Tietoa ei ole vielä vastaanotettu')
+          ? const Text('Tietoa ei ole vielä vastaanotettu')
           : Row(children:<Widget> [
         Expanded(
           flex: 3,
@@ -110,13 +111,14 @@ Widget airHeatPumpSummary(MitsuHeatPumpDevice myAirHeatPumpDevice) {
             color: observationSymbolColor(myAirHeatPumpDevice.observationLevel()),
           ),
         ),
-        const Expanded(
+        Expanded(
           flex: 6,
           child:
-            const Column(
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
-                const Text('Ulkolämpötila:'),
+                myAirHeatPumpDevice.peekPower() ? Text('Päällä') : Text('Pois päältä'),
+                Text('Ulkolämpötila:'),
                 Text('Sisälämpötila: '),
                 Text('Haluttu lämpötila: '),
                 Text('Tuuletusteho:'),
@@ -131,7 +133,7 @@ Widget airHeatPumpSummary(MitsuHeatPumpDevice myAirHeatPumpDevice) {
                 children: <Widget>[
                   Text('${myAirHeatPumpDevice.outsideTemperature().toStringAsFixed(1)} $celsius'),
                   Text('${myAirHeatPumpDevice.measuredTemperature().toStringAsFixed(1)} $celsius'),
-                  Text('${myAirHeatPumpDevice.setTemperature().toStringAsFixed(1)} $celsius'),
+                  Text('${myAirHeatPumpDevice.targetTemperature().toStringAsFixed(1)} $celsius'),
                   Text(' ${myAirHeatPumpDevice.fanSpeed()}/5'),
                   Text(' ${myAirHeatPumpDevice.fetchingTime().hour.toString().padLeft(2,'0')}:${myAirHeatPumpDevice.fetchingTime().minute.toString().padLeft(2,'0')}'),
                 ])

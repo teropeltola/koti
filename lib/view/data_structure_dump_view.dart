@@ -40,7 +40,7 @@ Widget _dumpWidgetizer({required String headline,
   }
   catch (e, st) {
     log.error('Unvalid dump formatter with "$headline"', e, st);
-    return Text('Sisäinen virhe tietojen tulostuksessa ("headline"');
+    return const Text('Sisäinen virhe tietojen tulostuksessa ("headline"');
   }
 
 }

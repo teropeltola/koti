@@ -3,7 +3,6 @@ import 'package:koti/devices/testing_switch_device/view/edit_testing_switch_devi
 import '../../estate/estate.dart';
 import '../../logic/services.dart';
 import '../../logic/unique_id.dart';
-import '../../logic/state_broker.dart';
 import '../../service_catalog.dart';
 import '../../trend/trend_switch.dart';
 import '../device/device.dart';
@@ -13,13 +12,13 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
 
   void _initOfferedServices() {
     services = Services([
-      onOffServiceDefinition(),
       AttributeDeviceService(attributeName: deviceWithManualCreation)
     ]);
   }
 
   TestingSwitchDevice() {
     _setUniqueId();
+    _initOfferedServices();
   }
 
   @override
@@ -50,7 +49,7 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
         peekFunction: switchStatus
     );
 
-    _initOfferedServices();
+    services.addService(onOffServiceDefinition());
 
     trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, switchStatus(), 'alustus käynnistyksessä'));
 
@@ -128,6 +127,7 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
   @override
   TestingSwitchDevice.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
+    _initOfferedServices();
   }
 
 

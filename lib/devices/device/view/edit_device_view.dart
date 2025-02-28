@@ -86,12 +86,12 @@ class _EditDeviceViewState extends State<EditDeviceView> {
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
-                            Spacer(),
+                            const Spacer(),
                             Row(children: <Widget>[
-                              Flexible(flex:1, child: Text('Tunnus: ')),
-                              Flexible(flex:5, child: AutoSizeText(newDevice.id, style:TextStyle(fontSize:20,color:Colors.blue))),
+                              const Flexible(flex:1, child: Text('Tunnus: ')),
+                              Flexible(flex:5, child: AutoSizeText(newDevice.id, style:const TextStyle(fontSize:20,color:Colors.blue))),
                             ]),
-                            Spacer(),
+                            const Spacer(),
                             TextField(
                               key: const Key('deviceName'),
                               decoration: const InputDecoration(

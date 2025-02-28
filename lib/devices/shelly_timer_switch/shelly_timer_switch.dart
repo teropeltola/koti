@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:koti/devices/mixins/on_off_switch.dart';
 import '../../estate/estate.dart';
 import '../../logic/services.dart';
-import '../../logic/state_broker.dart';
-import '../../service_catalog.dart';
 import '../../trend/trend_switch.dart';
 import '../shelly/shelly_device.dart';
 
@@ -15,8 +13,7 @@ class ShellyTimerSwitch extends ShellyDevice with OnOffSwitch {
       ]);
   }
 
-  ShellyTimerSwitch() {
-  }
+  ShellyTimerSwitch();
 
   @override
   Future<void> init () async {

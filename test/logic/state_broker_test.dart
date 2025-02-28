@@ -1,4 +1,3 @@
-import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:koti/look_and_feel.dart';
@@ -22,27 +21,27 @@ void main() {
 
     });
     test('StateFollower', () async {
-      String _currentState = "";
-      String _oldState = "";
+      String currentState = "";
+      String oldState = "";
 
       StateFollower s = StateFollower( [
         StateWithDoubleLimits('hot', 23.0, 100.0),
         StateWithDoubleLimits('cold', -50.0, 23.0),
       ],
           ({required String newState, required String oldState}) {
-            _currentState = newState;
-            _oldState = oldState;
+            currentState = newState;
+            oldState = oldState;
           });
 
       s.checkDoubleStateChange(25.0);
-      expect(_currentState, 'hot');
-      expect(_oldState, unknownState);
+      expect(currentState, 'hot');
+      expect(oldState, unknownState);
       s.checkDoubleStateChange(-49.0);
-      expect(_currentState, 'cold');
-      expect(_oldState, 'hot');
+      expect(currentState, 'cold');
+      expect(oldState, 'hot');
       s.checkDoubleStateChange(-51.0);
-      expect(_currentState, unknownState);
-      expect(_oldState, 'cold');
+      expect(currentState, unknownState);
+      expect(oldState, 'cold');
 
     });
 

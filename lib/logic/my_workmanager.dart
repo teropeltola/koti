@@ -1,4 +1,5 @@
-import 'package:hive/hive.dart';
+/*
+
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:koti/app_configurator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,10 +11,34 @@ import 'observation.dart';
 const String taskPrefix = 'com.mosahybrid.koti';
 const String testTask = '$taskPrefix.test';
 const String test2Task = '$taskPrefix.test2';
+const String oumanTask = '$taskPrefix.ouman';
+
+Future <void> initHiveForWorkmanager() async {
+  await Hive.initFlutter();
+  initHiveAdapters();
+}
+
+class WorkmanagerTrendEventBox {
+
+  late Box<TrendEvent> box;
+
+  Future<void> init() async {
+    await Hive.openBox<TrendEvent>(hiveTrendEventName);
+    box = Hive.box<TrendEvent>(hiveTrendEventName);
+  }
+
+}
+
 
 @pragma('vm:entry-point')
 void callbackDispatcher() {
   Workmanager().executeTask((task, inputData) async {
+
+    for (int index=0; index<workmanagerTasks.length;index++) {
+      if (workmanagerTasks[index] == task) {
+        return await workmanagerFunctions[index](task, inputData);
+      }
+    }
     switch (task) {
       case testTask:
         {
@@ -29,8 +54,7 @@ void callbackDispatcher() {
         prefs.setInt("test2", 1);
         print("$test2Task was started. inputData = $inputData");
         prefs.setInt("test2", 2);
-        await Hive.initFlutter();
-        initHiveAdapters();
+        await initHiveForWorkmanager();
         prefs.setInt("test2", 3);
         await Hive.openBox<TrendEvent>(hiveTrendEventName);
         prefs.setInt("test2", 4);
@@ -67,6 +91,28 @@ class MyWorkManager {
     );
   }
 
+  cancelTask(String uniqueTaskName) {
+    Workmanager().cancelByUniqueName(uniqueTaskName);
+  }
+
+  void registerPeriodicTask(
+    String uniqueName,
+    String taskName, {
+    required Map <String, dynamic> inputData,
+    required Duration initialDelay,
+    required Duration frequency
+  }
+  ) {
+    cancelTask(uniqueName);
+    Workmanager().registerPeriodicTask(
+      uniqueName,
+      taskName,
+      initialDelay: initialDelay,
+      inputData: inputData,
+      frequency: frequency
+    );
+  }
+
   void test1() {
     Workmanager().registerOneOffTask(
         testTask,
@@ -92,7 +138,7 @@ class MyWorkManager {
           'string': 'string',
           'array': [1, 2, 3],
         },
-        initialDelay: Duration(seconds:10)
+        initialDelay: const Duration(seconds:10)
     );
   }
 
@@ -100,64 +146,5 @@ class MyWorkManager {
 
 MyWorkManager myWorkManager = MyWorkManager();
 
-/*
-// In your WorkManager task:
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-
-Future<void> myWorkManagerTask() async {
-  final directory = await getApplicationDocumentsDirectory();
-  final filePath = '${directory.path}/workmanager_data.txt';
-  final data = '{"message": "Task completed!"}';
-
-  File file = File(filePath);
-  await file.writeAsString(data);
-}
-
-// In your UI:
-import 'dart:io';
-import 'package:path_provider/path_provider/path_provider.dart';
-
-class MyHomePage extends StatefulWidget {
-  @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  String _message = '';
-
-  Future<void> _readData() async {
-    final directory = await getApplicationDocumentsDirectory();
-    final filePath = '${directory.path}/workmanager_data.txt';
-    File file = File(filePath);
-
-    if (await file.exists()) {
-      String contents = await file.readAsString();
-      // Parse the JSON string (if applicable)
-      Map<String, dynamic> jsonData = jsonDecode(contents);
-      setState(() {
-        _message = jsonData['message'];
-      });
-      // Delete the file after reading
-      await file.delete();
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    // Periodically check for updates (adjust interval as needed)
-    Timer.periodic(Duration(seconds: 5), (_) => _readData());
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text(_message),
-      ),
-    );
-  }
-}
-
  */
+

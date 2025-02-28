@@ -47,12 +47,12 @@ class WeatherForecastView extends FunctionalityView {
                   myForecast().locationName,
                   style: const TextStyle(
                       fontSize: 12)),
-              Icon(
+              const Icon(
                 Icons.cloud,
                 size: 50,
                 color: Colors.white,
               ),
-              Text(myForecast().currentTemperature() + " $celsius")
+              Text("${myForecast().currentTemperature()} $celsius")
             ])
     );
   }
@@ -94,16 +94,19 @@ class WeatherExplorer extends StatelessWidget {
       ..setNavigationDelegate(
         NavigationDelegate(
             onWebResourceError: (WebResourceError error) async {
-              await informMatterToUser(context, networkServiceProblemInfo,
-                  'Voit muuten käyttää appia!');
-              Navigator.of(context).pop();
+              bool isForRequestedPage = error.isForMainFrame ?? true;
+              if (isForRequestedPage) {
+                await informMatterToUser(context, networkServiceProblemInfo,
+                    'Voit muuten käyttää appia!');
+                Navigator.of(context).pop();
+              }
             }
         ),
       )
       ..loadRequest(Uri.parse(weatherUrl));
     return Scaffold(
       appBar: AppBar(
-        title: appIconAndTitle(myEstates.currentEstate().name, this.title),
+        title: appIconAndTitle(myEstates.currentEstate().name, title),
       ),// new line
       body: WebViewWidget( controller: controller ),
     );

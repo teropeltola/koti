@@ -28,10 +28,10 @@ class TestApp extends StatelessWidget {
 
     device.editWidget(context, estate);
 
-    return MaterialApp(
+    return const MaterialApp(
       title: 'Flutter Demo',
       debugShowCheckedModeBanner: false,
-      home: const MyHomePage(),
+      home: MyHomePage(),
     );
   }
 }

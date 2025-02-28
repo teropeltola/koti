@@ -1,6 +1,5 @@
 // Class Services is used by Devices to offer the services they are capable to provide
 
-import '../look_and_feel.dart';
 
 class Services {
   List<DeviceService> _services = [];
@@ -11,6 +10,10 @@ class Services {
 
   void setServices(List<DeviceService> newServices) {
     _services = newServices;
+  }
+
+  void addService(DeviceService newService) {
+    _services.add(newService);
   }
 
   bool offerService(String requestedServiceName) {

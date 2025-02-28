@@ -28,8 +28,7 @@ class ShellyBluGw extends ShellyDevice {
     ]);
   }
 
-  ShellyBluGw() {
-  }
+  ShellyBluGw();
 
   ShellyBluGw.failed() {
     setFailed();

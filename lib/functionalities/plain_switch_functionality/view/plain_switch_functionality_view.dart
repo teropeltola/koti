@@ -1,12 +1,9 @@
 
 import 'package:flutter/material.dart';
-import 'package:koti/devices/shelly/json/switch_get_status.dart';
-import 'package:koti/devices/testing_switch_device/testing_switch_device.dart';
 
 import '../../../devices/device/device.dart';
 import '../../../look_and_feel.dart';
 import '../../../trend/trend_switch.dart';
-import '../../functionality/functionality.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../plain_switch_functionality.dart';
 
@@ -26,11 +23,9 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
     return myFunctionality() as PlainSwitchFunctionality;
   }
 
-  PlainSwitchFunctionalityView() {
-  }
+  PlainSwitchFunctionalityView();
 
-  PlainSwitchFunctionalityView.fromJson(Map<String, dynamic> json) {
-  }
+  PlainSwitchFunctionalityView.fromJson(Map<String, dynamic> json);
 
 
   @override

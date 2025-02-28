@@ -1,32 +1,31 @@
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:http/http.dart' as http;
 
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:koti/app_configurator.dart';
-import 'package:koti/devices/shelly/shelly_script_code.dart';
+import 'package:koti/functionalities/electricity_price/electricity_price_foreground.dart';
+import 'package:koti/interfaces/foreground_interface.dart';
 import 'package:koti/main.dart';
 import 'package:koti/view/data_structure_dump_view.dart';
 import 'package:koti/view/temperature_setting_widget.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 
 import '../devices/device/device.dart';
-import '../devices/ouman/view/ouman_view.dart';
-import '../devices/porssisahko/porssisahko.dart';
-import '../devices/shelly/shelly_device.dart';
-import '../devices/shelly/shelly_code_editor_view.dart';
-import '../devices/shelly/shelly_script_analysis.dart';
-import '../devices/wlan/find_devices.dart';
+import '../devices/porssisahko/json/porssisahko_data.dart';
 import '../estate/estate.dart';
 import '../estate/view/edit_estate_view.dart';
 import '../estate/view/estate_list_view.dart';
+import '../functionalities/electricity_price/trend_electricity.dart';
 import '../functionalities/functionality/functionality.dart';
 import '../logic/diagnostics.dart';
 import '../logic/events.dart';
 import '../logic/observation.dart';
 import '../logic/my_workmanager.dart';
-import '../trend/trend.dart';
 import '../trend/trend_event.dart';
 import '../look_and_feel.dart';
 
@@ -41,7 +40,7 @@ Drawer myDrawerView( BuildContext context,
       padding: EdgeInsets.zero,
       children: [
         DrawerHeader(
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
             color: myPrimaryColor,
           ),
           child: Center(
@@ -72,7 +71,7 @@ Drawer myDrawerView( BuildContext context,
           onTap: () async {
             await Navigator.push(context, MaterialPageRoute(
               builder: (context) {
-                return EditEstateView(estateName: '');
+                return const EditEstateView(estateName: '');
               },
             ));
             callback();
@@ -82,29 +81,12 @@ Drawer myDrawerView( BuildContext context,
         ),
         /*
         ListTile(
-          leading: const Icon(Icons.network_check,
-              color: myPrimaryColor, size: 40),
-          title: const Text('Scan'),
+          leading: const Icon(Icons.temple_hindu,
+              color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
+          title: const Text('Testaa fore', style: TextStyle(color: _primaryDrawerFontColor)),
           onTap: () async {
-            String s = await MyNetworkDiscovery().discoverNetworkDeviceIpAddress();
-            s = s + await MyNetworkDiscovery().scan();
-            s = s + await MyNetworkDiscovery().listBroadcastServices('_http._tcp');
-            s = s + await MyNetworkDiscovery().listBroadcastServices('_shelly._tcp');
-            await informMatterToUser(context, 'scan', s);
-            Navigator.pop(context);
-          },
-        ),
-        ListTile(
-          leading: const Icon(Icons.on_device_training,
-              color: myPrimaryColor, size: 40),
-          title: const Text('Shelly'),
-          onTap: () async {
-            ShellyDevice device = ShellyDevice();
-            device.setIpAddress('192.168.72.79');
-            //await device.sysGetConfig();
-            //await device.plugsUiGetConfig();
-            await device.switchGetStatus(0);
-            Navigator.pop(context);
+            var x = foregroundInterface.sendData('xxx',{});
+
           },
         ),
 
@@ -112,31 +94,16 @@ Drawer myDrawerView( BuildContext context,
         ListTile(
           leading: const Icon(Icons.temple_hindu,
               color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
-          title: const Text('Testaa kello', style: TextStyle(color: _primaryDrawerFontColor)),
+          title: const Text('Testaa porssisahkoData', style: TextStyle(color: _primaryDrawerFontColor)),
           onTap: () async {
-            events.write(myEstates.currentEstate().id, '', ObservationLevel.ok, 'Testi alkaa');
-            final prefs = await SharedPreferences.getInstance();
-            prefs.setInt("test",0);
-            print("Int from prefs in UI1: ${prefs.getInt("test")??98}");
-            myWorkManager.initialize();
-            myWorkManager.test1();
-            await Future.delayed(const Duration(seconds: 10));
-            await prefs.reload();
-            print("Int from prefs in UI2: ${prefs.getInt("test")??97}");
-            int i = 75;
-            myWorkManager.test2();
-            await Future.delayed(const Duration(seconds: 10));
-            await prefs.reload();
-            print("Int from prefs in UI2: ${prefs.getInt("test2")??50}");
-            await Future.delayed(const Duration(seconds: 10));
-            await prefs.reload();
-            print("Int from prefs in UI2: ${prefs.getInt("test2")??51}");
-            await Future.delayed(const Duration(seconds: 10));
-            await prefs.reload();
-            print("Int from prefs in UI2: ${prefs.getInt("test2")??52}");
+            String path = (await getApplicationDocumentsDirectory()).path;
+            ElectricityPriceForeground e = ElectricityPriceForeground(internetPage: 'https://api.porssisahko.net/v1/latest-prices.json',
+                directoryPath: path);
+            print('boxin koko lopussa ${e.electricityBox.length}');
 
-          },
-        ),
+          }
+          ),
+
         ListTile(
           leading: const Icon(Icons.speaker_notes,
               color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
@@ -153,7 +120,7 @@ Drawer myDrawerView( BuildContext context,
             Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) =>
-                      DataStructureDumpView(),
+                      const DataStructureDumpView(),
                 )
             );
           },
@@ -183,7 +150,7 @@ Drawer myDrawerView( BuildContext context,
             Navigator.of(context).push(
                 MaterialPageRoute(
                   builder: (context) =>
-                      EventsView(),
+                      const EventsView(),
                 )
             );
           },
@@ -329,7 +296,7 @@ class _EventsViewState extends State<EventsView> {
   Widget build(BuildContext context) {
     return Scaffold(
             appBar: AppBar(
-                title: appIconAndTitle('$appName','tapahtumat'),
+                title: appIconAndTitle(appName,'tapahtumat'),
                 backgroundColor: myPrimaryColor,
                 iconTheme: const IconThemeData(color:myPrimaryFontColor)
             ),// new line
@@ -382,12 +349,12 @@ class _TestViewState extends State<TestView> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-            title: appIconAndTitle('$appName','testaus'),
+            title: appIconAndTitle(appName,'testaus'),
             backgroundColor: myPrimaryColor,
             iconTheme: const IconThemeData(color:myPrimaryFontColor)
         ),// new line
         body: SingleChildScrollView( child: Column(children: <Widget>[
-          Text('ttt'),
+          const Text('ttt'),
           TemperatureSettingWidget(currentTarget: 22.0, currentTemperature: 19.0,
               returnValue: (value){}),
           TemperatureSettingWidget(currentTarget: 22.0, currentTemperature: 10.0,
@@ -412,7 +379,7 @@ void _testSetTimer() {
   );
 
   // Schedule a given time
-  Timer _timer = Timer(delay, () async {
+  Timer timer = Timer(delay, () async {
     events.write(myEstates.currentEstate().id, '', ObservationLevel.ok, "testi jatkuu" );
     _testSetTimer();
   });

@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
-import '../../shelly/shelly_scan.dart';
 import '../device.dart';
 
 ButtonStyle _buttonStyle (Color backgroundColor, Color foregroundColor) {
   return   ElevatedButton.styleFrom(
       backgroundColor: backgroundColor,
       foregroundColor: foregroundColor,
-      padding: EdgeInsets.all(2.0),
+      padding: const EdgeInsets.all(2.0),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(10),
       )
@@ -57,7 +56,7 @@ Widget shortNamedDeviceView(
                 child:
                 AutoSizeText(device.shortTypeName(),
                   textAlign: TextAlign.center,
-                  presetFontSizes: [8,10,12,14],
+                  presetFontSizes: const [8,10,12,14],
 
                 ),
             ),
@@ -94,7 +93,7 @@ Widget devicesGrid(
           labelText: title),
         child:
           devices.isEmpty
-          ? Text('Ei laitteita')
+          ? const Text('Ei laitteita')
           : SizedBox(
               height: _height(devices.length),
               width: MediaQuery.of(context).size.width,

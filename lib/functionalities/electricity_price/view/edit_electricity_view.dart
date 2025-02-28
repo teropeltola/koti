@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:auto_size_text/auto_size_text.dart';
-import 'package:provider/provider.dart';
 
 import '../../../devices/device/device.dart';
 import '../../../estate/estate.dart';
@@ -236,19 +235,19 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                         child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
-                              Spacer(),
+                              const Spacer(),
                               Row(children: <Widget>[
-                                Flexible(flex:1, child: Text('Nimi: ')),
-                                Flexible(flex:5, child: AutoSizeText(widget.device.name, style:TextStyle(fontSize:14,color:Colors.blue))),
+                                const Flexible(flex:1, child: Text('Nimi: ')),
+                                Flexible(flex:5, child: AutoSizeText(widget.device.name, style:const TextStyle(fontSize:14,color:Colors.blue))),
                               ]),
-                              Spacer(),
+                              const Spacer(),
                               Row(children: <Widget>[
-                                Flexible(flex:1, child: Text('Osoite: ')),
+                                const Flexible(flex:1, child: Text('Osoite: ')),
                                 Flexible(flex:5,
                                     child: AutoSizeText(electricityPriceParameters.basicElectricityParameters.spotAddress,
-                                        style:TextStyle(fontSize:14,color:Colors.blue))),
+                                        style:const TextStyle(fontSize:14,color:Colors.blue))),
                               ]),
-                              Spacer(),
+                              const Spacer(),
                             ]),
                       ),
                     )
