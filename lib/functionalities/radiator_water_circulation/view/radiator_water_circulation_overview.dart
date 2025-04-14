@@ -110,7 +110,7 @@ class _RadiatorWaterCirculationOverviewState extends State<RadiatorWaterCirculat
                               MaterialPageRoute(
                                 builder: (context) {
                                   return EditRadiatorWaterCirculationView(
-                                    estate: myEstates.currentEstate(),
+                                    environment: myEstates.currentEstate().findEnvironmentFor(widget.radiator),
                                     radiatorSystem: widget.radiator,
                                   );
                                 },

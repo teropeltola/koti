@@ -1,7 +1,185 @@
 
+import 'package:koti/devices/porssisahko/json/porssisahko_data.dart';
+
 import '../functionalities/electricity_price/electricity_price.dart';
+import '../functionalities/electricity_price/json/electricity_price_parameters.dart';
 import '../functionalities/electricity_price/trend_electricity.dart';
 import '../look_and_feel.dart';
+
+
+enum PriceChange {decline, flat, increase}
+
+enum TariffType {constant, spot}
+
+enum DistributionTariffType {timeOfDay, constant}
+
+class ElectricityTariff {
+  String _name = '';
+  TariffType _tariffType = TariffType.spot;
+  double _parameterValue = 0.0;
+
+  ElectricityTariff();
+
+  String get name => _name;
+  set name(String newName) { _name = newName; }
+
+  void setValue (String newName, TariffType newType, double newParameter) {
+    _name = newName;
+    _tariffType = newType;
+    _parameterValue = newParameter;
+  }
+
+  double priceWithoutVat(double stockPrice) {
+
+    if (_tariffType == TariffType.spot) {
+      return stockPrice  + _parameterValue;
+    }
+    else {
+      return _parameterValue;
+    }
+  }
+
+  double priceWithVat(double stockPrice) {
+    return priceWithoutVat(stockPrice) * electricityPriceParameters.vatMultiplier();
+  }
+
+  double reversePriceWithoutVat(double stockPrice) {
+    return stockPrice / electricityPriceParameters.vatMultiplier();
+  }
+
+  double spot(double stockPrice) {
+    return (stockPrice-_parameterValue);
+  }
+
+  double margin() {
+    return (_parameterValue);
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    json['name'] = _name;
+    json['type'] = _tariffType == TariffType.spot ? 'spot' : 'const';
+    json['par'] = _parameterValue;
+    return json;
+  }
+
+  ElectricityTariff.fromJson(Map<String, dynamic> json) {
+    _name = json['name'] ?? '';
+    _tariffType = (json['type'] == 'spot' ? TariffType.spot : TariffType.constant);
+    _parameterValue = json['par'];
+  }
+
+}
+
+class ElectricityDistributionPrice {
+  String _name = '';
+  DistributionTariffType _type = DistributionTariffType.timeOfDay;
+  int _dayTimeStartingHour = 0;
+  int _dayTimeEndingHour = 0;
+  double _dayTransferTariff = 0.0;
+  double _nightTransferTariff = 0.0;
+  double _electricityTax = 0.0;
+
+  ElectricityDistributionPrice();
+
+  String get name => _name;
+  set name(String newName) { _name = newName; }
+
+  void setTimeOfDayParameters(String newName,
+      int dayTimeStarting,
+      int dayTimeEnding,
+      double dayTariff,
+      double nightTariff,
+      double electricityTax) {
+    _name = newName;
+    _type = DistributionTariffType.timeOfDay;
+    _dayTimeStartingHour = dayTimeStarting;
+    _dayTimeEndingHour = dayTimeEnding;
+    _dayTransferTariff = dayTariff;
+    _nightTransferTariff = nightTariff;
+    _electricityTax = electricityTax;
+  }
+
+  double electricityTaxWithoutVat() {
+    return _electricityTax;
+  }
+
+  void setConstantParameters(String newName, double tariff, double electricityTax) {
+    _name = newName;
+    _type = DistributionTariffType.constant;
+    _dayTransferTariff = tariff;
+    _electricityTax = electricityTax;
+  }
+
+  bool constantTariff() {
+    return _type == DistributionTariffType.constant;
+  }
+
+  bool dayTime(int originalHour) {
+    int hour = originalHour % 24;
+    return ((hour >= _dayTimeStartingHour) && (hour < _dayTimeEndingHour));
+  }
+
+  double currentTransferTariff(int hour) {
+    if (constantTariff()) {
+      return _dayTransferTariff;
+    }
+    else {
+      return (dayTime(hour) ? _dayTransferTariff : _nightTransferTariff);
+    }
+  }
+
+  double priceWithoutVat(int hour) {
+    return currentTransferTariff(hour) + _electricityTax;
+  }
+
+  double priceWithVat(int hour) {
+    return priceWithoutVat(hour) * electricityPriceParameters.vatMultiplier();
+  }
+
+  // returns a timestamp of the time when the previous tariff change will
+  // occur earlier than the given timestamp
+  int previousTariffChange(int timestamp) {
+    if (constantTariff()) {
+      return 0;
+    }
+    else {
+      DateTime d = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      int hour = d.hour;
+      if (dayTime(hour)) {
+        return DateTime(d.year, d.month, d.day, _dayTimeStartingHour).millisecondsSinceEpoch;
+      }
+      else {
+        int day = (d.hour < _dayTimeStartingHour) ? d.day-1 : d.day;
+        return DateTime(d.year, d.month, day, _dayTimeEndingHour).millisecondsSinceEpoch;
+      }
+    }
+  }
+
+  Map<String, dynamic> toJson() {
+    final json = <String, dynamic>{};
+    json['name'] = _name;
+    json['type'] = _type == DistributionTariffType.timeOfDay ? 'timeOfDay' : 'const';
+    json['dayTimeStarting'] = _dayTimeStartingHour;
+    json['dayTimeEnding'] = _dayTimeEndingHour;
+    json['dayTariff'] = _dayTransferTariff;
+    json['nightTariff'] = _nightTransferTariff;
+    json['electricityTax'] = _electricityTax;
+    return json;
+  }
+
+  ElectricityDistributionPrice.fromJson(Map<String, dynamic> json) {
+    _name = json['name'] ?? '';
+    _type = (json['type'] == 'timeOfDay' ? DistributionTariffType.timeOfDay : DistributionTariffType.constant);
+    _dayTimeStartingHour = json['dayTimeStarting'];
+    _dayTimeEndingHour = json['dayTimeEnding'];
+    _dayTransferTariff = json['dayTariff'];
+    _nightTransferTariff = json['nightTariff'];
+    _electricityTax = json['electricityTax'];
+  }
+
+}
+
 
 
 int constantSlotSize = 60; // constant parameter that can be patched
@@ -21,47 +199,68 @@ class ElectricityTotalPriceItem {
 
 class ElectricityPriceData {
   List <ElectricityTotalPriceItem> prices = [];
-  ElectricityDistributionPrice _distributionPrice = ElectricityDistributionPrice();
+  ElectricityTariff tariff = ElectricityTariff();
+  ElectricityDistributionPrice distributionPrice = ElectricityDistributionPrice();
+
   int slotSizeInMinutes = constantSlotSize;
 
   ElectricityPriceData();
+
 
   void storeElectricityPrice(List <TrendElectricity> electricityPrices) {
     prices.clear();
     for (var e in electricityPrices) {
       ElectricityTotalPriceItem item = ElectricityTotalPriceItem();
       item.timestamp = e.timestamp;
-      item.electricityPrice = e.price;
+      item.electricityPrice = noValue(e.price) ? noValueDouble : tariff.priceWithVat(e.price);
       prices.add(item);
     }
+    _storeTransferPrice(0);
   }
 
-  void storeTransferPrice(ElectricityDistributionPrice distributionPrice) {
-    _distributionPrice = distributionPrice;
+  void updateElectricityPrice(List <TrendElectricity> electricityPrices) {
+    int latestTimestamp = prices.last.timestamp;
+    int startingIndex = 0;
+    for (int index=0; index<electricityPrices.length; index++) {
+      if (electricityPrices[index].timestamp >= latestTimestamp) {
+        startingIndex = index;
+        break;
+      }
+    }
+    for (int index=startingIndex; index<electricityPrices.length; index++) {
+      ElectricityTotalPriceItem item = ElectricityTotalPriceItem();
+      item.timestamp = electricityPrices[index].timestamp;
+      item.electricityPrice = noValue(electricityPrices[index].price) ? noValueDouble : tariff.priceWithVat(electricityPrices[index].price);
+      prices.add(item);
+    }
+    _storeTransferPrice(startingIndex);
+  }
+
+  void _storeTransferPrice(int fromIndex) {
     if (prices.length <= 1) {
       // only the dummy item is present
       return;
     }
-    if (_distributionPrice.constantTariff()) {
-      for (var e in prices) {
-        e.transferPrice = _distributionPrice.price(12); // parameter 'hour' is not used
+    if (distributionPrice.constantTariff()) {
+      for (int index=fromIndex; index<prices.length; index++) {
+        prices[index].transferPrice = distributionPrice.priceWithVat(12); // parameter 'hour' is not used
       }
     }
     else {
       // fill transfer prices to the existing items
-      for (var e in prices) {
-        if (e.electricityPrice != noValueDouble) {
-        e.transferPrice = _distributionPrice.price(
+      for (int index=fromIndex; index<prices.length; index++) {
+        if (prices[index].electricityPrice != noValueDouble) {
+          prices[index].transferPrice = distributionPrice.priceWithVat(
             DateTime.fromMillisecondsSinceEpoch(
-                e.timestamp)
+                prices[index].timestamp)
                 .hour);
         }
       }
 
       // add possible tariff changes if they are between items
-      int previousTariffChange = _distributionPrice.previousTariffChange(prices.last.timestamp);
-      int startingIndex = prices.length-1;
-      for (int index=startingIndex; index>=0; index--) {
+      int previousTariffChange = distributionPrice.previousTariffChange(prices.last.timestamp);
+      int endIndex = prices.length-1;
+      for (int index=endIndex; index>=fromIndex; index--) {
         if (prices[index].totalPrice != noValueDouble) {
           while (previousTariffChange >= prices[index].timestamp) {
             // if the tariff change is exactly at the same time as the item timestamp then
@@ -71,12 +270,12 @@ class ElectricityPriceData {
               ElectricityTotalPriceItem item = ElectricityTotalPriceItem();
               item.timestamp = previousTariffChange;
               item.electricityPrice = prices[index].electricityPrice;
-              item.transferPrice = _distributionPrice.price(DateTime
+              item.transferPrice = distributionPrice.priceWithVat(DateTime
                   .fromMillisecondsSinceEpoch(previousTariffChange)
                   .hour);
               prices.insert(index + 1, item);
             }
-            previousTariffChange = _distributionPrice.previousTariffChange(
+            previousTariffChange = distributionPrice.previousTariffChange(
                 previousTariffChange - 1);
           }
         }
@@ -209,22 +408,11 @@ class ElectricityPriceData {
     return e;
   }
 
-  int _countPercentileIndex(double percentile) {
-    return (percentile <= 0) ? 0 : (percentile >= 1) ? (prices.length-1) :
-      (percentile * prices.length).ceil()-1;
-  }
 
   double findPercentile(double percentile) {
-    if (prices.isEmpty) {
-      return 0.0;
-    }
-    List <double> sortedList = [];
-    for (var item in prices) {
-      sortedList.add(item.totalPrice);
-    }
-    sortedList.sort();
-    int index = _countPercentileIndex(percentile);
-    return sortedList[index];
+    Analyzer analyzer = Analyzer();
+    analyzer.init(this);
+    return analyzer.findPercentile(percentile);
   }
 
   double currentPrice() {
@@ -235,6 +423,21 @@ class ElectricityPriceData {
     else {
       return prices[index].totalPrice;
     }
+  }
+
+  PriceComponents currentPriceComponents() {
+    int index = findIndex(DateTime.now());
+    PriceComponents result = PriceComponents();
+    if (index != -1) {
+      result.electricityPriceVat = electricityPriceParameters.vatOf(prices[index].electricityPrice);
+      double eWithoutVat = prices[index].electricityPrice - result.electricityPriceVat;
+      result.spot = tariff.spot(eWithoutVat);
+      result.electricityPriceMargin = tariff.margin();
+      result.distributionVat = electricityPriceParameters.vatOf(prices[index].transferPrice);
+      result.distributionPrice = distributionPrice.currentTransferTariff(DateTime.now().hour);
+      result.electricityTax = distributionPrice.electricityTaxWithoutVat();
+    }
+    return result;
   }
 
   PriceChange priceChange() {
@@ -288,7 +491,8 @@ class ElectricityPriceData {
     }
 
     ElectricityPriceData result = ElectricityPriceData();
-    result._distributionPrice = _distributionPrice;
+    result.tariff = tariff;
+    result.distributionPrice = distributionPrice;
     result.slotSizeInMinutes = slotSizeInMinutes;
     int startingIndex = findIndex(startingTimeParameter);
     if (startingIndex >= 0) {
@@ -298,7 +502,59 @@ class ElectricityPriceData {
   }
 }
 
+class PriceComponents {
+  double spot = noValueDouble;
+  double electricityPriceMargin = noValueDouble;
+  double electricityPriceVat = noValueDouble;
+  double distributionPrice = noValueDouble;
+  double electricityTax = noValueDouble;
+  double distributionVat = noValueDouble;
+}
+
 class PriceAndTime {
   double price = noValueDouble;
   DateTime time = DateTime(0);
+}
+
+class PriceAndDuration {
+  int timestamp = 0;
+  int duration = 0;
+  double price = 0.0;
+
+  PriceAndDuration(this.timestamp, this.duration, this.price);
+}
+
+class Analyzer {
+  List <PriceAndDuration> sortedList = [];
+  int totalDuration = 0;
+
+  void init(ElectricityPriceData electricityPriceData) {
+    sortedList.clear();
+    totalDuration = 0;
+
+    for (int index = 0; index < electricityPriceData.prices.length-1; index++) {
+      if (electricityPriceData.prices[index].totalPrice != noValueDouble) {
+        int duration = electricityPriceData.prices[index + 1].timestamp -
+            electricityPriceData.prices[index].timestamp;
+        totalDuration += duration;
+        sortedList.add(PriceAndDuration(
+            electricityPriceData.prices[index].timestamp,
+            duration,
+            electricityPriceData.prices[index].totalPrice));
+      }
+    }
+    sortedList.sort((a, b) => a.price.compareTo(b.price));
+  }
+
+  double findPercentile(double percentile) {
+    int percentileDuration = (percentile * totalDuration).floor();
+    double indexPercentile = 0.0;
+    for (var item in sortedList) {
+      indexPercentile += item.duration;
+      if (indexPercentile >= percentileDuration) {
+        return item.price;
+      }
+    }
+    return sortedList.isEmpty ? noValueDouble : sortedList.last.price;
+  }
 }

@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 
 import '../../../devices/device/view/short_device_view.dart';
+import '../../../estate/environment.dart';
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
 import '../heating_system.dart';
 
 class EditHeatingSystemView extends StatefulWidget {
-  String estateName;
+  Environment environment;
   HeatingSystem heatingSystem;
-  EditHeatingSystemView({Key? key, required this.estateName, required this.heatingSystem}) : super(key: key);
+  EditHeatingSystemView({Key? key, required this.environment, required this.heatingSystem}) : super(key: key);
 
   @override
   _EditHeatingSystemViewState createState() => _EditHeatingSystemViewState();
@@ -17,6 +18,7 @@ class EditHeatingSystemView extends StatefulWidget {
 class _EditHeatingSystemViewState extends State<EditHeatingSystemView> {
   @override
   Widget build(BuildContext context) {
+    Estate estate = myEstates.estate(widget.environment.name);
     return Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -32,7 +34,7 @@ class _EditHeatingSystemViewState extends State<EditHeatingSystemView> {
                   Navigator.of(context).pop();
                 }
               }),
-          title: appIconAndTitle(widget.estateName, HeatingSystem.functionalityName),
+          title: appIconAndTitle(widget.environment.name, HeatingSystem.functionalityName),
         ), // new line
         body: SingleChildScrollView(
         child: Column(children: <Widget>[
@@ -40,7 +42,7 @@ class _EditHeatingSystemViewState extends State<EditHeatingSystemView> {
               context,
               'liitetyt laitteet',
               Colors.blue,
-              myEstates.estate(widget.estateName),
+              estate,
               widget.heatingSystem.connectedDevices,
               () {}
           ),

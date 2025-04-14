@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:koti/estate/environment.dart';
 
 import 'package:koti/operation_modes/view/edit_operation_mode_view.dart';
 import 'package:koti/view/interrupt_editing_widget.dart';
@@ -16,10 +17,10 @@ import '../../boiler_heating/view/controlled_devices_widget.dart';
 import '../air_heat_pump.dart';
 
 class EditAirPumpView extends StatefulWidget {
-  final Estate estate;
+  final Environment environment;
   final AirHeatPump airHeatPumpInput;
   final Function callback;
-  const EditAirPumpView({Key? key, required this.estate, required this.airHeatPumpInput, required this.callback}) : super(key: key);
+  const EditAirPumpView({Key? key, required this.environment, required this.airHeatPumpInput, required this.callback}) : super(key: key);
 
   @override
   _EditAirPumpViewState createState() => _EditAirPumpViewState();
@@ -30,17 +31,18 @@ class _EditAirPumpViewState extends State<EditAirPumpView> {
   late AirHeatPump airHeatPump;
   List <String> foundDeviceNames = [''];
   late DropdownContent possibleDevicesDropdown;
+  late Estate estate;
 
   @override
   void initState() {
     super.initState();
+    estate = widget.environment.myEstate();
     airHeatPump = widget.airHeatPumpInput.clone();
     refresh();
   }
 
   void refresh() {
-    foundDeviceNames =
-        widget.estate.findPossibleDevices(deviceService: airHeatPumpService);
+    foundDeviceNames = estate.findPossibleDevices(deviceService: airHeatPumpService);
     int index = max(0, foundDeviceNames.indexOf(airHeatPump.id));
     possibleDevicesDropdown = DropdownContent(foundDeviceNames, '', index);
     setState(() {});
@@ -58,14 +60,14 @@ class _EditAirPumpViewState extends State<EditAirPumpView> {
           leading: interruptEditingWidget(context, () async {
             airHeatPump.remove();
           }),
-          title: appIconAndTitle(widget.estate.name, 'muokkaa ilmalämpöpumppua'),
+          title: appIconAndTitle(widget.environment.name, 'muokkaa ilmalämpöpumppua'),
         ), // new line
         body: SingleChildScrollView(
             child: Column(children: <Widget>[
               controlledDevicesWidget('Ohjattava laite', 'Ilmalämpöpumppu', possibleDevicesDropdown, () {setState(() {});}),
               operationModeHandling2(
                   context,
-                  widget.estate,
+                  widget.environment,
                   airHeatPump.operationModes,
                   airPumpParameterSetting,
                       () {
@@ -73,19 +75,19 @@ class _EditAirPumpViewState extends State<EditAirPumpView> {
                   }
               ),
               readyWidget(() async {
-                Device device = widget.estate.myDeviceFromName(
+                Device device = estate.myDeviceFromName(
                     possibleDevicesDropdown.currentString());
                 // remove earlier version
                 widget.airHeatPumpInput.unPairAll();
-                widget.estate.removeFunctionality(widget.airHeatPumpInput);
+                widget.environment.removeFunctionality(widget.airHeatPumpInput);
                 // add new version
 
                 airHeatPump.pair(device);
                 await airHeatPump.init();
-                widget.estate.addFunctionality(airHeatPump);
+                widget.environment.addFunctionality(airHeatPump);
                 widget.callback();
 
-                log.info('${widget.estate.name}: ilmalämpöpumpun "${device
+                log.info('${widget.environment.name}: ilmalämpöpumpun "${device
                       .name}" ohjausta päivitetty');
 
                 showSnackbarMessage('laitteen ${device.name} ohjausta päivitetty!');

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koti/devices/shelly_blu_trv/shelly_blu_trv.dart';
 import 'package:koti/devices/shelly_blu_trv/view/edit_shelly_blu_trv_view.dart';
 import 'package:koti/logic/observation.dart';
 import '../../estate/estate.dart';
@@ -13,11 +14,14 @@ import '../shelly_blu_gw/shelly_blu_gw.dart';
 
 const _fetchTimeValidityWindow = 5; // minutes
 
+const double _targetAccuracy = 1.0;
+
 class ShellyBluTrv extends Device {
   String myGwDeviceId = ''; //device Id of the connected gateway
   int idNumber = -1; // id number used inside the gateway
 
   late ThermostatControlService thermostatControlService;
+
   late ShellyBluGw myGw;
   late BluConfigAndStatus myInfo;
 
@@ -26,9 +30,17 @@ class ShellyBluTrv extends Device {
 
   ShellyBluTrv(String initId, this.myGwDeviceId, this.idNumber) {
     id = initId;
+    thermostatControlService = ThermostatControlService(
+        _temperatureFunction, _targetTemperature, _setTargetTemperature,
+        _peekTemperature, _batteryLevel, _showMessage, _targetAccuracy, this);
+
   }
 
-  ShellyBluTrv.empty();
+  ShellyBluTrv.empty() {
+    thermostatControlService = ThermostatControlService(
+    _temperatureFunction, _targetTemperature, _setTargetTemperature,
+    _peekTemperature, _batteryLevel, _showMessage, _targetAccuracy, this);
+  }
 
   void _initOfferedServices() {
     services = Services([
@@ -40,10 +52,6 @@ class ShellyBluTrv extends Device {
   Future<void> init() async {
     myGw = allDevices.findDevice(myGwDeviceId) as ShellyBluGw;
     myInfo = await myGw.bluInfo(idNumber);
-
-    thermostatControlService = ThermostatControlService(
-        _temperatureFunction, _targetTemperature, _setTargetTemperature,
-        _peekTemperature, _batteryLevel, _showMessage, this);
 
     _initOfferedServices();
   }
@@ -73,7 +81,9 @@ class ShellyBluTrv extends Device {
 
   final OverloadGuard<int> _overloadGuard = OverloadGuard(-100, const Duration(seconds:10));
 
-  Future <void> _setTargetTemperature(int newTarget, String caller) async {
+  Future <void> _setTargetTemperature(double newTargetDouble, String caller) async {
+
+    int newTarget = newTargetDouble.round();
 
     if (_overloadGuard.updateIsAllowed(newTarget)) {
       events.write(myEstateId, id, ObservationLevel.ok,
@@ -97,6 +107,7 @@ class ShellyBluTrv extends Device {
   double _peekTemperature() {
     return (latestStatus.status.trv0.currentC);
   }
+
 
   @override
   Widget dumpData({required Function formatterWidget}) {
@@ -134,6 +145,9 @@ class ShellyBluTrv extends Device {
   @override
   ShellyBluTrv.fromJson(Map<String, dynamic> json) {
     super.fromJson(json);
+    thermostatControlService = ThermostatControlService(
+      _temperatureFunction, _targetTemperature, _setTargetTemperature,
+      _peekTemperature, _batteryLevel, _showMessage, _targetAccuracy, this);
     myGwDeviceId = json['gwId'] ?? '';
     idNumber = json['idNumber'] ?? 0;
   }
@@ -155,7 +169,11 @@ class ThermostatControlService {
 
   late final Future <double> Function() _temperature;
   late final Future <double> Function() _targetTemperature;
-  late final Future <void> Function(int, String) _setTargetTemperature;
+  late final Future <void> Function(double, String) _setTargetTemperature;
+  late final double targetAccuracy; // in celsius degrees: tells what is the granularity
+                                    // of device target setting function. E.g,:
+                                    // - Shelly TRV is 1.0 degree steps
+                                    // - Mitsu Air condition is 0.1 degree steps
   late final double Function() _peekTemperature;
   late final int Function() _batteryLevel;
   late final Future <void> Function(String) _showMessage;
@@ -164,7 +182,7 @@ class ThermostatControlService {
   ThermostatControlService(
       this._temperature, this._targetTemperature, this._setTargetTemperature,
       this._peekTemperature, this._batteryLevel,
-      this._showMessage,
+      this._showMessage, this.targetAccuracy,
       this.device);
 
   Future <double> temperature() async {
@@ -175,7 +193,7 @@ class ThermostatControlService {
     return await _targetTemperature();
   }
 
-  Future <void> setTargetTemperature(int newTarget, String caller) async {
+  Future <void> setTargetTemperature(double newTarget, String caller) async {
     await _setTargetTemperature(newTarget, caller);
   }
 

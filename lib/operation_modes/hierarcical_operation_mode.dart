@@ -1,29 +1,30 @@
 import 'package:koti/functionalities/functionality/functionality.dart';
 
+import '../estate/environment.dart';
 import '../estate/estate.dart';
 import '../logic/device_attribute_control.dart';
 import 'operation_modes.dart';
 import '../../../look_and_feel.dart';
 
-class FunctionalityAndOperationMode {
-  late String functionalityId;
+class IdAndOperationMode {
+  late String id;
   late String operationName;
 
-  FunctionalityAndOperationMode(this.functionalityId, this.operationName);
+  IdAndOperationMode(this.id, this.operationName);
 
-  FunctionalityAndOperationMode fromJson(Map<String, dynamic> json) {
-    FunctionalityAndOperationMode f = FunctionalityAndOperationMode.fromJson(json);
+  IdAndOperationMode fromJson(Map<String, dynamic> json) {
+    IdAndOperationMode f = IdAndOperationMode.fromJson(json);
     return f;
   }
-  FunctionalityAndOperationMode.fromJson(Map<String, dynamic> json){
-    functionalityId = json['functionalityId'] ?? '';
+  IdAndOperationMode.fromJson(Map<String, dynamic> json){
+    id = json['functionalityId'] ?? '';
     operationName = json['operationName'] ?? '';
   }
 
   Map<String, dynamic> toJson() {
     final json = <String, dynamic>{};
 
-    json['functionalityId'] = functionalityId;
+    json['functionalityId'] = id;
     json['operationName'] = operationName;
 
     return json;
@@ -32,25 +33,25 @@ class FunctionalityAndOperationMode {
 
 class HierarchicalOperationMode extends OperationMode {
 
-  List <FunctionalityAndOperationMode> items = [];
+  List <IdAndOperationMode> items = [];
 
   HierarchicalOperationMode();
 
   void add(String functionalityName, String operationName) {
     int existingIndex = items.indexWhere((item) =>
-                          item.functionalityId == functionalityName);
+                          item.id == functionalityName);
     if (existingIndex >= 0) {
       items[existingIndex].operationName = operationName;
     }
     else {
       items.add(
-          FunctionalityAndOperationMode(functionalityName, operationName));
+          IdAndOperationMode(functionalityName, operationName));
     }
   }
 
   String operationCode(String functionalityId) {
     int existingIndex = items.indexWhere((item) =>
-                          item.functionalityId == functionalityId);
+                          item.id == functionalityId);
     if (existingIndex < 0) {
       return '';
     }
@@ -62,13 +63,22 @@ class HierarchicalOperationMode extends OperationMode {
 
   @override select(ControlledDevice controlledDevice, OperationModes? parentOperationModes) async {
     log.info('Koostevalinta "$name"');
-    for (int i=0; i<items.length; i++) {
-      var functionality = myEstates.currentEstate().functionality(items[i].functionalityId);
-      if (functionality == allFunctionalities.noFunctionality()) {
-        log.error('Hierarchical selectation failure: functionality "${items[i].functionalityId} was not found');
+    for (var item in items) {
+      // first check if the operationMode is from environment
+      var environment = myEstates.currentEstate().findEnvironmentId(item.id);
+      if (environment != noEnvironment) {
+        environment.operationModes.selectNameAndSetParentInfo(item.operationName, parentOperationModes!);
       }
       else {
-        functionality.operationModes.selectNameAndSetParentInfo(items[i].operationName, parentOperationModes!);
+        // secondly check the possible functionalities
+        var functionality = myEstates.currentEstate().functionality(item.id);
+        if (functionality == allFunctionalities.noFunctionality()) {
+          log.error('Hierarchical selection failure: id "${item.id}" was not found');
+        }
+        else {
+          functionality.operationModes.selectNameAndSetParentInfo(
+              item.operationName, parentOperationModes!);
+        }
       }
     }
   }
@@ -81,7 +91,7 @@ class HierarchicalOperationMode extends OperationMode {
   @override
   HierarchicalOperationMode.fromJson(Map<String, dynamic> json): super.fromJson(json) {
 
-    items = List.from(json['items']).map((e)=>FunctionalityAndOperationMode.fromJson(e)).toList();
+    items = List.from(json['items']).map((e)=>IdAndOperationMode.fromJson(e)).toList();
   }
 
   @override

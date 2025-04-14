@@ -9,13 +9,16 @@ import 'package:koti/devices/mitsu_air-source_heat_pump/view/edit_mitsu_view.dar
 import 'dart:convert' show jsonDecode, utf8;
 
 import '../../estate/estate.dart';
+import '../../logic/events.dart';
 import '../../logic/observation.dart';
+import '../../logic/overload_guard.dart';
 import '../../logic/services.dart';
 import '../../logic/unique_id.dart';
 import '../../service_catalog.dart';
 import '../../look_and_feel.dart';
 import '../device_with_login/device_with_login.dart';
 import '../mixins/on_off_switch.dart';
+import '../shelly_blu_trv/shelly_blu_trv.dart';
 import 'mea_data_json.dart';
 
 const _meaCloudUrl = 'https://app.melcloud.com/Mitsubishi.Wifi.Client';
@@ -43,13 +46,18 @@ return await resp.json()
 
 
  */
-const _mitsuFetchingIntervalInMinutes = 3;
+const _mitsuFetchingIntervalInMinutes = 5;
+
+const double _targetAccuracy = 0.1;
+
 
 class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
 
   //String urlString = _meaCloudUrl;
 
   late Timer _timer;
+
+  late ThermostatControlService thermostatControlService;
 
   Map <String, String> requestResult = {};
 
@@ -63,6 +71,10 @@ class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
   int _fetchCounter = 0;
 
   void _initOfferedServices() {
+    thermostatControlService = ThermostatControlService(
+        _temperatureFunction, _targetTemperature, _setTargetTemperature,
+        _peekTemperature, _batteryLevel, _showMessage, _targetAccuracy, this);
+
     services = Services([
       RODeviceService<double>(
           serviceName: outsideTemperatureDeviceService,
@@ -70,6 +82,7 @@ class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
           getFunction: outsideTemperature),
       AttributeDeviceService(attributeName: airHeatPumpService),
       AttributeDeviceService(attributeName: deviceWithManualCreation),
+      DeviceServiceClass<ThermostatControlService>(serviceName: thermostatService, services: thermostatControlService)
     ]);
 
   }
@@ -109,7 +122,8 @@ class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
         boxName: id,
         getFunction: getPower,
         setFunction: setPower,
-        peekFunction: peekPower
+        peekFunction: peekPower,
+        defineTask: _defineTask
     );
     services.addService(onOffServiceDefinition());
     await fetchAndAnalyzeData();
@@ -311,7 +325,7 @@ class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
   }
 
   @override
-  double temperatureFunction() {
+  double outsideTemperatureFunction() {
     return outsideTemperature();
   }
 
@@ -333,6 +347,57 @@ class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
 
   bool peekPower() {
     return _meaDevice.power ?? false;
+  }
+
+  Future<bool> _defineTask(Map<String, dynamic> parameters) async {
+    // todo: not implemented
+
+    return false;
+  }
+
+  Future <void> ensureDataValidity() async {
+    if (DateTime.now().difference(_latestDataFetched).inMinutes > _mitsuFetchingIntervalInMinutes) {
+      await fetchAndAnalyzeData();
+    }
+  }
+
+  Future <double> _temperatureFunction() async {
+    await ensureDataValidity();
+    return measuredTemperature();
+  }
+
+  Future <double> _targetTemperature() async {
+    await ensureDataValidity();
+    return (targetTemperature());
+  }
+
+  // sets the TRV target temperature
+
+  final OverloadGuard<int> _overloadGuard = OverloadGuard(-100, const Duration(seconds:10));
+
+  Future <void> _setTargetTemperature(double newTargetDouble, String caller) async {
+
+    int newTarget = newTargetDouble.round();
+
+    if (_overloadGuard.updateIsAllowed(newTarget)) {
+      events.write(myEstateId, id, ObservationLevel.ok,
+          '$name tavoitelämpötilaksi asetettu $newTarget$celsius ($caller) (EI VIELÄ TOTEUTETTU)');
+      //TODO: PUUTTUU
+    }
+  }
+
+  Future <void> _showMessage(String message) async {
+    // not possible to implement in this device
+    return;
+  }
+
+  int _batteryLevel()  {
+    // not possible to implement in this device
+    return (100);
+  }
+
+  double _peekTemperature() {
+    return (measuredTemperature());
   }
 
   @override

@@ -7,6 +7,8 @@ import '../estate/estate.dart';
 import '../functionalities/electricity_price/electricity_price.dart';
 import '../logic/device_attribute_control.dart';
 import '../logic/electricity_price_data.dart';
+import '../logic/events.dart';
+import '../logic/observation.dart';
 import '../look_and_feel.dart';
 import 'analysis_of_modes.dart';
 import 'operation_modes.dart';
@@ -15,8 +17,10 @@ const String dynamicOperationModeText = 'Vaihtuva';
 
 enum OperationComparisons {less, greater, equal, lessOrEqual, greaterOrEqual;
   static const comparisonText = ['pienempi kuin', 'suurempi kuin', 'yhtäsuuri kuin', 'pienempi tai yhtäsuuri kuin', 'suurempi tai yhtäsuuri kuin' ];
+  static const comparisonChangeText = ['pienemmäksi kuin', 'suuremmaksi kuin', 'yhtäsuureksi kuin', 'pienemmäksi tai yhtäsuureksi kuin', 'suuremmaksi tai yhtäsuureksi kuin' ];
   static const jsonText = ['<','>','==','<=','>=' ];
   String text() => comparisonText[index];
+  String changeText() => comparisonChangeText[index];
 
   bool comparisonValue(double par1, double par2) {
     switch (this) {
@@ -31,7 +35,7 @@ enum OperationComparisons {less, greater, equal, lessOrEqual, greaterOrEqual;
   OperationComparisons fromJson(Map<String, dynamic> json){
     int myIndex = jsonText.indexOf(json['comparison'] ?? '');
     if (myIndex < 0) {
-      log.error('OperationComparison fromJson, invalid json: $json');
+      events.write(myEstates.currentEstate().id, '', ObservationLevel.warning,'OperationComparison fromJson, invalid json: $json');
       return OperationComparisons.less;
     }
     else {
@@ -353,26 +357,27 @@ class ConditionalOperationModes extends OperationMode {
 
   Timer? _nextSelectTimer;
 
+  /*
   ElectricityPriceListener electricityPriceListener = ElectricityPriceListener();
-
+*/
   ConditionalOperationModes();
 
   @override
-  void init(String estateName, [OperationModes? initOperationModes]) {
+  void init(/*String enviromentName ,*/ [OperationModes? initOperationModes]) {
     operationModes = initOperationModes!;
     /*
     electricityPriceListener.start(
-        myEstates.estate(estateName).myDefaultElectricityPrice().myBroadcaster(),
+        myEstates.estates[0].myDefaultElectricityPrice().myBroadcaster(),
         updateCurrentAnalysis);
+*/
 
-     */
   }
 
   //called whenever there are updates to listened electricityPriceTable
   void updateCurrentAnalysis(ElectricityPriceData electricityPriceData) {
     DateTime dateTime = DateTime.now();
 
-    currentAnalysis = _analyse(electricityPriceListener.data,dateTime);
+    currentAnalysis = _analyse(electricityPriceData,dateTime);
     log.info('ConditionalOperationModes "$name" updateCurrentAnalysis');
 
   }
@@ -424,7 +429,8 @@ class ConditionalOperationModes extends OperationMode {
 
   List<String> simulate() {
 
-    DateTime startingTime = electricityPriceListener.data.startingTime();
+    ElectricityPriceData data  = myEstates.currentEstate().myDefaultElectricityPrice().electricity.data;
+    DateTime startingTime =    data.startingTime();
 
     AnalysisOfModes analysis = AnalysisOfModes();
 
@@ -432,9 +438,9 @@ class ConditionalOperationModes extends OperationMode {
       return [];
     }
 
-    for (int i=0; i<electricityPriceListener.data.nbrOfMinutes(); i++) {
+    for (int i=0; i<data.nbrOfMinutes(); i++) {
       DateTime slotStartingTime = startingTime.add(Duration(minutes: i));
-      String oName = getOperationModeName(i ~/ electricityPriceListener.data.slotSizeInMinutes, electricityPriceListener.data);
+      String oName = getOperationModeName(i ~/ data.slotSizeInMinutes, data);
       analysis.add(slotStartingTime, 1, oName);
     }
     analysis.compress();
@@ -531,7 +537,6 @@ class ConditionalOperationModes extends OperationMode {
     if (_nextSelectTimer != null) {
       _nextSelectTimer!.cancel();
     }
-    electricityPriceListener.cancel();
     currentAnalysis.clear();
   }
 

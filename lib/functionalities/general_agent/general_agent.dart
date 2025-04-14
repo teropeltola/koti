@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:koti/functionalities/general_agent/view/edit_general_agent_view.dart';
 import 'package:koti/functionalities/general_agent/view/general_agent_view.dart';
 import '../../devices/device/device.dart';
+import '../../estate/environment.dart';
 import '../../estate/estate.dart';
 import '../../logic/device_attribute_control.dart';
 import '../../look_and_feel.dart';
@@ -28,7 +29,7 @@ class GeneralAgent extends Functionality {
   @override
   Future<void> init () async {
     operationModes.initModeStructure(
-        estate: myEstates.currentEstate(),
+        environment: myEstates.currentEstate(),
         parameterSettingFunctionName: 'GeneralAgentParameterFunction',
         deviceId: '',
         deviceAttributes: [DeviceAttributeCapability.directControl],
@@ -61,12 +62,12 @@ class GeneralAgent extends Functionality {
 
 
   @override
-  Future<bool> editWidget(BuildContext context, bool createNew, Estate estate, Functionality functionality, Device device) async {
+  Future<bool> editWidget(BuildContext context, bool createNew, Environment environment, Functionality functionality, Device device) async {
     return await Navigator.push(context, MaterialPageRoute(
         builder: (context)
         {
           return EditGeneralAgentView(
-              estate: estate,
+              environment: environment,
               generalAgent: this
           );
         }

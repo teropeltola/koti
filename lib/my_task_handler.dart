@@ -35,9 +35,14 @@ class MyTaskHandler extends TaskHandler {
   // Called when data is sent using `FlutterForegroundTask.sendDataToTask`.
   @override
   void onReceiveData(Object data) {
-    print('onReceiveData4: ${data.runtimeType.toString()}/$data');
+    print('MyTaskHandler.onReceiveData: ${data.runtimeType.toString()}/$data');
     if (data is Map<String, dynamic>) {
-      taskHandlerController.onReceiveControl(data);
+      Map<String, dynamic> response = taskHandlerController.onReceiveControl(data);
+      print('MyTaskHandler: response=$response');
+      if (response.isNotEmpty) {
+        print('MyTaskHandler: response=$response');
+        FlutterForegroundTask.sendDataToMain(response);
+      }
     }
     else {
       print('Unknown data type: ${data.runtimeType.toString()}');

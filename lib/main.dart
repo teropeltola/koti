@@ -115,6 +115,7 @@ Future <void> appInitializationRoutines() async {
 
   events.write('','',ObservationLevel.ok,'$appName käynnistyi (laitteen wifi on "${activeWifiName.activeWifiName}")');
 
+  await foregroundInterface.initDataStructures();
 }
 
 void main() async {

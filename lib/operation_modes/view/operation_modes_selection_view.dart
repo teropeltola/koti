@@ -1,5 +1,6 @@
 
 import 'package:flutter/material.dart';
+import '../../estate/environment.dart';
 import '../../estate/estate.dart';
 import '../operation_modes.dart';
 import '../../look_and_feel.dart';
@@ -32,19 +33,27 @@ class _OperationModesSelectionViewState extends State<OperationModesSelectionVie
     if (widget.operationModes.nbrOfModes() == 0) {
       return emptyWidget();
     }
-    return Container(
-        margin: const EdgeInsets.all(2),
+    return Container( child: Column( children: [
+      Container(
+        margin: const EdgeInsets.fromLTRB(5,0,5,0),
         height: 50,
         child:
          ListView(
+           padding: const EdgeInsets.all(2),
            scrollDirection: Axis.horizontal,
-          children: [ListView.builder(
+          children: [ListView.separated(
+            separatorBuilder: (context, index) => const SizedBox(width: 5),
               itemCount: widget.operationModes.nbrOfModes(),
               shrinkWrap: true,
               scrollDirection: Axis.horizontal,
               itemBuilder: (context, index) {
                 bool indexIsCurrentMode = widget.operationModes.currentIndex() == index;
                 bool currentModeIsValid = indexIsCurrentMode ? widget.operationModes.currentIndexIsValid() : false;
+
+                Color myForegroundColor = indexIsCurrentMode ? Colors.white : Colors.blue;
+                Color myBackgroundColor = indexIsCurrentMode ? Colors.blue : Colors.white;
+                Color myBorderColor = indexIsCurrentMode ? Colors.blue : Colors.blue;
+
                 return OutlinedButton(
                     onPressed: () {
                       widget.operationModes.selectIndex(index, widget.topHierarchy ? widget.operationModes : null);
@@ -52,20 +61,20 @@ class _OperationModesSelectionViewState extends State<OperationModesSelectionVie
                       setState(() {});
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: indexIsCurrentMode
-                          ? Colors.amber
-                          : Colors.white,
+                      foregroundColor: myForegroundColor,
+                      backgroundColor: myBackgroundColor,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
                       side: BorderSide(
-                        color: indexIsCurrentMode
-                            ? (currentModeIsValid ? Colors.blueGrey : Colors.red)
-                            : Colors.white,
+                        color: myBorderColor,
                       ),
                     ),
                     child: Text(widget.operationModes.modeName(index),
-                        style: TextStyle(color: Colors.brown[900])));
-              })],)
-    );
+                        style: TextStyle(color: myForegroundColor, backgroundColor:myBackgroundColor)));
+              }
+    )])),
+    Divider(color: Colors.blue, thickness: 4),
+    ]))
+    ;
   }
 }
 
@@ -110,6 +119,9 @@ class _OperationModesSelectionViewState2 extends State<OperationModesSelectionVi
               scrollDirection: Axis.horizontal,
               itemBuilder: (context, index) {
                 bool indexIsCurrentMode = widget.operationModes.modeName(index) == currentSelectionName;
+                Color myForegroundColor = indexIsCurrentMode ? Colors.white : Colors.blue;
+                Color myBackgroundColor = indexIsCurrentMode ? Colors.blue : Colors.white;
+                Color myBorderColor = indexIsCurrentMode ? Colors.blue : Colors.blue;
                 return OutlinedButton(
                     onPressed: () {
                       currentSelectionName = widget.operationModes.modeName(index);
@@ -117,88 +129,21 @@ class _OperationModesSelectionViewState2 extends State<OperationModesSelectionVi
                       setState(() {});
                     },
                     style: OutlinedButton.styleFrom(
-                      foregroundColor: indexIsCurrentMode
-                          ? Colors.amber
-                          : Colors.white,
+                      foregroundColor: myForegroundColor,
                       side: BorderSide(
-                        color: indexIsCurrentMode
-                            ? Colors.amber
-                            : Colors.white,
+                        color: myBorderColor,
                       ),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10.0)),
                     ),
                     child: Text(widget.operationModes.modeName(index),
-                        style: TextStyle(color: Colors.brown[900])));
+                        style: TextStyle(color: myForegroundColor, backgroundColor:myBackgroundColor)));
               })],));
   }
 }
-/*
-
-class OperationModesSelectionInternalView extends StatefulWidget {
-  final OperationModes operationModes;
-  final Function selectionNameFunction;
-  final Function returnSelectedModeName;
-
-  const OperationModesSelectionInternalView({
-    Key? key,
-    required this.operationModes,
-    required this.selectionNameFunction,
-    required this.returnSelectedModeName,
-  }) : super(key: key);
-
-  @override
-  State<OperationModesSelectionInternalView> createState() =>_OperationModesSelectionInternalViewState();
-}
-
-class _OperationModesSelectionInternalViewState extends State<OperationModesSelectionInternalView> {
-  String currentSelectionName = '';
-  @override
-  void initState() {
-    super.initState();
-    currentSelectionName = widget.selectionNameFunction();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (widget.operationModes.nbrOfModes() == 0) {
-      widget.returnSelectedModeName('');
-      return emptyWidget();
-    }
-    return SizedBox(
-        height: 50,
-        child: Row(
-          children: [ListView.builder(
-              itemCount: widget.operationModes.nbrOfModes(),
-              shrinkWrap: true,
-              scrollDirection: Axis.horizontal,
-              itemBuilder: (context, index) {
-                bool indexIsCurrentMode = widget.operationModes.modeName(index) == currentSelectionName;
-                return OutlinedButton(
-                    onPressed: () {
-                      currentSelectionName = widget.operationModes.modeName(index);
-                      widget.returnSelectedModeName(currentSelectionName);
-                      setState(() {});
-                    },
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: indexIsCurrentMode
-                          ? Colors.amber
-                          : Colors.white,
-                      side: BorderSide(
-                        color: indexIsCurrentMode
-                            ? Colors.amber
-                            : Colors.white,
-                      ),
-                    ),
-                    child: Text(widget.operationModes.modeName(index),
-                        style: TextStyle(color: Colors.brown[900])));
-              })],));
-  }
-}
-*/
 
 class OperationModesEditingView extends StatefulWidget {
   //final String operationModeSetFunctionName;
-  final Estate estate;
+  final Environment environment;
   final OperationModes operationModes;
   final Function selectionNameFunction;
   final Function returnSelectedModeName;
@@ -207,7 +152,7 @@ class OperationModesEditingView extends StatefulWidget {
   const OperationModesEditingView({
     Key? key,
     //required this.operationModeSetFunctionName,
-    required this.estate,
+    required this.environment,
     required this.operationModes,
     required this.selectionNameFunction,
     required this.returnSelectedModeName,
@@ -253,7 +198,7 @@ class _OperationModesEditingViewState extends State<OperationModesEditingView> {
                                 MaterialPageRoute(
                                   builder: (context) {
                                     return EditOperationModeView(
-                                        estate: widget.estate,
+                                        environment: widget.environment,
                                         initOperationModeName: widget.operationModes.modeName(index), //operationModes.currentModeName(),
                                         operationModes: widget.operationModes,
                                         parameterFunction: widget.parameterReadingFunction,

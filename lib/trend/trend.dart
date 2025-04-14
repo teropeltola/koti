@@ -187,11 +187,11 @@ class TrendData {
   @HiveField(0)
   int timestamp = 0;
   @HiveField(1)
-  String estateId = '';
+  String environmentId = '';
   @HiveField(2)
   String deviceId = '';
 
-  TrendData(this.timestamp, this.estateId, this.deviceId);
+  TrendData(this.timestamp, this.environmentId, this.deviceId);
 
 /*
   TrendData(DateTime dateTime, this.estateId, this.deviceId) {
@@ -211,43 +211,3 @@ class TrendData {
     return const Text('not implemented', style: TextStyle(color:Colors.red));
   }
 }
-
-/*
-class TrendElectricityPrice extends TrendData {
-  int endingTimestamp = 0;
-  double spotPrice = 0.0;
-  double transferPrice = 0.0;
-}
-
-
-
-class TrendOuman extends TrendData {
-
-}
-
-
- */
-/*
-class RecordDataItem<T> {
-  int millisecondsSinceEpoch = 0;
-  late T data;
-
-  RecordDataItem(this.millisecondsSinceEpoch, this.data);
-}
-
-class StatisticsCollection<T> {
-
-  List<RecordDataItem<T>> items = [];
-  StatisticsCollection() {
-  }
-
-  void record(T value) {
-    items.add(RecordDataItem(DateTime.now().millisecondsSinceEpoch, value));
-  }
-
-  List <RecordDataItem<T>> getTrend() {
-    return items;
-  }
-}
-
-*/

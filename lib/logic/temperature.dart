@@ -8,7 +8,7 @@ class Temperature {
   Temperature();
 
   double get value {
-    return _device.temperatureFunction();
+    return _device.outsideTemperatureFunction();
   }
 
   double get target {

@@ -8,7 +8,7 @@ class TestDevice extends Device {
     _x = x;
   }
 @override
-  double temperatureFunction() {
+  double outsideTemperatureFunction() {
     return _x;
   }
 }

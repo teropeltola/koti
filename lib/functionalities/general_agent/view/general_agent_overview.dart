@@ -84,7 +84,7 @@ class _GeneralAgentOverviewState extends State<GeneralAgentOverview> {
                               MaterialPageRoute(
                                 builder: (context) {
                                   return EditGeneralAgentView(
-                                    estate: myEstates.currentEstate(),
+                                    environment: myEstates.currentEstate().findEnvironmentFor(widget.generalAgent),
                                     generalAgent: widget.generalAgent,
                                   );
                                 },

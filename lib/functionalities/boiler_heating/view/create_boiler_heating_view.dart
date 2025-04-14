@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:koti/estate/environment.dart';
 import 'package:koti/functionalities/boiler_heating/view/controlled_devices_widget.dart';
 import 'package:koti/view/no_needed_resources_widget.dart';
 
@@ -16,9 +17,9 @@ import '../boiler_heating_functionality.dart';
 import 'boiler_heating_parameter_setting.dart';
 
 class CreateBoilerHeatingView extends StatefulWidget {
-  final Estate estate;
+  final Environment environment;
   const CreateBoilerHeatingView({Key? key,
-    required this.estate}) : super(key: key);
+    required this.environment}) : super(key: key);
 
   @override
   _CreateBoilerHeatingViewState createState() => _CreateBoilerHeatingViewState();
@@ -28,17 +29,19 @@ class _CreateBoilerHeatingViewState extends State<CreateBoilerHeatingView> {
   BoilerHeatingFunctionality boilerHeatingFunctionality = BoilerHeatingFunctionality();
   List <String> foundDeviceNames = [''];
   late DropdownContent possibleDevicesDropdown;
+  late Estate estate;
 
   @override
   void initState() {
     super.initState();
+    estate = widget.environment.myEstate();
     boilerHeatingFunctionality.addPredefinedOperationMode('Päällä', powerOnOffWaitingService , true);
     boilerHeatingFunctionality.addPredefinedOperationMode('Pois', powerOnOffWaitingService , false);
     refresh();
   }
 
   void refresh() {
-    foundDeviceNames = widget.estate.findPossibleDevices(deviceService: powerOnOffWaitingService);
+    foundDeviceNames = estate.findPossibleDevices(deviceService: powerOnOffWaitingService);
     int index = max(0, foundDeviceNames.indexOf(boilerHeatingFunctionality.id));
     possibleDevicesDropdown = DropdownContent(foundDeviceNames, '', index);
     setState(() {});
@@ -54,7 +57,7 @@ class _CreateBoilerHeatingViewState extends State<CreateBoilerHeatingView> {
     return Scaffold(
       appBar: AppBar(
         leading: interruptEditingWidget(context, () async {boilerHeatingFunctionality.remove();}),
-        title: appIconAndTitle(widget.estate.name, 'luo lämminvesivaraaja'),
+        title: appIconAndTitle(widget.environment.name, 'luo lämminvesivaraaja'),
       ), // new line
       body: SingleChildScrollView(
         child:
@@ -65,19 +68,19 @@ class _CreateBoilerHeatingViewState extends State<CreateBoilerHeatingView> {
                 controlledDevicesWidget('Ohjattava laite', 'Lämminvesivaraajan sähköohjaus', possibleDevicesDropdown, () {setState(() {});}),
                 operationModeHandling2(
                   context,
-                  widget.estate,
+                  widget.environment,
                   boilerHeatingFunctionality.operationModes,
                   boilerHeatingParameterSetting,
                   refresh
                 ),
                 readyWidget(
                         () async {
-                          Device device = widget.estate.myDeviceFromName(possibleDevicesDropdown.currentString());
+                          Device device = estate.myDeviceFromName(possibleDevicesDropdown.currentString());
                           boilerHeatingFunctionality.pair(device);
                           await boilerHeatingFunctionality.init();
                           await boilerHeatingFunctionality.operationModes.selectIndex(0);
-                          widget.estate.addFunctionality(boilerHeatingFunctionality);
-                          log.info('${widget.estate.name}: laite "${device.name}" liitetty lämminvesivaraajaan');
+                          widget.environment.addFunctionality(boilerHeatingFunctionality);
+                          log.info('${widget.environment.name}: laite "${device.name}" liitetty lämminvesivaraajaan');
                           Navigator.pop(context, true);
                         }
                     )
@@ -87,13 +90,13 @@ class _CreateBoilerHeatingViewState extends State<CreateBoilerHeatingView> {
   }
 }
 
-Future <bool> createBoilerWarmingSystem(BuildContext context, Estate estate) async {
+Future <bool> createBoilerWarmingSystem(BuildContext context, Environment environment) async {
 
   bool success = await Navigator.push(context, MaterialPageRoute(
       builder: (context)
       {
         return CreateBoilerHeatingView(
-            estate: estate
+            environment: environment
         );
       }
   ));

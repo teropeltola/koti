@@ -4,6 +4,7 @@ import 'package:koti/trend/trend_event.dart';
 
 import '../app_configurator.dart';
 import '../devices/device/device.dart';
+import '../estate/environment.dart';
 import '../estate/estate.dart';
 import 'observation.dart';
 import '../look_and_feel.dart';
@@ -19,23 +20,23 @@ class Events {
 
   }
 
-  void write(String estateId, String deviceId,
+  void write(String environmentId, String deviceId,
       ObservationLevel observationLevel, String eventText) {
     eventBox.add(TrendEvent(
       DateTime.now().millisecondsSinceEpoch,
-      estateId,
+      environmentId,
       deviceId,
       observationLevel,
       eventText));
 
     if ((observationLevel == ObservationLevel.ok) || (observationLevel == ObservationLevel.informatic)) {
-      log.info('${_estateAndDeviceHeader(estateId, deviceId)} $eventText');
+      log.info('${_estateAndDeviceHeader(environmentId, deviceId)} $eventText');
     }
     else if (observationLevel == ObservationLevel.warning) {
-      log.warning('${_estateAndDeviceHeader(estateId, deviceId)} $eventText');
+      log.warning('${_estateAndDeviceHeader(environmentId, deviceId)} $eventText');
     }
     else {
-      log.error('${_estateAndDeviceHeader(estateId, deviceId)} $eventText');
+      log.error('${_estateAndDeviceHeader(environmentId, deviceId)} $eventText');
     }
   }
 
@@ -44,7 +45,7 @@ class Events {
   }
 }
 
-String _estateName(String estateId) {
+String _environmentName(String estateId) {
   return myEstates.estateFromId(estateId).name;
 }
 
@@ -56,13 +57,27 @@ String _deviceName(String deviceId) {
   return d.name;
 }
 
-String _estateAndDeviceHeader(String estateId, String deviceId) {
-  if ((estateId == '') && (deviceId == '')) {
-    return '';
+String _estateAndDeviceHeader(String environmentId, String deviceId) {
+  String estateEnvironmentName = '';
+  if (environmentId == '') {
+    if (deviceId == '') {
+      return '';
+    }
   }
-  String estateName = (estateId == '') ? '' : _estateName(estateId);
+  else {
+    Environment environment = myEstates.environmentFromId(environmentId);
+    if (environment.hasParent()) {
+      estateEnvironmentName = '${environment
+          .myEstate()
+          .name}/${environment.name}';
+    }
+    else {
+      estateEnvironmentName = environment.name;
+    }
+  }
   String deviceNameAddition = (deviceId == '') ? '' : '/${_deviceName(deviceId)}';
-  return '$estateName$deviceNameAddition:';
+
+  return '$estateEnvironmentName$deviceNameAddition:';
 }
 
 Events events = Events();
@@ -73,13 +88,17 @@ Widget showEvent(TrendEvent trendEvent) {
         margin: myContainerMargin,
         padding: myContainerPadding,
         child: InputDecorator(
-            decoration: InputDecoration(labelText: timestampToDateTimeString(trendEvent.timestamp)),
+            decoration: InputDecoration(
+                labelText: '${timestampToDateTimeString(
+                      trendEvent.timestamp)}${_estateAndDeviceHeader(
+                                              trendEvent.environmentId,
+                                                  trendEvent.deviceId)}'),
             textAlignVertical: TextAlignVertical.top,
             child:
             Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget> [
-                  Text('${_estateAndDeviceHeader(trendEvent.estateId, trendEvent.deviceId)}${_observationLevelText(trendEvent.observationLevel)} ${trendEvent.text}')
+                  Text('${_observationLevelText(trendEvent.observationLevel)} ${trendEvent.text}')
                 ]
             )
         )

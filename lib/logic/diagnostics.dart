@@ -6,6 +6,7 @@ import 'package:koti/functionalities/functionality/functionality.dart';
 
 import '../app_configurator.dart';
 import '../devices/device/device.dart';
+import '../estate/environment.dart';
 import '../estate/estate.dart';
 import '../look_and_feel.dart';
 
@@ -172,7 +173,7 @@ class Diagnostics {
     }
 
     for (var connectedFunctionality in device.connectedFunctionalities) {
-      if (! estate.features.contains(connectedFunctionality)) {
+      if (estate.findEnvironmentFor(connectedFunctionality) == noEnvironment) {
         diagnosticsLog.add(
             ['Connected functionality "${connectedFunctionality.id} of device "${device.name}" in "${estate.name}" not in estate feature list']);
         success = false;

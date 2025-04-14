@@ -5,7 +5,6 @@ import 'package:hive/hive.dart';
 import 'package:koti/app_configurator.dart';
 import 'package:koti/foreground_configurator.dart';
 
-import 'package:koti/functionalities/electricity_price/json/electricity_price_parameters.dart';
 import 'package:koti/functionalities/electricity_price/trend_electricity.dart';
 import 'package:koti/functionalities/electricity_price/view/electricity_price_view.dart';
 import 'package:koti/interfaces/foreground_interface.dart';
@@ -13,21 +12,20 @@ import 'package:path_provider/path_provider.dart';
 import '../../devices/porssisahko/porssisahko.dart';
 import '../../estate/estate.dart';
 import '../../functionalities/functionality/functionality.dart';
-import '../../devices/porssisahko/json/porssisahko_data.dart';
 import '../../logic/electricity_price_data.dart';
 import '../../logic/my_change_notifier.dart';
 import '../../look_and_feel.dart';
 
 int constantSlotSize = 60; // constant parameter that can be patched
                            // eg. testing 1 or in future 15
-
+/*
 class XElectricityPriceTable {
   DateTime startingTime = DateTime(0);
   int slotSizeInMinutes = constantSlotSize;
   List <double> slotPrices = [];
 
   XElectricityPriceTable();
-/*
+
   int findIndex(DateTime myTime) {
     Duration diff = myTime.difference(startingTime);
 
@@ -166,161 +164,10 @@ class XElectricityPriceTable {
   int nbrOfMinutes() {
     return slotPrices.length*slotSizeInMinutes;
   }
-*/
-}
-
-enum PriceChange {decline, flat, increase}
-
-enum TariffType {constant, spot}
-
-enum DistributionTariffType {timeOfDay, constant}
-
-const vatMultiplier = 1.24;
-
-class ElectricityTariff {
-  String _name = '';
-  TariffType _tariffType = TariffType.spot;
-  double _parameterValue = 0.0;
-
-  ElectricityTariff();
-
-  String get name => _name;
-  set name(String newName) { _name = newName; }
-
-
-  void setValue (String newName, TariffType newType, double newParameter) {
-    _name = newName;
-    _tariffType = newType;
-    _parameterValue = newParameter;
-  }
-
-  double price(double stockPrice) {
-
-    if (_tariffType == TariffType.spot) {
-      return stockPrice  + _parameterValue;
-    }
-    else {
-      return _parameterValue;
-    }
-  }
-
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{};
-    json['name'] = _name;
-    json['type'] = _tariffType == TariffType.spot ? 'spot' : 'const';
-    json['par'] = _parameterValue;
-    return json;
-  }
-
-  ElectricityTariff.fromJson(Map<String, dynamic> json) {
-    _name = json['name'] ?? '';
-    _tariffType = (json['type'] == 'spot' ? TariffType.spot : TariffType.constant);
-    _parameterValue = json['par'];
-  }
 
 }
 
-class ElectricityDistributionPrice {
-  String _name = '';
-  DistributionTariffType _type = DistributionTariffType.timeOfDay;
-  int _dayTimeStartingHour = 0;
-  int _dayTimeEndingHour = 0;
-  double _dayTransferTariff = 0.0;
-  double _nightTransferTariff = 0.0;
-  double _electricityTax = 0.0;
-
-  ElectricityDistributionPrice();
-
-  String get name => _name;
-  set name(String newName) { _name = newName; }
-
-  void setTimeOfDayParameters(String newName,
-                              int dayTimeStarting,
-                              int dayTimeEnding,
-                              double dayTariff,
-                              double nightTariff,
-                              double electricityTax) {
-    _name = newName;
-    _type = DistributionTariffType.timeOfDay;
-    _dayTimeStartingHour = dayTimeStarting;
-    _dayTimeEndingHour = dayTimeEnding;
-    _dayTransferTariff = dayTariff;
-    _nightTransferTariff = nightTariff;
-    _electricityTax = electricityTax;
-  }
-
-  void setConstantParameters(String newName, double tariff, double electricityTax) {
-    _name = newName;
-    _type = DistributionTariffType.constant;
-    _dayTransferTariff = tariff;
-    _electricityTax = electricityTax;
-  }
-
-  bool constantTariff() {
-    return _type == TariffType.constant;
-  }
-
-  bool dayTime(int originalHour) {
-    int hour = originalHour % 24;
-    return ((hour >= _dayTimeStartingHour) && (hour < _dayTimeEndingHour));
-  }
-
-  double currentTransferTariff(int hour) {
-    if (constantTariff()) {
-      return _dayTransferTariff;
-    }
-    else {
-      return (dayTime(hour) ? _dayTransferTariff : _nightTransferTariff);
-    }
-  }
-
-  double price(int hour) {
-    return currentTransferTariff(hour) + _electricityTax;
-  }
-
-  // returns a timestamp of the time when the previous tariff change will
-  // occur earlier than the given timestamp
-  int previousTariffChange(int timestamp) {
-    if (constantTariff()) {
-      return 0;
-    }
-    else {
-      DateTime d = DateTime.fromMillisecondsSinceEpoch(timestamp);
-      int hour = d.hour;
-      if (dayTime(hour)) {
-        return DateTime(d.year, d.month, d.day, _dayTimeStartingHour).millisecondsSinceEpoch;
-      }
-      else {
-        int day = (d.hour < _dayTimeStartingHour) ? d.day-1 : d.day;
-        return DateTime(d.year, d.month, day, _dayTimeEndingHour).millisecondsSinceEpoch;
-      }
-    }
-  }
-
-  Map<String, dynamic> toJson() {
-    final json = <String, dynamic>{};
-    json['name'] = _name;
-    json['type'] = _type == DistributionTariffType.timeOfDay ? 'timeOfDay' : 'const';
-    json['dayTimeStarting'] = _dayTimeStartingHour;
-    json['dayTimeEnding'] = _dayTimeEndingHour;
-    json['dayTariff'] = _dayTransferTariff;
-    json['nightTariff'] = _nightTransferTariff;
-    json['electricityTax'] = _electricityTax;
-    return json;
-  }
-
-  ElectricityDistributionPrice.fromJson(Map<String, dynamic> json) {
-    _name = json['name'] ?? '';
-    _type = (json['type'] == 'timeOfDay' ? DistributionTariffType.timeOfDay : DistributionTariffType.constant);
-    _dayTimeStartingHour = json['dayTimeStarting'];
-    _dayTimeEndingHour = json['dayTimeEnding'];
-    _dayTransferTariff = json['dayTariff'];
-    _nightTransferTariff = json['nightTariff'];
-    _electricityTax = json['electricityTax'];
-  }
-
-}
-
+ */
 
 class ElectricityPriceDataNotifier extends MyChangeNotifier<ElectricityPriceData> {
   ElectricityPriceDataNotifier(super.initData);
@@ -328,9 +175,6 @@ class ElectricityPriceDataNotifier extends MyChangeNotifier<ElectricityPriceData
 
 class ElectricityPriceListener extends BroadcastListener<ElectricityPriceData>{
 }
-
-
-
 
 class ElectricityPrice extends Functionality {
 
@@ -341,9 +185,6 @@ class ElectricityPrice extends Functionality {
   //StockPriceListener stockPriceListener = StockPriceListener();
 
   ElectricityPriceDataNotifier electricity = ElectricityPriceDataNotifier(ElectricityPriceData());
-  BasicElectricityParameters parameters = BasicElectricityParameters();
-  ElectricityTariff tariff = ElectricityTariff();
-  ElectricityDistributionPrice distributionPrice = ElectricityDistributionPrice();
 
   ElectricityPrice() {
     myView = ElectricityGridBlock();
@@ -357,7 +198,6 @@ class ElectricityPrice extends Functionality {
   Future<void> updateElectricity() async {
     List <TrendElectricity> trendElectricityData = await getAllTrendData();
     electricity.data.storeElectricityPrice(trendElectricityData);
-    electricity.data.storeTransferPrice(distributionPrice);
     electricity.poke();
   }
 
@@ -372,13 +212,19 @@ class ElectricityPrice extends Functionality {
       log.error('ElectricityPrice connectedDevices is missing Porssisahko');
     }
     else {
+      String estateId = connectedDevices[0].myEstateId;
       Porssisahko stockElectricity = (connectedDevices[0] as Porssisahko);
+      Map<String, dynamic> parameters = {internetPageKey : stockElectricity.internetPage,
+        boxPathKey : await _trendDirectoryPath()};
+
+      parameters[estateIdKey] = estateId;
+      parameters[electricityTariffKey] = electricity.data.tariff.toJson();
+      parameters[distributionTariffKey] = electricity.data.distributionPrice.toJson();
 
       await foregroundInterface.defineDailyRecurringService(
           electricityPriceForegroundService,
           TimeOfDay(hour: stockElectricity.fetchingStartHour, minute: stockElectricity.fetchingStartMinutes),
-          {internetPageKey : stockElectricity.internetPage,
-                      boxPathKey : await _trendDirectoryPath()});
+          parameters);
 
       initOperationModes();
 
@@ -389,7 +235,7 @@ class ElectricityPrice extends Functionality {
   void initOperationModes() {
 
     operationModes.initModeStructure(
-        estate: myEstates.estateFromId(connectedDevices[0].myEstateId),
+        environment: myEstates.estateFromId(connectedDevices[0].myEstateId),
         parameterSettingFunctionName: '',
         deviceId: connectedDevices[0].id,
         deviceAttributes: [],
@@ -446,28 +292,20 @@ class ElectricityPrice extends Functionality {
         textLines: [
           'tunnus: $id',
           'latausaika: ${dumpTimeString(loadingTime)}',
-          'sähkösopimus: ${tariff.name}',
-          'jakelusopimus: ${distributionPrice.name}',
+          'sähkösopimus: ${electricity.data.tariff.name}',
+          'jakelusopimus: ${electricity.data.distributionPrice.name}',
         ],
         widgets: [
           dumpDataMyDevices(formatterWidget: formatterWidget)
         ]
     );
   }
-/*
-  @override
-  FunctionalityView myView() {
-    return ElectricityGridBlock(id);
-  }
-
-
- */
 
   @override
   Map<String, dynamic> toJson() {
     var json = super.toJson();
-    json['electricityTariff'] = tariff.toJson();
-    json['distributionTariff'] = distributionPrice.toJson();
+    json['electricityTariff'] = electricity.data.tariff.toJson();
+    json['distributionTariff'] = electricity.data.distributionPrice.toJson();
     return json;
   }
 
@@ -475,8 +313,8 @@ class ElectricityPrice extends Functionality {
   ElectricityPrice.fromJson(Map<String, dynamic> json)  : super.fromJson(json) {
     myView = ElectricityGridBlock();
     myView.setFunctionality(this);
-    tariff = ElectricityTariff.fromJson(json['electricityTariff']);
-    distributionPrice = ElectricityDistributionPrice.fromJson(json['distributionTariff']);
+    electricity.data.tariff = ElectricityTariff.fromJson(json['electricityTariff']);
+    electricity.data.distributionPrice = ElectricityDistributionPrice.fromJson(json['distributionTariff']);
   }
 }
 

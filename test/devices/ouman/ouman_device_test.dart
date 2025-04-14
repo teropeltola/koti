@@ -160,7 +160,7 @@ void main() {
       device.analyseRequest();
 
       expect(device.observationLevel(), ObservationLevel.informatic);
-      expect(device.temperatureFunction(),-3.0);
+      expect(device.outsideTemperatureFunction(),-3.0);
       expect(device.parameterValue('OutsideTemperature'), '-3.0');
       expect(device.oumanDataCodes().length,189);
 

@@ -170,7 +170,7 @@ void main() {
     device.name = 'TestDevice';
     device.id = '123';
     await device.init();
-    expect(device.temperatureFunction(),-99.9);
+    expect(device.outsideTemperatureFunction(),-99.9);
 
   });
 

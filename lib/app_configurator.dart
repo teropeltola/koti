@@ -4,6 +4,7 @@ import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pu
 import 'package:koti/devices/shelly_pro2/shelly_pro2.dart';
 import 'package:koti/devices/shelly_timer_switch/shelly_timer_switch.dart';
 import 'package:koti/devices/testing_switch_device/testing_switch_device.dart';
+import 'package:koti/devices/testing_thermostat_device/testing_thermostat_device.dart';
 import 'package:koti/devices/vehicle/vehicle.dart';
 import 'package:koti/devices/weather_service_provider/weather_service_provider.dart';
 import 'package:koti/functionalities/electricity_price/trend_electricity.dart';
@@ -62,6 +63,7 @@ class ApplicationDeviceTypes {
     MitsuHeatPumpDevice().addClassIntoApp();
     Device().addClassIntoApp();
     TestingSwitchDevice().addClassIntoApp();
+    TestingThermostatDevice().addClassIntoApp();
     Vehicle().addClassIntoApp();
     WeatherServiceProvider('', '', '').addClassIntoApp();
     Wifi().addClassIntoApp();

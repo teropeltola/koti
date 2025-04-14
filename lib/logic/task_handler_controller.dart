@@ -1,7 +1,10 @@
 // used from foreground service => no global data & service use
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:flutter_foreground_task/task_handler.dart';
+import 'package:koti/logic/price_collection.dart';
+import 'package:koti/logic/task_list.dart';
 
 
 import '../app_configurator.dart';
@@ -34,15 +37,14 @@ class TaskServiceFunctions {
     return _dummy;
   }
 
-  Future<bool> Function(Map <String, dynamic>)  getExecutionFunction(String serviceName) {
-    for (var taskServiceFunction in taskServiceFunctions) {
-      print('serviceName=$serviceName and taskServiceFunction.serviceName= ${taskServiceFunction.serviceName}');
-      if (taskServiceFunction.serviceName == serviceName) {
-        return taskServiceFunction.executionFunction;
+  int getExecutionFunctionIndex(String serviceName) {
+    for (int index=0; index < taskServiceFunctions.length; index++) {
+      if (taskServiceFunctions[index].serviceName == serviceName) {
+        return index;
       }
     }
     print('No task execution function found for service: $serviceName');
-    return _dummy;
+    return -1;
   }
 
 }
@@ -50,71 +52,12 @@ Future<bool> _dummy (Map<String, dynamic> data) async { return false;}
 
 TaskServiceFunctions taskFunctions = TaskServiceFunctions();
 
-class TaskItem {
-  String serviceName;
-  Map <String, dynamic> parameters = {};
-
-  DateTime nextExecution = DateTime.now();
-  Future<bool> Function(Map <String, dynamic>) taskExecutionFunction = _dummy;
-
-  TaskItem(this.serviceName, this.parameters) {
-    print('TaskItem: $serviceName');
-    taskExecutionFunction = taskFunctions.getExecutionFunction(serviceName);
-  }
-
-  void updateNextExecution() {
-    print('task item ${this.runtimeType.toString()} missing updateNextExecution');
-  }
-
-  @override
-  String toString() {
-    return '(taskName: $serviceName, nextExecution: ${nextExecution.toString()})';
-  }
-}
-
-class RecurringTask extends TaskItem {
-  int intervalInMinutes;
-
-  RecurringTask(String taskName, this.intervalInMinutes, Map <String, dynamic> parameters) : super(taskName, parameters);
-
-
-  @override
-  void updateNextExecution() {
-    nextExecution = nextExecution.add(Duration(minutes: intervalInMinutes));
-  }
-
-  @override
-  String toString() {
-    return '(recurring task: $serviceName, intervalInMinutes: $intervalInMinutes, nextExecution: ${nextExecution.toString()})';
-  }
-}
-
-class DailyRecurringTask extends TaskItem {
-  int hour = 0;
-  int minute = 0;
-
-  DailyRecurringTask(String taskName, this.hour, this.minute,  Map <String, dynamic> parameters) : super(taskName, parameters);
-
-
-  @override
-  void updateNextExecution() {
-    DateTime now = DateTime.now();
-    nextExecution = DateTime(now.year, now.month, now.day, hour, minute);
-    if (nextExecution.isBefore(now)) {
-      nextExecution = nextExecution.add(Duration(days: 1));
-    }
-  }
-
-  @override
-  String toString() {
-    return '(daily task: $serviceName, at ${hour.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')} nextExecution: ${nextExecution.toString()})';
-  }
-}
+PriceCollection priceCollection = PriceCollection();
 
 
 class TaskHandlerController {
 
-  List <TaskItem> tasks = [];
+  TaskList taskList = TaskList();
 
   bool appInitiated = false;
 
@@ -126,7 +69,7 @@ class TaskHandlerController {
 
   @override
   String toString() {
-    return tasks.toString();
+    return taskList.toString();
   }
 
   Future <void> initOnStart(DateTime timestamp, TaskStarter starter) async {
@@ -136,71 +79,119 @@ class TaskHandlerController {
     counter++;
   }
 
-  void _onRecurringService(Map<String, dynamic> data) {
-    final String serviceName = data[serviceNameKey] ?? 'serviceNameNotFound';
-    final int intervalInMinutes = data[intervalInMinutesKey] ?? 9999;
-    print('onRecurringService: $serviceName, $intervalInMinutes, $counter');
-    int index = tasks.indexWhere((element) => element.serviceName == serviceName);
+  void _removeExistingService(String id) {
+
+    int index = taskList.tasks.indexWhere((element) => element.id == id);
 
     if (index >= 0) {
-      tasks.removeAt(index);
+      taskList.tasks.removeAt(index);
     }
-    tasks.add(RecurringTask(serviceName, intervalInMinutes, data));
+  }
+
+  void _onIntervalService(Map<String, dynamic> data) {
+    final String serviceName = data[serviceNameKey] ?? 'serviceNameNotFound';
+    final String id = data[idKey] ?? 'idNotFound';
+    final bool recurring = data[recurringKey] ?? true;
+    final int intervalInMinutes = data[intervalInMinutesKey] ?? 9999;
+    print('IntervalService: $serviceName, $intervalInMinutes, ${recurring ? 'recurring' : 'not recurring'}, $counter');
+    _removeExistingService(data[idKey]);
+
+    taskList.tasks.add(IntervalTask(serviceName, id, recurring, intervalInMinutes, data, DateTime.now(),taskFunctions.getExecutionFunctionIndex(serviceName)));
     taskFunctions.getInitFunction(serviceName)(data);
   }
 
-  void _onDailyRecurringService(Map<String, dynamic> data) {
+  void _onTimeOfDayService(Map<String, dynamic> data) {
     final String serviceName = data[serviceNameKey] ?? 'serviceNameNotFound';
+    final String id = data[idKey] ?? 'idNotFound';
+    final bool recurring = data[recurringKey] ?? true;
+
     final int hour = data[timeOfDayHourKey] ?? 12;
     final int minute = data[timeOfDayMinuteKey] ?? 00;
-    print('onDailyRecurringService: $serviceName, $hour:$minute, $counter');
-    int index = tasks.indexWhere((element) => element.serviceName == serviceName);
+    print('onDailyRecurringService: $serviceName, $hour:$minute, ${recurring ? 'recurring' : 'not recurring'} $counter');
 
-    if (index >= 0) {
-      tasks.removeAt(index);
-    }
-    tasks.add(DailyRecurringTask(serviceName, hour, minute, data));
+    _removeExistingService(data[idKey]);
+
+    taskList.tasks.add(TimeOfDayTask(serviceName, id, recurring, hour, minute, data, DateTime.now(), taskFunctions.getExecutionFunctionIndex(serviceName)));
     taskFunctions.getInitFunction(serviceName)(data);
   }
 
-  void _onReadDataStructure() {
-    print('readDataStructure');
+  void _onUserTask(Map<String, dynamic> data) {
+    final bool timeOfDay = (data[timeOfDayHourKey] != null);
+    if (timeOfDay) {
+      _onTimeOfDayService(data);
+    }
+    else {
+      _onIntervalService(data);
+    }
   }
 
-  void onReceiveControl(Map <String, dynamic> data) {
+  Map <String, dynamic> _onReadDataStructure() {
+    final Map<String,dynamic> data = {
+      messageKey: messageData,
+      dataKey: taskList.toJson(),
+    };
+    print('TaskHandlerController.onReadDataStructure');
+    return data;
+  }
+
+  Map <String, dynamic> onReceiveControl(Map <String, dynamic> data) {
     counter++;
     print('onReceiveControlA: $counter' );
-    final String taskName = data[taskNameKey];
+    final String taskName = data[taskNameKey] ?? 'taskNameNotFound';
     print('onReceiveControlB: $taskName');
     switch (taskName) {
       case readDataStructureKey:
-        _onReadDataStructure();
+        return _onReadDataStructure();
         break;
-      case recurringServiceKey:
-        _onRecurringService(data);
+      case intervalServiceKey:
+        _onIntervalService(data);
         break;
-      case dailyRecurringServiceKey:
-        _onDailyRecurringService(data);
+      case timeOfDayServiceKey:
+        _onTimeOfDayService(data);
         break;
+      case userTaskKey:
+        _onUserTask(data);
+        break;
+
       default:
         print('Unknown task name: $taskName');
     }
+    return {};
   }
 
+  // onRepeatEvent is the main iteration function in foreground.
+  // The system invokes it in the frequently set interval.
   Future <void> onRepeatEvent(DateTime timestamp) async {
+    bool updateMainTask = false;
+    bool tasksToBeRemoved = false;
 
-    print('#ofTasks = ${tasks.length}');
-    for (var task in tasks) {
+    print('#ofTasks = ${taskList.tasks.length}');
+    for (var task in taskList.tasks) {
+
       if (timestamp.isAfter(task.nextExecution)) {
         // next execution time has passed
         print('next execution time has passed: $task');
-        bool success = await task.taskExecutionFunction(task.parameters);
+        bool success = await taskFunctions.taskServiceFunctions[task.taskExecutionFunctionIndex].executionFunction(task.parameters);
         if (success) {
-          // if successful task execution, update next execution time, otherwise
-          // leave the tasks in the list => it will be called again in the round
-          task.updateNextExecution();
+          // if not successful, then we leave the task in the list => it will be
+          // called again in the round
+          updateMainTask = true;
+
+          if (task.recurring) {
+            task.updateNextExecution();
+          }
+          else {
+            task.removeThis = true;
+            tasksToBeRemoved = true;
+          }
         }
       }
+    }
+    if (tasksToBeRemoved) {
+      taskList.removeMarked();
+    }
+    if (updateMainTask) {
+      FlutterForegroundTask.sendDataToMain(_onReadDataStructure());
     }
   }
 

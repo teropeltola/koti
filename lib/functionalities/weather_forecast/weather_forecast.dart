@@ -3,6 +3,7 @@ import 'package:koti/functionalities/weather_forecast/view/edit_weather_forecast
 
 import 'package:koti/functionalities/weather_forecast/view/weather_forecast_view.dart';
 import '../../devices/device/device.dart';
+import '../../estate/environment.dart';
 import '../../estate/estate.dart';
 import '../../look_and_feel.dart';
 import '../functionality/functionality.dart';
@@ -52,13 +53,13 @@ class WeatherForecast extends Functionality {
   }
 
   @override
-  Future<bool> editWidget(BuildContext context, bool createNew, Estate estate, Functionality functionality, Device device) async {
+  Future<bool> editWidget(BuildContext context, bool createNew, Environment environment, Functionality functionality, Device device) async {
     return await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) {
             return EditWeatherForecastView(
-                estate: estate,
+                environment: environment,
                 originalWeatherForecast: functionality as WeatherForecast,
                 callback: () {}
             );
@@ -85,17 +86,17 @@ class WeatherForecast extends Functionality {
     );
   }
   @override
-  Future<bool> Function(BuildContext context, Estate estate, Functionality functionality, Function callback)  myEditingFunction() {
+  Future<bool> Function(BuildContext context, Environment environment, Functionality functionality, Function callback)  myEditingFunction() {
     return editWeatherForecastFunctionality;
   }
 }
 
 
-Future<bool> editWeatherForecastFunctionality(BuildContext context, Estate estate, Functionality functionality, Function callback) async {
+Future<bool> editWeatherForecastFunctionality(BuildContext context, Environment environment, Functionality functionality, Function callback) async {
   bool success = await Navigator.push(context, MaterialPageRoute(
       builder: (context) {
         return EditWeatherForecastView(
-            estate: estate,
+            environment: environment,
             originalWeatherForecast: functionality as WeatherForecast,
             callback: callback
         );

@@ -1,10 +1,12 @@
 
 import 'package:flutter/material.dart';
 import 'package:koti/devices/mixins/on_off_switch.dart';
+import 'package:koti/functionalities/plain_switch_functionality/view/edit_plain_switch_view.dart';
 
 import 'package:koti/functionalities/plain_switch_functionality/view/plain_switch_functionality_view.dart';
 
 import '../../devices/device/device.dart';
+import '../../estate/environment.dart';
 import '../../estate/estate.dart';
 import '../../logic/device_attribute_control.dart';
 import '../../logic/services.dart';
@@ -28,7 +30,7 @@ class PlainSwitchFunctionality extends Functionality {
   void initStructures() {
 
     operationModes.initModeStructure(
-        estate: myEstates.currentEstate(),
+        environment: myEstates.currentEstate(),
         parameterSettingFunctionName: '',
         deviceId: connectedDevices.isEmpty ? '' : connectedDevices[0].id,
         deviceAttributes: [DeviceAttributeCapability.directControl],
@@ -79,10 +81,32 @@ class PlainSwitchFunctionality extends Functionality {
     return mySwitchDeviceService.services.peek();
   }
 
+  @override
+  Future<bool> Function(BuildContext context, Environment environment, Functionality functionality, Function callback)  myEditingFunction() {
+    return editPlainSwitchFunctionality;
+  }
+
+  @override
+  Future<bool> editWidget(BuildContext context, bool createNew, Environment environment, Functionality functionality, Device device) async {
+    return await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            return EditPlainSwitchView(
+                environment: environment,
+                switchFunctionality: functionality as PlainSwitchFunctionality,
+                callback: () {}
+            );
+          },
+        )
+    );
+  }
 
   @override
   PlainSwitchFunctionality clone() {
-    return PlainSwitchFunctionality.fromJson(toJson());
+    PlainSwitchFunctionality p = PlainSwitchFunctionality.fromJson(toJson());
+    p.initStructures();
+    return p;
   }
 
   @override
@@ -110,4 +134,16 @@ class PlainSwitchFunctionality extends Functionality {
     myView = PlainSwitchFunctionalityView();
     myView.setFunctionality(this);
   }
+}
+
+Future<bool> editPlainSwitchFunctionality(BuildContext context, Environment environment, Functionality functionality, Function callback) async {
+  bool success = await Navigator.push(context, MaterialPageRoute(
+      builder: (context) {
+        return EditPlainSwitchView(
+          environment: environment,
+          switchFunctionality: functionality as PlainSwitchFunctionality,
+          callback: callback
+        );
+      }));
+  return success;
 }

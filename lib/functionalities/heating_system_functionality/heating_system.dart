@@ -5,6 +5,7 @@ import 'package:koti/functionalities/heating_system_functionality/view/edit_heat
 import 'package:koti/functionalities/heating_system_functionality/view/heating_system_view.dart';
 import '../../devices/device/device.dart';
 import '../../devices/ouman/ouman_device.dart';
+import '../../estate/environment.dart';
 import '../../estate/estate.dart';
 import '../functionality/functionality.dart';
 
@@ -41,12 +42,12 @@ class HeatingSystem extends Functionality {
 */
 
   @override
-  Future<bool> editWidget(BuildContext context, bool createNew, Estate estate, Functionality functionality, Device device) async {
+  Future<bool> editWidget(BuildContext context, bool createNew, Environment environment, Functionality functionality, Device device) async {
     return await Navigator.push(context, MaterialPageRoute(
         builder: (context)
     {
       return EditHeatingSystemView(
-          estateName: estate.name,
+          environment: environment,
           heatingSystem: functionality as HeatingSystem
       );
     }

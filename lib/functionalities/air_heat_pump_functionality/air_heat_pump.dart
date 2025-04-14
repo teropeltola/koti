@@ -6,6 +6,7 @@ import 'package:koti/functionalities/air_heat_pump_functionality/view/air_heat_p
 import 'package:koti/functionalities/air_heat_pump_functionality/view/edit_air_pump_view.dart';
 import 'package:koti/operation_modes/operation_modes.dart';
 import '../../devices/device/device.dart';
+import '../../estate/environment.dart';
 import '../../estate/estate.dart';
 import '../../logic/device_attribute_control.dart';
 import '../../look_and_feel.dart';
@@ -28,7 +29,7 @@ class AirHeatPump extends Functionality {
 
   initStructures() {
     operationModes.initModeStructure(
-        estate: myEstates.currentEstate(),
+        environment: myEstates.currentEstate(),
         parameterSettingFunctionName: airHeatParameterFunction,
         deviceId: connectedDevices.isNotEmpty ? connectedDevices[0].id : '',
         deviceAttributes: [DeviceAttributeCapability.directControl],
@@ -91,12 +92,12 @@ class AirHeatPump extends Functionality {
 
 
   @override
-  Future<bool> editWidget(BuildContext context, bool createNew, Estate estate, Functionality functionality, Device device) async {
+  Future<bool> editWidget(BuildContext context, bool createNew, Environment environment, Functionality functionality, Device device) async {
     bool success = await Navigator.push(context, MaterialPageRoute(
         builder: (context)
         {
           return EditAirPumpView(
-              estate: estate,
+              environment: environment,
               airHeatPumpInput: this,
               callback: (){}
          );

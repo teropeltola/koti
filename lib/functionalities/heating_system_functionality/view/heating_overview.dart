@@ -112,7 +112,7 @@ class _HeatingOverviewState extends State<HeatingOverview> {
                               MaterialPageRoute(
                                 builder: (context) {
                                   return EditHeatingSystemView(
-                                    estateName: myEstates.currentEstate().name,
+                                    environment: myEstates.currentEstate().findEnvironmentFor(widget.heatingSystem),
                                     heatingSystem: widget.heatingSystem,
                                   );
                                 },

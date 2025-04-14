@@ -20,6 +20,7 @@ import '../devices/porssisahko/json/porssisahko_data.dart';
 import '../estate/estate.dart';
 import '../estate/view/edit_estate_view.dart';
 import '../estate/view/estate_list_view.dart';
+import '../foreground_configurator.dart';
 import '../functionalities/electricity_price/trend_electricity.dart';
 import '../functionalities/functionality/functionality.dart';
 import '../logic/diagnostics.dart';
@@ -94,13 +95,9 @@ Drawer myDrawerView( BuildContext context,
         ListTile(
           leading: const Icon(Icons.temple_hindu,
               color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
-          title: const Text('Testaa porssisahkoData', style: TextStyle(color: _primaryDrawerFontColor)),
+          title: const Text('Testaa foreground', style: TextStyle(color: _primaryDrawerFontColor)),
           onTap: () async {
-            String path = (await getApplicationDocumentsDirectory()).path;
-            ElectricityPriceForeground e = ElectricityPriceForeground(internetPage: 'https://api.porssisahko.net/v1/latest-prices.json',
-                directoryPath: path);
-            print('boxin koko lopussa ${e.electricityBox.length}');
-
+            await foregroundInterface.sendData(readDataStructureKey,{});
           }
           ),
 

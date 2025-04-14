@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koti/estate/environment.dart';
 
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
@@ -11,9 +12,9 @@ import '../../air_heat_pump_functionality/view/air_heat_pump_view.dart';
 import '../general_agent.dart';
 
 class EditGeneralAgentView extends StatefulWidget {
-  Estate estate;
+  Environment environment;
   GeneralAgent generalAgent;
-  EditGeneralAgentView({Key? key, required this.estate, required this.generalAgent}) : super(key: key);
+  EditGeneralAgentView({Key? key, required this.environment, required this.generalAgent}) : super(key: key);
 
   @override
   _EditGeneralAgentViewState createState() => _EditGeneralAgentViewState();
@@ -37,13 +38,13 @@ class _EditGeneralAgentViewState extends State<EditGeneralAgentView> {
                   Navigator.of(context).pop();
                 }
               }),
-          title: appIconAndTitle(widget.estate.name, GeneralAgent.functionalityName),
+          title: appIconAndTitle(widget.environment.name, GeneralAgent.functionalityName),
         ), // new line
         body: SingleChildScrollView(
             child: Column(children: <Widget>[
               operationModeHandling(
                 context,
-                widget.estate,
+                widget.environment,
                 widget.generalAgent.operationModes,
                 generalParameterSetting,
                 () {setState(() {});}
@@ -60,23 +61,6 @@ class _EditGeneralAgentViewState extends State<EditGeneralAgentView> {
             )
           ),
               readyWidget(() async {
-    /*
-                          Device device = widget.estate.myDeviceFromName(possibleDevicesDropdown.currentString());
-                          if (! widget.createNew) {
-                            widget.switchFunctionality.unPairAll();
-                            widget.estate.removeFunctionality(widget.switchFunctionality);
-                          }
-                          plainSwitchFunctionality.pair(device);
-                          widget.estate.addFunctionality(plainSwitchFunctionality);
-                          widget.estate.addView(plainSwitchFunctionality.myView());
-                          await plainSwitchFunctionality.init();
-                          widget.callback(plainSwitchFunctionality);
-                          log.info('${widget.estate.name}: laite ${device.name}(${device.id}) asetettu toimintoon: ${widget.switchType}"');
-                          showSnackbarMessage('laitteen tietoja päivitetty!');
-                          Navigator.pop(context, true);
-
-                           */
-
               })
 
             ]
@@ -87,7 +71,7 @@ class _EditGeneralAgentViewState extends State<EditGeneralAgentView> {
   }
 }
 
-Future <GeneralAgent> createGeneralAgent(BuildContext context, Estate estate, String serviceName) async {
+Future <GeneralAgent> createGeneralAgent(BuildContext context, Environment enviroment, String serviceName) async {
   GeneralAgent generalAgent = GeneralAgent();
   await generalAgent.init();
 
@@ -95,7 +79,7 @@ Future <GeneralAgent> createGeneralAgent(BuildContext context, Estate estate, St
       builder: (context)
       {
         return EditGeneralAgentView(
-            estate: estate,
+            environment: enviroment,
             generalAgent: generalAgent
         );
       }

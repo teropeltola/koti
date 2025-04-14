@@ -16,6 +16,7 @@ import '../shelly_blu_trv/shelly_blu_trv.dart';
 import '../shelly_pro2/shelly_pro2.dart';
 import '../shelly_timer_switch/shelly_timer_switch.dart';
 import '../testing_switch_device/testing_switch_device.dart';
+import '../testing_thermostat_device/testing_thermostat_device.dart';
 import '../vehicle/vehicle.dart';
 import '../wifi/wifi.dart';
 import 'device_state.dart';
@@ -147,7 +148,7 @@ class Device {
   }
 
 
-  double temperatureFunction() {
+  double outsideTemperatureFunction() {
     return temperatureNotAvailable;
   }
 
@@ -204,6 +205,9 @@ class Device {
     return 'laite';
   }
 
+  // this function is used by the inherited classes for checking it the device
+  // is allowed to create several times (default is no). If yes then the inherited
+  // class should override this function
   bool isReusableForFunctionalities() {
     return false;
   }
@@ -266,7 +270,13 @@ Device deviceFromTypeName(String typeName) {
     case  'ShellyBluGw':
       return ShellyBluGw();
     case 'ShellyBluTrv':
-      return ShellyBluTrv.empty(); {}
+      return ShellyBluTrv.empty();
+    case  'WeatherServiceProvider':
+      return WeatherServiceProvider('','','');
+    case 'TestingSwitchDevice':
+      return TestingSwitchDevice();
+    case 'TestingThermostatDevice':
+      return TestingThermostatDevice();
 
   }
   log.error('unknown type name "$typeName"');
@@ -286,6 +296,7 @@ Device extendedDeviceFromJson(Map<String, dynamic> json) {
     case 'WeatherServiceProvider': return WeatherServiceProvider.fromJson(json);
     case 'Vehicle': return Vehicle.fromJson(json);
     case 'TestingSwitchDevice': return TestingSwitchDevice.fromJson(json);
+    case 'TestingThermostatDevice': return TestingThermostatDevice.fromJson(json);
     case 'ShellyBluGw': return ShellyBluGw.fromJson(json);
     case 'ShellyBluTrv': return ShellyBluTrv.fromJson(json);
   }

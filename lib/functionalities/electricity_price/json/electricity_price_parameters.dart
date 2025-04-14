@@ -69,6 +69,13 @@ class ElectricityPriceParameters {
     }
   }
 
+  double vatMultiplier() {
+    return basicElectricityParameters.vatMultiplier;
+  }
+
+  double vatOf(double withVat) {
+    return withVat - (withVat / basicElectricityParameters.vatMultiplier);
+  }
 
 }
 
@@ -76,16 +83,19 @@ class BasicElectricityParameters {
   BasicElectricityParameters({
     this.electricityTax = 0.0,
     this.spotAddress = '',
-    this.spotSize = 60
+    this.spotSize = 60,
+    this.vatMultiplier = 1.255
   });
   late double electricityTax;
   late String spotAddress;
   late int spotSize;
+  late double vatMultiplier;
 
   BasicElectricityParameters.fromJson(Map<String, dynamic> json){
     electricityTax = _readDouble(json, 'electricityTax');
     spotAddress = json['spotAddress'] ?? '';
     spotSize = json['spotSize'] ?? 60;
+    vatMultiplier = json[ 'vatMultiplier'] ?? 1.255;
   }
 
   Map<String, dynamic> toJson() {
@@ -93,6 +103,7 @@ class BasicElectricityParameters {
     data['electricityTax'] = electricityTax;
     data['spotAddress'] = spotAddress;
     data['spotSize'] = spotSize;
+    data['vatMultiplier'] = vatMultiplier;
     return data;
   }
 }

@@ -7,6 +7,7 @@ import '../../../devices/device/device.dart';
 import '../../../estate/estate.dart';
 import '../../../functionalities/functionality/functionality.dart';
 import '../../../logic/dropdown_content.dart';
+import '../../../logic/electricity_price_data.dart';
 import '../../../look_and_feel.dart';
 import '../../../view/my_dropdown_widget.dart';
 import '../../../view/ready_widget.dart';
@@ -253,8 +254,8 @@ class _EditElectricityViewState extends State<EditElectricityView> {
                     )
                     : emptyWidget(),
                     readyWidget(() async {
-                      myElectricityPrice.tariff = _eTariff(electricityAgreement.currentIndex());
-                      myElectricityPrice.distributionPrice = _dTariff(electricityDistributionAgreement.currentIndex());
+                      myElectricityPrice.electricity.data.tariff = _eTariff(electricityAgreement.currentIndex());
+                      myElectricityPrice.electricity.data.distributionPrice = _dTariff(electricityDistributionAgreement.currentIndex());
                       await myElectricityPrice.init();
                       /*
                                 if (_functionality.currentIndex() == 0) {
@@ -305,10 +306,10 @@ class _EditElectricityShortViewState extends State<EditElectricityShortView> {
 
     myElectricityPrice = widget.estate.myDefaultElectricityPrice();
 
-    int eIndex = max(0, eAgreementNames.indexOf(myElectricityPrice.tariff.name));
+    int eIndex = max(0, eAgreementNames.indexOf(myElectricityPrice.electricity.data.tariff.name));
     electricityAgreement = DropdownContent(electricityPriceParameters.electricityAgreementNames(), '', eIndex);
 
-    int dIndex = max(0, dAgreementNames.indexOf(myElectricityPrice.distributionPrice.name));
+    int dIndex = max(0, dAgreementNames.indexOf(myElectricityPrice.electricity.data.distributionPrice.name));
     electricityDistributionAgreement = DropdownContent(electricityPriceParameters.eDistributionNames(), '', dIndex);
 
     refresh();
@@ -351,7 +352,7 @@ class _EditElectricityShortViewState extends State<EditElectricityShortView> {
                                                 electricityAgreement
                                                     .setIndex(newValue);
 
-                                                myElectricityPrice.tariff = _eTariff(newValue);
+                                                myElectricityPrice.electricity.data.tariff = _eTariff(newValue);
                                                 setState(() {});
                                               })),
                                     ),
@@ -363,7 +364,7 @@ class _EditElectricityShortViewState extends State<EditElectricityShortView> {
                                   child: Container(
                                     margin: myContainerMargin,
                                     padding: const EdgeInsets.fromLTRB(0, 8, 0, 2),
-                                    child: InputDecorator(
+child: InputDecorator(
                                       decoration:
                                       const InputDecoration(labelText: 'Siirtoyhtiö'),
                                       child: SizedBox(
@@ -375,7 +376,7 @@ class _EditElectricityShortViewState extends State<EditElectricityShortView> {
                                               setValue: (newValue) {
                                                 electricityDistributionAgreement
                                                     .setIndex(newValue);
-                                                myElectricityPrice.distributionPrice = _dTariff(newValue);
+                                                myElectricityPrice.electricity.data.distributionPrice = _dTariff(newValue);
                                                 setState(() {});
                                               })),
                                     ),

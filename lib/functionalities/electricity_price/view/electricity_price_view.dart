@@ -175,6 +175,26 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
                           );
                         }
                     ),
+                    IconButton(
+                        icon: const Icon(
+                            Icons.pie_chart,
+                            color: myPrimaryFontColor,
+                            size: 40),
+                        tooltip: 'hinnan jakauma',
+                        onPressed: () async {
+                          await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context)  {
+
+                                  return ElectricityPriceDistributionPieView(
+                                      electricityPrice: widget.electricityPrice
+                                  );
+                                },
+                              )
+                          );
+                        }
+                    ),
                   ]),
             )
     );
@@ -284,8 +304,6 @@ class ElectricityGridBlock extends FunctionalityView {
   }
 }
 
-
-
 class ElectricityPriceDumpView extends StatefulWidget {
   final ElectricityPrice electricityPrice;
   const ElectricityPriceDumpView({Key? key, required this.electricityPrice}) : super(key: key);
@@ -358,6 +376,109 @@ class _ElectricityPriceDumpViewState extends State<ElectricityPriceDumpView> {
   }
 }
 
+class ElectricityPriceDistributionPieView extends StatefulWidget {
+  final ElectricityPrice electricityPrice;
+  const ElectricityPriceDistributionPieView({Key? key, required this.electricityPrice}) : super(key: key);
+
+  @override
+  State<ElectricityPriceDistributionPieView> createState() => _ElectricityPriceDistributionPieViewState();
+}
+
+
+class _ElectricityPriceDistributionPieViewState extends State<ElectricityPriceDistributionPieView> {
+
+  ElectricityPriceData electricityPriceData = ElectricityPriceData();
+
+  PriceComponents priceComponents = PriceComponents();
+  double totalPrice = 0.0;
+
+  @override
+  void initState() {
+    super.initState();
+    electricityPriceData = widget.electricityPrice.getElectricityData();
+    priceComponents = electricityPriceData.currentPriceComponents();
+    totalPrice = electricityPriceData.currentPrice();
+  }
+
+  TableCell _myTableCell(String text) {
+    return TableCell(child: Padding(
+        padding: const EdgeInsets.all(8.0),
+    child: Text(text)
+    ));
+  }
+
+  TableRow _myRow(String text, double value1) {
+    return TableRow(
+      children: [
+        _myTableCell(text),
+        _myTableCell(currencyCentInText(value1)),
+        _myTableCell('${(value1/totalPrice*100).toStringAsFixed(1)} %'),
+      ]
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+        appBar: AppBar(
+            title: appIconAndTitle('Sähkön hinta','jakauma'),
+            backgroundColor: myPrimaryColor,
+            iconTheme: const IconThemeData(color:myPrimaryFontColor)
+        ),// new line
+        body: SingleChildScrollView( child: Column(children: <Widget>[
+          Text('Sähkön hintajakauma (/kWh) tällä hetkellä'),
+          Container(
+            margin: EdgeInsets.all(10),
+            child: Table(
+                border: TableBorder.all(),
+                columnWidths: const <int, TableColumnWidth>{
+                  0: FlexColumnWidth(4),
+                  1: FlexColumnWidth(2),
+                  2: FlexColumnWidth(2),
+                },
+                children: [
+                  TableRow(
+                    children: [
+                      _myTableCell( 'laji'),
+                      _myTableCell( 'hinta'),
+                      _myTableCell( 'osuus %'),
+                    ]
+                  ),
+                  _myRow('Hinta yhteensä', totalPrice),
+                  _myRow('- Sähkösopimus yht', priceComponents.spot+priceComponents.electricityPriceMargin+priceComponents.electricityPriceVat),
+                  _myRow('   - spot-hinta', priceComponents.spot),
+                  _myRow('   - sähkökate', priceComponents.electricityPriceMargin),
+                  _myRow('   - alv sähköstä', priceComponents.electricityPriceVat),
+                  _myRow('- Siirtosopimus yht', priceComponents.distributionPrice+priceComponents.distributionVat+priceComponents.electricityTax),
+                  _myRow('   - siirto', priceComponents.distributionPrice),
+                  _myRow('   - sähkövero', priceComponents.electricityTax),
+                  _myRow('   - alv siirrosta', priceComponents.distributionVat),
+                  _myRow('Verot yhteensä', priceComponents.distributionVat+priceComponents.electricityTax+priceComponents.electricityPriceVat),
+                ]
+          )
+          )
+        ]
+          ),
+        ),
+        bottomNavigationBar: Container(
+          height: bottomNavigatorHeight,
+          alignment: AlignmentDirectional.topCenter,
+          color: myPrimaryColor,
+          child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: <Widget>[
+                IconButton(
+                    icon: const Icon(Icons.share,
+                        color:myPrimaryFontColor,
+                        size:40),
+                    tooltip: 'jaa näyttö somessa',
+                    onPressed: () async {}
+                ),
+              ]),
+        )
+    );
+  }
+}
 
 
 

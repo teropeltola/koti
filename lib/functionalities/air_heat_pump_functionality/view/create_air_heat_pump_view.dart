@@ -12,13 +12,16 @@ import '../../../../look_and_feel.dart';
 import '../../../../operation_modes/view/edit_generic_operation_modes_view.dart';
 import '../../../../view/ready_widget.dart';
 import '../../../../view/interrupt_editing_widget.dart';
+import '../../../estate/environment.dart';
+import '../../../logic/events.dart';
+import '../../../logic/observation.dart';
 import '../../../operation_modes/view/edit_operation_mode_view.dart';
 import '../air_heat_pump.dart';
 
 class CreateAirHeatPumpView extends StatefulWidget {
-  final Estate estate;
+  final Environment environment;
   const CreateAirHeatPumpView({Key? key,
-    required this.estate}) : super(key: key);
+    required this.environment}) : super(key: key);
 
   @override
   _CreateAirHeatPumpViewState createState() => _CreateAirHeatPumpViewState();
@@ -28,17 +31,19 @@ class _CreateAirHeatPumpViewState extends State<CreateAirHeatPumpView> {
   AirHeatPump airHeatPump = AirHeatPump();
   List <String> foundDeviceNames = [''];
   late DropdownContent possibleDevicesDropdown;
+  late Estate estate;
 
   @override
   void initState() {
     super.initState();
+    estate = widget.environment.myEstate();
     airHeatPump.addPredefinedOperationMode('Päällä', powerOnOffWaitingService , true);
     airHeatPump.addPredefinedOperationMode('Pois', powerOnOffWaitingService , false);
     refresh();
   }
 
   void refresh() {
-    foundDeviceNames = widget.estate.findPossibleDevices(deviceService: airHeatPumpService);
+    foundDeviceNames = estate.findPossibleDevices(deviceService: airHeatPumpService);
     int index = max(0, foundDeviceNames.indexOf(airHeatPump.id));
     possibleDevicesDropdown = DropdownContent(foundDeviceNames, '', index);
     setState(() {});
@@ -54,7 +59,7 @@ class _CreateAirHeatPumpViewState extends State<CreateAirHeatPumpView> {
     return Scaffold(
       appBar: AppBar(
         leading: interruptEditingWidget(context, () async {airHeatPump.remove();}),
-        title: appIconAndTitle(widget.estate.name, 'luo ilmalämpöpumppu'),
+        title: appIconAndTitle(widget.environment.name, 'luo ilmalämpöpumppu'),
       ), // new line
       body: SingleChildScrollView(
         child:
@@ -65,19 +70,19 @@ class _CreateAirHeatPumpViewState extends State<CreateAirHeatPumpView> {
                 controlledDevicesWidget('Ohjattava laite', 'Ilmalämpöpumppu', possibleDevicesDropdown, () {setState(() {});}),
                 operationModeHandling2(
                   context,
-                  widget.estate,
+                  widget.environment,
                   airHeatPump.operationModes,
                   airPumpParameterSetting,
                   refresh
                 ),
                 readyWidget(
                         () async {
-                          Device device = widget.estate.myDeviceFromName(possibleDevicesDropdown.currentString());
+                          Device device = estate.myDeviceFromName(possibleDevicesDropdown.currentString());
                           airHeatPump.pair(device);
                           await airHeatPump.init();
                           await airHeatPump.operationModes.selectIndex(0);
-                          widget.estate.addFunctionality(airHeatPump);
-                          log.info('${widget.estate.name}: laite "${device.name}" liitetty ilmalämpöpumpun ohjaukseen');
+                          widget.environment.addFunctionality(airHeatPump);
+                          events.write(widget.environment.id, device.id, ObservationLevel.informatic, 'laite "${device.name}" liitetty ilmalämpöpumpun ohjaukseen');
                           Navigator.pop(context, true);
                         }
                     )
@@ -87,13 +92,13 @@ class _CreateAirHeatPumpViewState extends State<CreateAirHeatPumpView> {
   }
 }
 
-Future <bool> createAirHeatPumpSystem(BuildContext context, Estate estate) async {
+Future <bool> createAirHeatPumpSystem(BuildContext context, Environment environment) async {
 
   bool success = await Navigator.push(context, MaterialPageRoute(
       builder: (context)
       {
         return CreateAirHeatPumpView(
-            estate: estate
+            environment: environment
         );
       }
   ));

@@ -67,7 +67,7 @@ class TrendDataAdapter extends TypeAdapter<TrendData> {
       ..writeByte(0)
       ..write(obj.timestamp)
       ..writeByte(1)
-      ..write(obj.estateId)
+      ..write(obj.environmentId)
       ..writeByte(2)
       ..write(obj.deviceId);
   }

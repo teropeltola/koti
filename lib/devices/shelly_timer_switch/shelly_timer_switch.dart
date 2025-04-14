@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:koti/devices/mixins/on_off_switch.dart';
+import 'package:koti/foreground_configurator.dart';
 import '../../estate/estate.dart';
+import '../../interfaces/foreground_interface.dart';
 import '../../logic/services.dart';
 import '../../trend/trend_switch.dart';
 import '../shelly/shelly_device.dart';
@@ -26,7 +28,8 @@ class ShellyTimerSwitch extends ShellyDevice with OnOffSwitch {
         boxName: id,
         getFunction: getPower,
         setFunction: setPower,
-        peekFunction: switchStatus
+        peekFunction: switchStatus,
+        defineTask: _defineTask
     );
 
     _initOfferedServices();
@@ -35,25 +38,37 @@ class ShellyTimerSwitch extends ShellyDevice with OnOffSwitch {
   }
 
   bool switchToggle() {
-    setPower(!switchOn.data, 'Painokytkin');
-    return switchOn.data;
+    setPower(!service.switchOn.data, 'Painokytkin');
+    return service.switchOn.data;
   }
 
   bool switchStatus() {
     // todo: should we read from the device?
-    return switchOn.data;
+    return service.switchOn.data;
   }
 
   Future <void> setPower(bool value, String caller) async {
-    switchOn.data = value;
+    service.switchOn.data = value;
     trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, value, caller));
-    await setSwitchOn(0, switchOn.data);
+    await setSwitchOn(0, service.switchOn.data);
   }
 
   Future<bool> getPower() async {
     return await powerOutputOn(0);
   }
 
+  Future<bool> _defineTask(Map<String, dynamic> parameters) async {
+    // todo: check the parameters from the caller
+    // update own parameters
+    bool powerParameter = parameters[powerOn] ?? false;
+    String _message = createSwitchCommand(0,powerParameter);
+    parameters[idKey] = foregroundCreateUniqueId(id);
+    parameters[messagesParameter] = [_message];
+
+    bool status = await foregroundInterface.defineUserTask(standardForegroundService, parameters);
+
+    return status;
+  }
 
   @override
   Widget dumpData({required Function formatterWidget}) {

@@ -2,17 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
-import 'package:koti/operation_modes/conditional_operation_modes.dart';
-import 'package:koti/operation_modes/hierarcical_operation_mode.dart';
-
 import '../devices/device/device.dart';
 import '../devices/wifi/wifi.dart';
 import '../functionalities/electricity_price/electricity_price.dart';
 import '../functionalities/functionality/functionality.dart';
-import '../functionalities/functionality/view/functionality_view.dart';
 import '../interfaces/estate_data_storage.dart';
 import '../logic/state_broker.dart';
-import '../logic/unique_id.dart';
 import '../operation_modes/operation_modes.dart';
 import '../look_and_feel.dart';
 import 'environment.dart';
@@ -20,21 +15,12 @@ import 'environment.dart';
 const String estateOperationParameterSettingFunction = 'estateParameterSetting';
 
 class Estate extends Environment {
-  String id = '';
-
-  // Environment env = Environment();
 
   List <Device> devices = [];
-  List <Functionality> features = [];
-  List <FunctionalityView> views = [];
-
-  OperationModes operationModes = OperationModes();
 
   StateBroker stateBroker = StateBroker();
 
-  Estate() {
-    id = UniqueId('e').get();
-  }
+  Estate();
 
   Estate.undefined() {
     name = '#undefined#';
@@ -62,18 +48,6 @@ class Estate extends Environment {
     return failedWifi;
   }
 
-  void initOperationModes() {
-    operationModes.initModeStructure(
-        estate: this,
-        parameterSettingFunctionName: estateOperationParameterSettingFunction,
-        deviceId: '',
-        deviceAttributes: [],
-        setFunction: _setOperationModeOn,
-        getFunction: _getParameters);
-
-    operationModes.addType(HierarchicalOperationMode().typeName());
-    operationModes.addType(ConditionalOperationModes().typeName());
-  }
 
   void init(String initName, String initMyWifi) {
     name = initName;
@@ -90,24 +64,22 @@ class Estate extends Environment {
     return newEstate;
   }
 
-  // note: this is called both with and without waiting
-  Future<bool> initDevicesAndFunctionalities() async {
-    // first non waiting activities
+  void updateDeviceData() {
     for (var d in devices) {
       d.myEstateId = id;
     }
-    for (var f in features) {
-      for (var d2 in f.connectedDevices) {
-        d2.connectedFunctionalities.add(f);
-      }
-    }
+  }
+  // note: this is called both with and without waiting
+  Future<bool> initDevicesAndFunctionalities() async {
+
+    // first non waiting activities
+    updateDeviceData();
+    connectFunctionalitiesToDevices();
+
     for (var d in devices) {
       await d.init();
     }
-    for (var f in features) {
-      await f.init();
-      addView(f.myView);
-    }
+    await initFunctionalities();
     return true;
   }
 
@@ -121,14 +93,6 @@ class Estate extends Environment {
     return ElectricityPrice();
   }
 
-  Functionality functionality(String functionalityId) {
-    for (var f in features) {
-      if (f.id == functionalityId) {
-        return f  ;
-      }
-    }
-    return allFunctionalities.noFunctionality();
-  }
 
   Device myDeviceFromName(String deviceName) {
     int deviceIndex = devices.indexWhere((device) => device.name == deviceName);
@@ -157,70 +121,20 @@ class Estate extends Environment {
     return false;
   }
 
-  void addFunctionality(Functionality newFunctionality) {
-
-    allFunctionalities.addFunctionality(newFunctionality);
-    features.add(newFunctionality);
-    addView(newFunctionality.myView);
-  }
-
   void removeDevice(String deviceId) {
     devices.removeWhere((e) => e.id == deviceId);
     // todo: pitäiskö poistaa myös device linkki?
   }
 
-  int _functionalityIndex(String id) {
-    return features.indexWhere((e)=>e.id == id);
-  }
-
-  void removeFunctionality(Functionality functionality) {
-
-    _removeView(functionality.id);
-    int index = _functionalityIndex(functionality.id);
-    if (index >= 0) {
-      features.removeAt(index);
-    }
-    else {
-      log.error('estate.removeFunctionality ${functionality.id} not found');
-    }
-  }
-
-  void addView(FunctionalityView newFunctionalityView) {
-    views.add(newFunctionalityView);
-  }
-
-  void _removeView(String functionalityId) {
-    views.removeWhere((e)=>e.myFunctionality().id == functionalityId);
-  }
-
+  @override
   void removeData(){
 
     for (var d in devices) {
       d.remove();
     }
 
-    for (var f in features) {
-      f.remove();
-    }
-
-    operationModes.clear();
+    super.removeData();
   }
-/*
-  void setViews() {
-    views.clear();
-  }
-
-
- */
-  List<String> operationModeNames() {
-    List<String> names = operationModes.operationModeNames();
-    for (var e in features) {
-      names += e.operationModes.operationModeNames();
-    }
-    names.sort();
-    return names;
-  }
-
 
   Device findDeviceWithService({required String deviceService}) {
     for (var device in devices) {
@@ -249,7 +163,6 @@ class Estate extends Environment {
     }
     return false;
   }
-
 
   Widget dumpData({required Function formatterWidget}) {
     return
@@ -286,40 +199,37 @@ class Estate extends Environment {
       );
   }
 
-  Estate.fromJson(Map<String, dynamic> json){
+  Estate.fromJson(Map<String, dynamic> json)  {
     name = json['name'] ?? '';
     id = json['id'] ?? '';
 
+    // note: not used super.json because devices need to be initialized first
+
     devices = List.from(json['devices']).map((e)=>extendedDeviceFromJson(e)).toList();
+
+    for (var e in json['subEnvironments'] ?? [] ) {
+      environments.add(Environment.fromJson(e));
+      environments.last.parentEnvironment = this;
+    }
+
     features = List.from(json['features']).map((e)=>extendedFunctionalityFromJson(e)).toList();
-    //views = List.from(json['views']).map((e)=>extendedFunctionalityViewFromJson(e)).toList();
+    for (var f in features) {
+      addView(f.myView);
+    }
     operationModes = OperationModes.fromJson(json['operationModes'] ?? {});
+
   }
 
   Map<String, dynamic> toJson() {
 
-
-    final json = <String, dynamic>{};
-
-    json['name'] = name;
-    json['id'] = id;
+    var json = super.toJson();
     json['devices'] = devices.map((e)=>e.toJson()).toList();
-    json['features'] = features.map((e)=>e.toJson()).toList();
-    // json['views'] = views.map((e)=>e.toJson()).toList();
-    json['operationModes'] = operationModes.toJson();
-
     return json;
   }
 
 }
 
-void _setOperationModeOn(Map<String, dynamic> parameters) {
-  log.info('Estate set operation parameters ${parameters.toString()}');
-}
 
-Map<String, dynamic> _getParameters() {
-  return {};
-}
 
 class Estates {
   List <Estate> estates = [];
@@ -417,14 +327,8 @@ class Estates {
         d.myEstateId = e.id;
         await d.init();
       }
-      for (var f in e.features) {
-        for (var d2 in f.connectedDevices) {
-          d2.connectedFunctionalities.add(f);
-        }
-        await f.init();
-        e.addView(f.myView);
-
-      }
+      e.connectFunctionalitiesToDevices();
+      await e.initFunctionalities();
       e.initOperationModes();
     }
   }
@@ -551,7 +455,7 @@ class Estates {
   }
 
   Estate estateFromId (String id) {
-    if (id == _candidateEstate.id) {
+    if ((_candidateActive) && (id == _candidateEstate.id)) {
       return _candidateEstate;
     }
     for (int index = 0; index <estates.length; index++) {
@@ -561,6 +465,23 @@ class Estates {
     }
     return noEstates;
   }
+
+  Environment environmentFromId (String id) {
+    if (_candidateActive) {
+      Environment e = _candidateEstate.findEnvironmentId(id);
+      if (e != noEnvironment) {
+        return e;
+      }
+    }
+    for (var estate in estates) {
+      Environment e = estate.findEnvironmentId(id);
+      if (e != noEnvironment) {
+        return e;
+      }
+    }
+    return noEnvironment;
+  }
+
 }
 
 Estates myEstates = Estates();

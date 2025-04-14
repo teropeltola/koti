@@ -3,6 +3,8 @@ import 'package:koti/devices/mixins/on_off_switch.dart';
 
 import 'package:koti/devices/shelly/json/shelly_input_config.dart';
 import '../../estate/estate.dart';
+import '../../foreground_configurator.dart';
+import '../../interfaces/foreground_interface.dart';
 import '../../logic/services.dart';
 import '../../trend/trend_switch.dart';
 import '../shelly/json/shelly_switch_config.dart';
@@ -47,7 +49,8 @@ class ShellyPro2 extends ShellyDevice with OnOffSwitch {
         boxName: id,
         getFunction: getFullPower,
         setFunction: setFullPower,
-        peekFunction: (){return switchStatus(ShellyPro2Id.both); }
+        peekFunction: (){return switchStatus(ShellyPro2Id.both); },
+        defineTask: _defineTask
     );
 
     _initOfferedServices();
@@ -107,6 +110,23 @@ class ShellyPro2 extends ShellyDevice with OnOffSwitch {
       switchStatusList[id.id()].output = on;
     }
   }
+
+  Future<bool> _defineTask(Map<String, dynamic> parameters) async {
+    // todo: not implemented
+    bool powerParameter = parameters[powerOn] ?? false;
+    List<String> _messages = [];
+    _messages.add(createSwitchCommand(ShellyPro2Id.id0.id(),powerParameter));
+    _messages.add(createSwitchCommand(ShellyPro2Id.id1.id(),powerParameter));
+    parameters[idKey] = foregroundCreateUniqueId(id);
+    parameters[messagesParameter] = _messages;
+
+    bool status = await foregroundInterface.defineUserTask(standardForegroundService, parameters);
+
+    return status;
+
+    return false;
+  }
+
 
   Future<void> getDataFromDevice() async {
 

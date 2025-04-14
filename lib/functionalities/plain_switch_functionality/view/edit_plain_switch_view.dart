@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:koti/functionalities/plain_switch_functionality/plain_switch_functionality.dart';
 
 import '../../../devices/device/device.dart';
+import '../../../estate/environment.dart';
 import '../../../estate/estate.dart';
 import '../../../logic/dropdown_content.dart';
 import '../../../logic/events.dart';
@@ -19,12 +20,12 @@ import '../../boiler_heating/view/boiler_heating_parameter_setting.dart';
 import '../../boiler_heating/view/controlled_devices_widget.dart';
 
 class EditPlainSwitchView extends StatefulWidget {
-  final Estate estate;
+  final Environment environment;
   final PlainSwitchFunctionality switchFunctionality;
   final Function callback;
 
   const EditPlainSwitchView({Key? key,
-    required this.estate,
+    required this.environment,
     required this.switchFunctionality,
     required this.callback}) : super(key: key);
 
@@ -36,10 +37,12 @@ class _EditPlainSwitchViewState extends State<EditPlainSwitchView> {
   late PlainSwitchFunctionality plainSwitch;
   List <String> foundDeviceNames = [''];
   late DropdownContent possibleDevicesDropdown;
+  late Estate estate;
 
   @override
   void initState() {
     super.initState();
+    estate = widget.environment.myEstate();
     plainSwitch = widget.switchFunctionality.clone();
     refresh();
   }
@@ -55,7 +58,7 @@ class _EditPlainSwitchViewState extends State<EditPlainSwitchView> {
   }
 
   void refresh() {
-    foundDeviceNames = findPossibleDevices(widget.estate.devices);
+    foundDeviceNames = findPossibleDevices(estate.devices);
     int index = max(0, foundDeviceNames.indexOf(plainSwitch.id));
     possibleDevicesDropdown = DropdownContent(foundDeviceNames, '', index);
   }
@@ -73,33 +76,33 @@ class _EditPlainSwitchViewState extends State<EditPlainSwitchView> {
           plainSwitch.remove();
           widget.callback();
         }),
-        title: appIconAndTitle(widget.estate.name, 'muokkaa kytkintä'),
+        title: appIconAndTitle(widget.environment.name, 'muokkaa kytkintä'),
       ), // new line
       body: SingleChildScrollView(
         child:
           foundDeviceNames.isEmpty
           ? noNeededResources(context, 'Asunnossa ei ole laitteita, jossa tarvittava virtakytkin.'
-                                        'Lisää ensin asuntoon vaadittava laite')
+                                        'Lisää ensin asuntoon sopiva laite')
           : Column(children: <Widget>[
             controlledDevicesWidget('Ohjattava laite', 'Sähkökatkaisin', possibleDevicesDropdown, () {setState(() {});}),
             operationModeHandling2(
                 context,
-                widget.estate,
+                widget.environment,
                 plainSwitch.operationModes,
                 boilerHeatingParameterSetting,
                 refresh
             ),
             readyWidget(() async {
-              Device device = widget.estate.myDeviceFromName(possibleDevicesDropdown.currentString());
+              Device device = estate.myDeviceFromName(possibleDevicesDropdown.currentString());
               // remove earlier version
               widget.switchFunctionality.unPairAll();
-              widget.estate.removeFunctionality(widget.switchFunctionality);
+              widget.environment.removeFunctionality(widget.switchFunctionality);
               // add new version
               plainSwitch.pair(device);
               await plainSwitch.init();
-              widget.estate.addFunctionality(plainSwitch);
-              widget.callback(plainSwitch);
-              events.write(widget.estate.id, device.id, ObservationLevel.informatic, 'laite asetettu sähkökytkimeksi');
+              widget.environment.addFunctionality(plainSwitch);
+              widget.callback();
+              events.write(estate.id, device.id, ObservationLevel.informatic, 'laite asetettu sähkökytkimeksi');
               showSnackbarMessage('laitteen tietoja päivitetty!');
               Navigator.pop(context, true);
             })

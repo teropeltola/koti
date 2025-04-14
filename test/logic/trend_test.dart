@@ -34,12 +34,12 @@ void main() {
 
       TrendData t2 = TrendData(DateTime(2024,12,4,10,0), 'estateId', 'deviceId');
       expect(DateTime.fromMillisecondsSinceEpoch(t2.timestamp), DateTime(2024,12,4,10,0));
-      expect(t2.estateId,'estateId');
+      expect(t2.environmentId,'estateId');
       expect(t2.deviceId,'deviceId');
 
       TrendEvent t3 = TrendEvent(DateTime(2024,12,4,10,0), 'estateId', 'deviceId', ObservationLevel.alarm, 'myObs');
       expect(DateTime.fromMillisecondsSinceEpoch(t3.timestamp), DateTime(2024,12,4,10,0));
-      expect(t3.estateId,'estateId');
+      expect(t3.environmentId,'estateId');
       expect(t3.deviceId,'deviceId');
       expect(t3.observationLevelIndex, ObservationLevel.alarm.index);
     });

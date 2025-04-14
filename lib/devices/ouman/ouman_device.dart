@@ -218,7 +218,7 @@ class OumanDevice extends DeviceWithLogin {
 
 
   @override
-  double temperatureFunction() {
+  double outsideTemperatureFunction() {
     return outsideTemperature();
   }
 

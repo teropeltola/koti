@@ -6,6 +6,7 @@ import 'package:koti/functionalities/boiler_heating/view/boiler_heating_function
 import 'package:koti/functionalities/boiler_heating/view/edit_boiler_heating_view.dart';
 import 'package:koti/service_catalog.dart';
 import '../../devices/device/device.dart';
+import '../../estate/environment.dart';
 import '../../estate/estate.dart';
 import '../../logic/device_attribute_control.dart';
 import '../../logic/state_broker.dart';
@@ -33,7 +34,7 @@ class BoilerHeatingFunctionality extends Functionality {
   void initStructures() {
 
     operationModes.initModeStructure(
-       estate: myEstates.currentEstate(),
+       environment: myEstates.currentEstate(),
        parameterSettingFunctionName: '',
        deviceId: connectedDevices.isEmpty ? '' : connectedDevices[0].id,
        deviceAttributes: [DeviceAttributeCapability.directControl],
@@ -140,7 +141,7 @@ class BoilerHeatingFunctionality extends Functionality {
   }
 
   @override
-  Future<bool> editWidget(BuildContext context, bool createNew, Estate estate, Functionality functionality, Device device) async {
+  Future<bool> editWidget(BuildContext context, bool createNew, Environment environment, Functionality functionality, Device device) async {
     /*
     bool success = await Navigator.push(context, MaterialPageRoute(
         builder: (context)
@@ -159,18 +160,18 @@ class BoilerHeatingFunctionality extends Functionality {
   }
 
   @override
-  Future<bool> Function(BuildContext context, Estate estate, Functionality functionality, Function callback)  myEditingFunction() {
+  Future<bool> Function(BuildContext context, Environment environment, Functionality functionality, Function callback)  myEditingFunction() {
     return editBoilerFunctionality;
   }
 }
 
-Future<bool> editBoilerFunctionality(BuildContext context, Estate estate, Functionality functionality, Function callback) async {
+Future<bool> editBoilerFunctionality(BuildContext context, Environment environment, Functionality functionality, Function callback) async {
 
     bool success = await Navigator.push(context, MaterialPageRoute(
         builder: (context)
     {
       return EditBoilerHeatingView(
-          estate: estate,
+          environment: environment,
           boilerHeating: functionality as BoilerHeatingFunctionality,
           callback: callback
       );

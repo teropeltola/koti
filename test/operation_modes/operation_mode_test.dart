@@ -194,7 +194,7 @@ void main() {
         estate.addDevice(device);
         final operationModes = estate.operationModes;
         operationModes.initModeStructure(
-            estate:estate,
+            environment:estate,
             parameterSettingFunctionName: 'dummy',
             deviceId:  device.id,
             deviceAttributes: [],

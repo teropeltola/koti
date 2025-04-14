@@ -14,25 +14,15 @@ class TrendEvent extends TrendData {
   String text = '';
 
   TrendEvent(int timestamp,
-      String estateId,
+      String environmentId,
       String deviceId,
       ObservationLevel initObservationLevel,
       String observationText) :
-        super(timestamp, estateId, deviceId) {
+        super(timestamp, environmentId, deviceId) {
     observationLevel = initObservationLevel;
     text = observationText;
   }
-  /*
-  TrendObservation(DateTime dateTime,
-      String estateId,
-      String deviceId,
-      ObservationLevel observationLevel,
-      String observationText) :
-        super(dateTime, estateId, deviceId) {
-    observationLevelIndex = observationLevel.index;
-    text = observationText;
-  }
-*/
+
   @override
   String hiveName() {
     return hiveTrendEventName;

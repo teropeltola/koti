@@ -14,6 +14,10 @@ const String celsius =  "\u2103";
 const String degree =  "\u00B0";
 const double noValueDouble = -99.9987654;
 
+bool noValue(double value) {
+  return value == noValueDouble;
+}
+
 ThemeData myTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -198,7 +202,7 @@ Future<bool> askUserGuidance(BuildContext context, String titleText, String cont
                   Navigator.pop(dialogContext, true);
                 }),
             TextButton(
-              child: const Text('En'),
+              child: const Text('Ei'),
               onPressed: () {
                 Navigator.pop(dialogContext, false);
               },

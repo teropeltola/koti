@@ -10,28 +10,6 @@ import '../../air_heat_pump_functionality/view/air_heat_pump_view.dart';
 
 List<String> possibleParameterTypes = [constWarming, relativeWarming ];
 
-Widget boilerHeatingParameterSetting(
-    OperationMode operationMode,
-    Estate estate,
-    OperationModes operationModes
-    )
-{
-  Widget myWidget;
-  if (operationMode is ConstantOperationMode) {
-    ConstantOperationMode cOM = operationMode;
-    myWidget=temperatureSelectionForm(temperatureParameterId, cOM.parameters);
-  }
-  else if (operationMode is ConditionalOperationModes) {
-    myWidget = ConditionalOperationView(
-        conditions: operationMode
-    );
-  }
-  else {
-    myWidget=const Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
-  }
-  return myWidget;
-}
-
 Widget temperatureSelectionForm(String parameterName, Map <String, dynamic> parameters) {
   double currentValue = parameters[parameterName] ?? 24.0;
 
@@ -48,4 +26,31 @@ Widget temperatureSelectionForm(String parameterName, Map <String, dynamic> para
       turnOn: true,
       onChanged: (val) {currentValue = val; parameters[parameterName] = val; }
   );
+}
+
+Widget boilerHeatingParameterSetting(
+    OperationMode operationMode,
+    Estate estate,
+    OperationModes operationModes
+    )
+{
+  Widget myWidget;
+  if (operationMode is ConstantOperationMode) {
+    ConstantOperationMode cOM = operationMode;
+    myWidget=temperatureSelectionForm(temperatureParameterId, cOM.parameters);
+  }
+  else if (operationMode is ConditionalOperationModes) {
+    myWidget = ConditionalOperationView(
+        conditions: operationMode
+    );
+  }
+  else if (operationMode is BoolServiceOperationMode) {
+    BoolServiceOperationMode bOS = operationMode;
+    myWidget = Text('ei oo toteutettu, käytä jo määriteltyjä tiloja');
+  }
+  else
+  {
+    myWidget=const Text('ei oo toteutettu, mutta ideana on antaa +/- arvoja edelliseen verrattuna');
+  }
+  return myWidget;
 }

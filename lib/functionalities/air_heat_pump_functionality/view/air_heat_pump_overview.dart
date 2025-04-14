@@ -77,7 +77,7 @@ class _AirHeatPumpState extends State<AirHeatPumpOverview> {
                               context, MaterialPageRoute(
                             builder: (context) {
                               return EditAirPumpView(
-                                  estate: myEstates.currentEstate(),
+                                  environment: myEstates.currentEstate().findEnvironmentFor(widget.airHeatPump),
                                   airHeatPumpInput: widget.airHeatPump,
                                   callback: (){});
                             }
@@ -131,9 +131,10 @@ Widget airHeatPumpSummary(MitsuHeatPumpDevice myAirHeatPumpDevice) {
             Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  Text('${myAirHeatPumpDevice.outsideTemperature().toStringAsFixed(1)} $celsius'),
-                  Text('${myAirHeatPumpDevice.measuredTemperature().toStringAsFixed(1)} $celsius'),
-                  Text('${myAirHeatPumpDevice.targetTemperature().toStringAsFixed(1)} $celsius'),
+                  Text(''),
+                  Text(temperatureString(myAirHeatPumpDevice.outsideTemperature())),
+                  Text(temperatureString(myAirHeatPumpDevice.measuredTemperature())),
+                  Text(temperatureString(myAirHeatPumpDevice.targetTemperature())),
                   Text(' ${myAirHeatPumpDevice.fanSpeed()}/5'),
                   Text(' ${myAirHeatPumpDevice.fetchingTime().hour.toString().padLeft(2,'0')}:${myAirHeatPumpDevice.fetchingTime().minute.toString().padLeft(2,'0')}'),
                 ])

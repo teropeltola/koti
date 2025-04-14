@@ -8,8 +8,6 @@ import '../device/device.dart';
 
 mixin OnOffSwitch {
 
-  StateBoolNotifier switchOn = StateBoolNotifier(false);
-
   late TrendBox<TrendSwitch> trendBox;
 
   late OnOffSwitchService service;
@@ -20,21 +18,22 @@ mixin OnOffSwitch {
         required String boxName,
         required Future<void> Function (bool, String) setFunction,
         required Future<bool> Function() getFunction,
-        required bool Function() peekFunction}
+        required bool Function() peekFunction,
+        required Future<bool> Function(Map<String, dynamic> ) defineTask}
   ) async {
 
     await trend.initBox<TrendSwitch>(boxName);
     trendBox = trend.open(boxName);
 
-    service = OnOffSwitchService(setFunction, getFunction, peekFunction, trendBox);
+    service = OnOffSwitchService(setFunction, getFunction, peekFunction, defineTask, trendBox);
 
     myEstate.stateBroker.initNotifyingBoolStateInformer(
         device: device,
         serviceName: powerOnOffStatusService,
-        stateBoolNotifier: switchOn,
+        stateBoolNotifier: service.switchOn,
         dataReadingFunction: peekFunction);
 
-    switchOn.data = await getFunction();
+    service.switchOn.data = await getFunction();
   }
 
   DeviceServiceClass<OnOffSwitchService> onOffServiceDefinition() {
@@ -45,12 +44,15 @@ mixin OnOffSwitch {
 
 class OnOffSwitchService {
 
+  StateBoolNotifier switchOn = StateBoolNotifier(false);
+
   late final Future<void> Function(bool, String) _setOnOff;
   late final Future<bool> Function() _getOnOff;
   late final bool Function() _peekOnOff;
+  late final Future<bool> Function(Map<String, dynamic>) _defineTask;
   late final TrendBox<TrendSwitch> _trendBox;
 
-  OnOffSwitchService(this._setOnOff, this._getOnOff, this._peekOnOff, this._trendBox);
+  OnOffSwitchService(this._setOnOff, this._getOnOff, this._peekOnOff, this._defineTask, this._trendBox);
 
   Future <void> set(bool value, {String caller=''}) async {
     await _setOnOff(value, caller);
@@ -68,6 +70,9 @@ class OnOffSwitchService {
     return _trendBox;
   }
 
+  Future<bool> defineTask(Map<String, dynamic> parameters) async {
+    return await _defineTask(parameters);
+  }
 }
 
 

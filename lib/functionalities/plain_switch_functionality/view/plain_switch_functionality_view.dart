@@ -1,7 +1,10 @@
 
 import 'package:flutter/material.dart';
+import 'package:koti/devices/testing_switch_device/testing_switch_device.dart';
+import 'package:provider/provider.dart';
 
 import '../../../devices/device/device.dart';
+import '../../../logic/state_broker.dart';
 import '../../../look_and_feel.dart';
 import '../../../trend/trend_switch.dart';
 import '../../functionality/view/functionality_view.dart';
@@ -30,7 +33,8 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
 
   @override
   Widget gridBlock(BuildContext context, Function callback) {
-
+    return ItemWidget(mySwitch(), mySwitch().mySwitchDeviceService.services.switchOn, callback);
+    /*
     return ElevatedButton(
         style: mySwitch().switchStatusPeek()
           ? buttonStyle(Colors.green, Colors.white)
@@ -63,7 +67,20 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
           )
             ])
     );
+
+     */
   }
+}
+
+ButtonStyle _buttonStyle (Color backgroundColor, Color foregroundColor) {
+  return   ElevatedButton.styleFrom(
+      backgroundColor: backgroundColor,
+      foregroundColor: foregroundColor,
+      padding: const EdgeInsets.all(0),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(10),
+      )
+  );
 }
 
 Future <void> _switchStatistics(BuildContext context, PlainSwitchFunctionality mySwitch, int switchNumber) async {
@@ -133,6 +150,59 @@ class _SwitchTrendViewState extends State<SwitchTrendView> {
               ]),
 
         )
+    );
+  }
+}
+
+
+
+class ItemWidget extends StatelessWidget {
+  final PlainSwitchFunctionality mySwitch;
+  final StateBoolNotifier myBoolNotifier;
+  final Function callback;
+
+  ItemWidget(this.mySwitch, this.myBoolNotifier, this.callback);
+
+  @override
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (context) => myBoolNotifier,
+      child: Consumer<StateBoolNotifier>(
+        builder: (context, notifier, child) {
+          return ElevatedButton(
+              style: notifier.data
+                  ? _buttonStyle(Colors.green, Colors.white)
+                  : _buttonStyle(Colors.grey, Colors.white),
+              onPressed: () async {
+                await mySwitch.toggle();
+                callback();
+              },
+              onLongPress: () async {
+                await _switchStatistics(context, mySwitch, 0);
+
+              },
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Text(
+                        mySwitch.myDevice().name,
+                        style: const TextStyle(
+                            fontSize: 12)),
+                    Icon(
+                      notifier.data
+                          ? Icons.power
+                          : Icons.power_off,
+                      size: 50,
+                      color:
+                      notifier.data
+                          ? Colors.yellowAccent
+                          : Colors.white,
+
+                    )
+                  ])
+          );
+        },
+      ),
     );
   }
 }

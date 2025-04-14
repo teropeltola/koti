@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:koti/devices/my_device_info.dart';
+import 'package:koti/estate/environment.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
@@ -18,9 +19,7 @@ void main() {
   });
 
   group('Estate Tests 1', () {
-
-    setUp(() {
-    });
+    setUp(() {});
 
     test('Add Device to Estate', () {
       Estate location = Estate();
@@ -42,51 +41,46 @@ void main() {
       e1.init('abc', 'wifi');
       var j = e1.toJson();
       Estate e2 = Estate.fromJson(j);
-      expect(e2.name,'abc');
-      expect(e2.myWifi,'wifi');
+      expect(e2.name, 'abc');
+      expect(e2.myWifi, 'wifi');
       expect(e2.devices.isNotEmpty, true);
-      expect(e2.devices[0].name,'wifi');
+      expect(e2.devices[0].name, 'wifi');
       expect(e2.features.isEmpty, true);
       expect(e2.views.isEmpty, true);
     });
 
     test('json test 2', () {
       Estate e1 = Estate();
-      e1.init('abc','wifi');
+      e1.init('abc', 'wifi');
       OumanDevice oumanDevice = OumanDevice();
       oumanDevice.name = 'oumanName';
       oumanDevice.ipAddress = '1.2.3.4';
       oumanDevice.id = 'oumanId';
       e1.addDevice(oumanDevice);
+
       HeatingSystem h = HeatingSystem();
-      allFunctionalities.addFunctionality(h);
       h.pair(oumanDevice);
       e1.addFunctionality(h);
-      HeatingSystemView hv = HeatingSystemView(h);
-      e1.addView(hv);
 
       var j = e1.toJson();
       Estate e2 = Estate.fromJson(j);
-      expect(e2.name,'abc');
-      expect(e2.id,e1.id);
-      expect(e2.myWifi,'wifi');
+      expect(e2.name, 'abc');
+      expect(e2.id, e1.id);
+      expect(e2.myWifi, 'wifi');
       expect(e2.devices.isEmpty, false);
       expect(e2.devices[1].name, 'oumanName');
       expect(e2.devices[1].id, 'oumanId');
       OumanDevice o2 = e2.devices[1] as OumanDevice;
       expect((e2.devices[1] as OumanDevice).ipAddress, '1.2.3.4');
 
-      Functionality fun = e2.views[0].myFunctionality as Functionality;
+      Functionality fun = e2.views[0].myFunctionality() as Functionality;
       HeatingSystem h2 = fun as HeatingSystem;
       expect(h2.id, h.id);
     });
-
   });
 
   group('Estates Tests 2', () {
-
-    setUp(() {
-    });
+    setUp(() {});
 
     test('Add Estate to Estates', () {
       Estates locations = Estates();
@@ -152,12 +146,57 @@ void main() {
       expect(location.myWifi == '', true);
       expect(location.myWifi == 'foo', false);
 
-      location.myWifi = 'foo';
+      location.init('name', 'foo');
       expect(location.myWifi == '', false);
       expect(location.myWifi == 'foo', true);
       expect(location.myWifi == 'woofoo', false);
     });
+  });
 
 
+  group('findEnviroment', () {
+    setUp(() {});
+
+    test('environmentFromId test', () {
+      Estates e = Estates();
+
+      expect(e.environmentFromId('123'), noEnvironment);
+
+      e.addEstate(Estate());
+
+      expect(e.environmentFromId('123'), noEnvironment);
+      expect(e.environmentFromId(e.estates[0].id), e.estates[0]);
+
+      e.estates[0].addSubEnvironment(Environment());
+      expect(e.environmentFromId('123'), noEnvironment);
+      expect(e.environmentFromId(e.estates[0].id), e.estates[0]);
+      expect(e.environmentFromId(e.estates[0].environments[0].id), e.estates[0].environments[0]);
+
+      e.addEstate(Estate());
+
+      expect(e.environmentFromId('123'), noEnvironment);
+      expect(e.environmentFromId(e.estates[0].id), e.estates[0]);
+      expect(e.environmentFromId(e.estates[1].id), e.estates[1]);
+      expect(e.environmentFromId(e.estates[0].environments[0].id), e.estates[0].environments[0]);
+
+      e.estates[1].addSubEnvironment(Environment());
+      expect(e.environmentFromId('123'), noEnvironment);
+      expect(e.environmentFromId(e.estates[0].id), e.estates[0]);
+      expect(e.environmentFromId(e.estates[1].id), e.estates[1]);
+      expect(e.environmentFromId(e.estates[0].environments[0].id), e.estates[0].environments[0]);
+      expect(e.environmentFromId(e.estates[1].environments[0].id), e.estates[1].environments[0]);
+
+      e.estates[0].name = 'e0';
+      e.estates[1].name = 'e1';
+
+      e.cloneCandidate('e1');
+      e.activateCandidate();
+      expect(e.environmentFromId(e.estates[0].environments[0].id), e.estates[0].environments[0]);
+      expect(e.environmentFromId(e.estates[1].environments[0].id), e.candidateEstate().environments[0]);
+
+      e.deactivateCandidate();
+      expect(e.environmentFromId(e.estates[1].environments[0].id), e.estates[1].environments[0]);
+
+    });
   });
 }

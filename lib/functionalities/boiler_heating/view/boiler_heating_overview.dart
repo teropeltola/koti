@@ -3,6 +3,7 @@ import 'package:koti/devices/shelly_blu_trv/shelly_blu_trv.dart';
 import 'package:koti/devices/shelly_pro2/shelly_pro2.dart';
 import 'package:koti/functionalities/boiler_heating/boiler_heating_functionality.dart';
 import 'package:koti/functionalities/boiler_heating/view/edit_boiler_heating_view.dart';
+import 'package:koti/functionalities/functionality/functionality.dart';
 import 'package:koti/logic/services.dart';
 import 'package:koti/view/temperature_setting_widget.dart';
 import '../../../devices/mixins/on_off_switch.dart';
@@ -29,8 +30,9 @@ class BoilerHeatingOverview extends StatefulWidget {
 class _BoilerHeatingState extends State<BoilerHeatingOverview> {
 
   StateBroker myStateBroker = myEstates.currentEstate().stateBroker;
-  late BoilerHeatingFunctionality boilerHeating;
-  late OumanDevice oumanDevice;//boiler heating can be updated with editing
+  late BoilerHeatingFunctionality boilerHeating; //boiler heating can be updated with editing
+  late String boilerHeatingId; // id used to find boiler heating from estate functionalities
+  late OumanDevice oumanDevice;
   List<TrendData> boilerTrendList = [];
   List<TrendOuman> oumanTrendList = [];
   List<TrendSwitch> switchTrendList = [];
@@ -39,17 +41,25 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
 
   List<ThermostatControlService> thermostatList = [];
 
+  TrendOuman latestOumanData = TrendOuman(0, '', '', noValueDouble, noValueDouble, noValueDouble, noValueDouble);
+
 
   @override
   void initState() {
     super.initState();
     boilerHeating = widget.boilerHeating;
+    boilerHeatingId = widget.boilerHeating.id;
+
     oumanDevice = myEstates.currentEstate().findDeviceWithService(deviceService: waterTemperatureService) as OumanDevice;
     mySwitch = boilerHeating.connectedDevices[0].services.getService(powerOnOffWaitingService) as DeviceServiceClass<OnOffSwitchService>;
 
     thermostatList = _getThermostatList();
 
     refresh();
+  }
+
+  BoilerHeatingFunctionality _newBoilerHeating() {
+    return allFunctionalities.findFunctionality(boilerHeatingId) as BoilerHeatingFunctionality;
   }
 
   List<ThermostatControlService> _getThermostatList() {
@@ -69,6 +79,7 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
 
   void refresh() async {
     oumanTrendList = await oumanDevice.getHistoryData();
+    latestOumanData = await oumanTrendList.last;
     switchTrendList = mySwitch.services.trendBox().getAll();
     boilerTrendList = [...oumanTrendList.cast<TrendData>(), ... switchTrendList.cast<TrendData>()];
     boilerTrendList.sort((a,b) => b.timestamp - a.timestamp);
@@ -113,6 +124,7 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
             _powerOn()
             ? const Icon(Icons.electric_bolt)
             : const Icon(Icons.flash_off),
+            /*
             Container(
                 margin: const EdgeInsets.fromLTRB(2,10,2,2),
                 padding: myContainerPadding,
@@ -144,6 +156,8 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
                     )
                 )
             ),
+
+             */
             Container(
               margin: const EdgeInsets.fromLTRB(2,10,2,2),
               padding: myContainerPadding,
@@ -153,10 +167,10 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                        Text('Veden lämpötila: ${_getFormattedValue(currentRadiatorWaterTemperatureService)} $celsius'),
-                        Text('Venttiilin asento: ${_getFormattedValue(radiatorValvePositionService)} %'),
-                        Text('Ohjattu lämpötilatarve: ${_getFormattedValue(requestedRadiatorWaterTemperatureService)} $celsius'),
-                        Text('Ulkolämpötila: ${_getFormattedValue(outsideTemperatureService)} $celsius'),
+                        Text('Veden lämpötila: ${temperatureString(latestOumanData.measuredWaterTemperature)}'),
+                        Text('Venttiilin asento: ${latestOumanData.valve.toStringAsFixed(0)} %'),
+                        Text('Ohjattu lämpötilatarve: ${temperatureString(latestOumanData.requestedWaterTemperature)}'),
+                        Text('Ulkolämpötila: ${temperatureString( latestOumanData.outsideTemperature)}'),
                   ]
                 )
               )
@@ -199,7 +213,7 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
                           MaterialPageRoute(
                             builder: (context) {
                               return EditBoilerHeatingView(
-                                  estate: myEstates.currentEstate(),
+                                  environment: myEstates.currentEstate().findEnvironmentFor(boilerHeating),
                                   boilerHeating: boilerHeating,
                                   callback: () {}
                               );
@@ -207,6 +221,7 @@ class _BoilerHeatingState extends State<BoilerHeatingOverview> {
                           )
                       );
                       if (successfullyEdited) {
+                        boilerHeating = _newBoilerHeating();
                         storeChanges();
                       }
                       setState(() {});

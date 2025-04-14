@@ -12,8 +12,8 @@ import 'package:koti/functionalities/electricity_price/trend_electricity.dart';
 import '../../app_configurator.dart';
 import '../../devices/porssisahko/json/porssisahko_data.dart';
 import '../../foreground_configurator.dart';
+import '../../logic/task_handler_controller.dart';
 import '../../look_and_feel.dart';
-
 
 class ElectricityPriceForeground {
   String internetPage = '';
@@ -68,7 +68,10 @@ class ElectricityPriceForeground {
         PorssisahkoData prices = PorssisahkoData.fromJson(
             json.decode(responseString));
 
-        storePrices(prices.convert());
+        List<TrendElectricity> trendElectricity = prices.convert();
+        storePrices(trendElectricity);
+        priceCollection.updateEstateData("",trendElectricity);
+        // TODO: estateID is not real
 
         return true;
       }
@@ -118,16 +121,16 @@ class ElectricityPriceForeground {
 }
 
 Future<bool> electricityPriceInitFunction(Map<String, dynamic> inputData) async {
-  ElectricityPriceForeground electricityPriceForeground = ElectricityPriceForeground.fromJson(inputData);
-  await electricityPriceForeground.init();
-  return await electricityPriceForeground.fetchDataFromNetwork();
-  electricityPriceForeground.close();
+
+  priceCollection.createPriceAgent(inputData[estateIdKey], inputData[electricityTariffKey], inputData[distributionTariffKey]);
+  return await electricityPriceExecutionFunction(inputData);
 }
 
 Future<bool> electricityPriceExecutionFunction(Map<String, dynamic> inputData) async {
   ElectricityPriceForeground electricityPriceForeground = ElectricityPriceForeground.fromJson(inputData);
   await electricityPriceForeground.init();
-  return await electricityPriceForeground.fetchDataFromNetwork();
+  bool status = await electricityPriceForeground.fetchDataFromNetwork();
   electricityPriceForeground.close();
+  return status;
 }
 

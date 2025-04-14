@@ -12,56 +12,6 @@ void main() {
   });
 
 
-  group('ElectricityTariff', () {
-    test('toJson converts tariff to JSON', () {
-      final tariff = ElectricityTariff();
-      tariff.setValue('name', TariffType.spot, 10.0);
-      expect(tariff.toJson(), equals({'name': 'name', 'type': 'spot', 'par': 10.0}));
-    });
-
-    // Add more tests for other methods in ElectricityTariff
-  });
-
-  group('ElectricityDistributionPrice', () {
-    test('toJson converts distribution price to JSON', () {
-      final distributionPrice = ElectricityDistributionPrice();
-      distributionPrice.setConstantParameters('Name', 5.0, 2.0);
-      expect(distributionPrice.toJson(), equals({
-        'name': 'Name',
-        'type': 'const',
-        'dayTimeStarting': 0,
-        'dayTimeEnding': 0,
-        'dayTariff': 5.0,
-        'nightTariff': 0.0,
-        'electricityTax': 2.0,
-      }));
-
-    });
-
-    test('nextTariffChange tests', () {
-      final d = ElectricityDistributionPrice();
-      d.setTimeOfDayParameters('Name', 7,22,20.0, 10.0, 2.0);
-
-      expect(d.constantTariff(), isFalse);
-      expect(d.dayTime(7), isTrue);
-      expect(d.dayTime(22), isFalse);
-
-      expect(d.currentTransferTariff(8), equals(20.0));
-      expect(d.currentTransferTariff(6), equals(10.0));
-
-      expect(d.price(8), equals(22.0));
-      expect(d.price(6), equals(12.0));
-
-      int nextChange = d.previousTariffChange(DateTime(2025,2,14,8).millisecondsSinceEpoch);
-      expect(nextChange, equals(DateTime(2025,2,14,7).millisecondsSinceEpoch));
-      expect(d.previousTariffChange(nextChange), nextChange);
-      expect(d.previousTariffChange(nextChange-1), DateTime(2025,2,13,22).millisecondsSinceEpoch);
-
-    });
-
-    // Add more tests for other methods in ElectricityDistributionPrice
-  });
-
   group('ElectricityPrice', () {
     test('isInitialized returns false if loadingTime is not set', () {
       final price = ElectricityPrice();

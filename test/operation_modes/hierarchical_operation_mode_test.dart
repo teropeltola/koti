@@ -18,14 +18,14 @@ void main() {
         'operationName': 'TestOperation'
       };
 
-      final functionalityAndOperationMode = FunctionalityAndOperationMode.fromJson(json);
+      final functionalityAndOperationMode = IdAndOperationMode.fromJson(json);
 
-      expect(functionalityAndOperationMode.functionalityId, 'TestFunctionality');
+      expect(functionalityAndOperationMode.id, 'TestFunctionality');
       expect(functionalityAndOperationMode.operationName, 'TestOperation');
     });
 
     test('toJson returns a JSON map containing proper data', () {
-      final functionalityAndOperationMode = FunctionalityAndOperationMode('TestFunctionality', 'TestOperation');
+      final functionalityAndOperationMode = IdAndOperationMode('TestFunctionality', 'TestOperation');
 
       final json = functionalityAndOperationMode.toJson();
 
@@ -52,17 +52,17 @@ void main() {
       final hierarchicalOperationMode = HierarchicalOperationMode.fromJson(json);
 
       expect(hierarchicalOperationMode.items.length, 2);
-      expect(hierarchicalOperationMode.items[0].functionalityId, 'TestFunctionality1');
+      expect(hierarchicalOperationMode.items[0].id, 'TestFunctionality1');
       expect(hierarchicalOperationMode.items[0].operationName, 'TestOperation1');
-      expect(hierarchicalOperationMode.items[1].functionalityId, 'TestFunctionality2');
+      expect(hierarchicalOperationMode.items[1].id, 'TestFunctionality2');
       expect(hierarchicalOperationMode.items[1].operationName, 'TestOperation2');
     });
 
     test('toJson returns a JSON map containing proper data', () {
       final hierarchicalOperationMode = HierarchicalOperationMode()
         ..items = [
-          FunctionalityAndOperationMode('TestFunctionality1', 'TestOperation1'),
-          FunctionalityAndOperationMode('TestFunctionality2', 'TestOperation2')
+          IdAndOperationMode('TestFunctionality1', 'TestOperation1'),
+          IdAndOperationMode('TestFunctionality2', 'TestOperation2')
         ];
 
       final json = hierarchicalOperationMode.toJson();
@@ -89,19 +89,19 @@ void main() {
       hierarchicalOperationMode.add('f1','t1');
       expect(hierarchicalOperationMode.items.length, 1);
       expect(hierarchicalOperationMode.operationCode('f1'), 't1');
-      expect(hierarchicalOperationMode.items[0].functionalityId, 'f1');
+      expect(hierarchicalOperationMode.items[0].id, 'f1');
       expect(hierarchicalOperationMode.items[0].operationName, 't1');
 
       hierarchicalOperationMode.add('f1','t1b');
       expect(hierarchicalOperationMode.items.length, 1);
-      expect(hierarchicalOperationMode.items[0].functionalityId, 'f1');
+      expect(hierarchicalOperationMode.items[0].id, 'f1');
       expect(hierarchicalOperationMode.items[0].operationName, 't1b');
       expect(hierarchicalOperationMode.operationCode('f1'), 't1b');
       expect(hierarchicalOperationMode.operationCode('f2'), '');
 
       hierarchicalOperationMode.add('f2','t1b');
       expect(hierarchicalOperationMode.items.length, 2);
-      expect(hierarchicalOperationMode.items[1].functionalityId, 'f2');
+      expect(hierarchicalOperationMode.items[1].id, 'f2');
       expect(hierarchicalOperationMode.items[1].operationName, 't1b');
       expect(hierarchicalOperationMode.operationCode('f1'), 't1b');
       expect(hierarchicalOperationMode.operationCode('f2'), 't1b');

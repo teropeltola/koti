@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 
 import 'package:koti/view/my_drawer_view.dart';
-import 'package:koti/operation_modes/view/operation_modes_selection_view.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import '../../app_configurator.dart';
 import '../../devices/device/device.dart';
 import '../../functionalities/functionality/functionality.dart';
 import '../../logic/diagnostics.dart';
+import '../../view/task_controller_view.dart';
+import '../environment.dart';
 import '../estate.dart';
 import '../../look_and_feel.dart';
 import 'edit_estate_view.dart';
+import 'environment_widget.dart';
 
 // global variable that is used to do diagnostics as long as it finds problems
 // (after finding errors this varible is turned off
@@ -33,18 +35,10 @@ class _EstateViewState extends State<EstateView> {
   @override
   void initState() {
     super.initState();
+
     refresh();
   }
 
-  List<Widget> _getGridViewItems(BuildContext context, Estate estate) {
-    List<Widget> allWidgets = [];
-    for (var view in estate.views) {
-      allWidgets.add(view.gridBlock(context, () {
-        setState(() {});
-      }));
-    }
-    return allWidgets;
-  }
 
   void refresh() {
     currentEstate = myEstates.estates[widget.estateIndex];
@@ -97,24 +91,7 @@ class _EstateViewState extends State<EstateView> {
         ]),
       drawer: Drawer(child: myDrawerView(context, () {widget.callback();})),
       body: SingleChildScrollView(
-        child: Column(children: [
-                OperationModesSelectionView(
-                  operationModes: currentEstate.operationModes,
-                  topHierarchy: true,
-                  callback: () {setState(() {}); }
-                ),
-                SizedBox(
-                    height: 400,
-                    child: GridView.count(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 10,
-                      mainAxisSpacing: 10,
-                      padding: const EdgeInsets.all(4.0),
-                      children: _getGridViewItems(context, currentEstate),
-                    )
-                )
-              ]
-              )
+        child: enviromentWidget(context, currentEstate, () {setState(() {});}),
       ),
       bottomNavigationBar: Container(
                 height: bottomNavigatorHeight,
@@ -123,8 +100,30 @@ class _EstateViewState extends State<EstateView> {
                 child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: <Widget>[
-                      IconButton(
-                          icon: const Icon(
+
+                          IconButton(
+                              icon: const Icon(
+                                  Icons.more_time_rounded,
+                                  color: myPrimaryFontColor,
+                                  size: 40),
+                              tooltip: 'aseta uusi tehtävä',
+                              onPressed: () async {
+                                await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) {
+                                        return TaskControllerView(
+                                            environment: currentEstate,
+                                            callback: () {});
+                                      },
+                                    )
+                                );
+                                // local variables like currentEstate need to be updated
+                                refresh();
+                              }
+                          ),
+                    IconButton(
+                      icon: const Icon(
                               Icons.edit,
                               color: myPrimaryFontColor,
                               size: 40),

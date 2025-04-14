@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
 import '../../../view/my_dropdown_widget.dart';
+import '../../estate/environment.dart';
 import '../../logic/dropdown_content.dart';
 import '../../view/ready_widget.dart';
 import '../conditional_operation_modes.dart';
@@ -52,7 +53,7 @@ class _PossibleOpModes {
       list[index].autoCreated = true;
       list[index].operationMode =
           operationModeTypeRegistry.createObject(list[index].name);
-      list[index].operationMode!.init(estateName, _operationModes);
+      list[index].operationMode!.init(/*estateName,*/ _operationModes);
     }
     return list[index].operationMode!;
   }
@@ -337,7 +338,7 @@ class _OperationModeNameForm extends StatelessWidget {
 
 Widget operationModeHandling2(
     BuildContext context,
-    Estate estate,
+    Environment environment,
     OperationModes operationModes,
     Function parameterReadingFunction,
     Function callback
@@ -355,7 +356,7 @@ Widget operationModeHandling2(
             operationModes.nbrOfModes() == 0
                 ? const Text('Toimintotiloja ei määritelty')
                 : OperationModesEditingView(
-                estate: estate,
+                environment: environment,
                 operationModes: operationModes,
                 parameterReadingFunction: parameterReadingFunction,
                 selectionNameFunction: ()=>selectedOpMode,
@@ -375,7 +376,7 @@ Widget operationModeHandling2(
                     MaterialPageRoute(
                       builder: (context) {
                         return EditOperationModeView(
-                            estate: estate,
+                            environment: environment,
                             initOperationModeName: '',
                             operationModes: operationModes,
                             parameterFunction: parameterReadingFunction,

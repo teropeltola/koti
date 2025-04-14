@@ -118,11 +118,17 @@ class ShellyDevice extends Device {
                   .toString()}');
           log.info(uri.toString());
         }
+        else {
+          log.info(
+              'VÄLIAIKAINEN JOTTA TIETÄÄ, PALJON NÄITÄ TULEE... $name/$commandName/rpcCall error: $errorClarification, ${x
+                  .toString()}');
+          log.info(uri.toString());
+        }
         return '';
       }
     }
     catch (e, st) {
-      log.handle(e, st, 'exception in shelly rpc ($commandName)');
+      log.handle(e, st, 'exception in shelly rpc (commandName: "$commandName", ipAddress: "$ipAddress", clarification: "$errorClarification")');
       errorClarification ='exception $e';
       return '';
     }
@@ -214,17 +220,25 @@ class ShellyDevice extends Device {
     return false;
   }
 
+  String _switchCommandString(int index, bool turnSwitchOn) {
+    return 'Switch.Set?id=$index&on=${turnSwitchOn?'true':'false'}';
+  }
   Future <void> setSwitchOn(int index, bool turnSwitchOn) async {
 
     try {
-      String response =  await rpcCall('Switch.Set?id=$index&on=${turnSwitchOn?'true':'false'}');
-      int i= 1;
+      String response =  await rpcCall(_switchCommandString(index, turnSwitchOn));
     }
     catch (e, st) {
-      log.handle(e, st, 'exception in shelly Switch.GetStatus');
+      log.handle(e, st, 'exception in shelly Switch.setSwitch');
       errorClarification = 'fromJson exception: $e';
     }
   }
+
+  String createSwitchCommand(int index, bool powerOn) { 
+
+    return _cmd(_switchCommandString(0, powerOn));
+  }
+
 
   Future <ShellyInputConfig> inputGetConfig(int index) async {
     ShellyInputConfig config = ShellyInputConfig.empty();

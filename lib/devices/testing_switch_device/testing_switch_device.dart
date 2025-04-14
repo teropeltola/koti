@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:koti/devices/testing_switch_device/view/edit_testing_switch_device_view.dart';
 import '../../estate/estate.dart';
+import '../../foreground_configurator.dart';
+import '../../interfaces/foreground_interface.dart';
 import '../../logic/services.dart';
 import '../../logic/unique_id.dart';
 import '../../service_catalog.dart';
@@ -46,7 +49,8 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
         boxName: _trendBoxName(),
         getFunction: asyncGetPower,
         setFunction: asyncSetPower,
-        peekFunction: switchStatus
+        peekFunction: switchStatus,
+        defineTask: defineTask
     );
 
     services.addService(onOffServiceDefinition());
@@ -56,21 +60,21 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
   }
 
   bool switchToggle() {
-    setPower(!switchOn.data, 'Painokytkin');
-    return switchOn.data;
+    setPower(!service.switchOn.data, 'Painokytkin');
+    return service.switchOn.data;
   }
 
   bool switchStatus() {
-    return switchOn.data;
+    return service.switchOn.data;
   }
 
   void setPower(bool value, String caller) {
-    switchOn.data = value;
+    service.switchOn.data = value;
     trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, value, caller));
   }
 
   bool getPower()  {
-    return switchOn.data;
+    return service.switchOn.data;
   }
 
   Future <void> asyncSetPower(bool value, String caller) async {
@@ -79,6 +83,21 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
 
   Future <bool> asyncGetPower() async {
     return getPower();
+  }
+
+  Future<bool> defineTask(Map<String, dynamic> parameters) async {
+    // todo: check the parameters from the caller
+    // update own parameters
+    parameters[idKey] = foregroundCreateUniqueId(id);
+    bool status = await foregroundInterface.defineUserTask(testOnOffForegroundService, parameters);
+    foregroundInterface.foregroundData.setServiceListener(testOnOffForegroundService, id, _foregroundListener);
+
+    return status;
+  }
+
+  void _foregroundListener(Map<String, dynamic> data) {
+    print('main: foregroundListener');
+    setPower(data[powerOn] ?? false, 'tehtävä');
   }
 
   @override
@@ -103,8 +122,8 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
               testingSwitchDevice: this,
               callback: (){}
           );
-        }));
-
+        })
+    );
   }
 
 
@@ -140,7 +159,22 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
   bool isReusableForFunctionalities() {
     return true;
   }
-
 }
 
+// foreground routines - not using the same address space
+Future<bool> testOnOffInitFunction(Map<String, dynamic> inputData) async {
+  return true;
+}
+
+Future<bool> testOnOffExecutionFunction(Map<String, dynamic> inputData) async {
+  print('foreground: testOnOffExecutionFunction');
+  Map<String, dynamic> response = {
+    messageKey: responseMessage,
+    serviceNameKey: testOnOffForegroundService,
+    idKey: inputData[idKey] ?? 'idNotFound',
+    powerOn: inputData[powerOn] ?? false
+  };
+  FlutterForegroundTask.sendDataToMain(response);
+  return true;
+}
 

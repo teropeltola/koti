@@ -28,6 +28,7 @@ class FunctionalityView {
     return   ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         foregroundColor: foregroundColor,
+        padding: const EdgeInsets.all(0),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         )

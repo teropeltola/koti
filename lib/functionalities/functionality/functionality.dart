@@ -8,6 +8,7 @@ import 'package:koti/functionalities/vehicle_charging/vehicle_charging.dart';
 import 'package:koti/functionalities/weather_forecast/weather_forecast.dart';
 
 import '../../devices/device/device.dart';
+import '../../estate/environment.dart';
 import '../../estate/estate.dart';
 import '../../operation_modes/operation_modes.dart';
 import '../../logic/unique_id.dart';
@@ -16,6 +17,7 @@ import '../air_heat_pump_functionality/air_heat_pump.dart';
 import '../electricity_price/electricity_price.dart';
 import '../general_agent/general_agent.dart';
 import '../radiator_water_circulation/radiator_water_circulation.dart';
+import '../thermostat/thermostat.dart';
 
 const String _functionalityFailure = 'functionalityFailure';
 
@@ -175,12 +177,12 @@ class Functionality {
   Future<void> init () async {
   }
 
-  Future<bool> editWidget(BuildContext context, bool createNew, Estate estate, Functionality functionality, Device device) async {
-    return await device.editWidget(context, estate);
+  Future<bool> editWidget(BuildContext context, bool createNew, Environment environment, Functionality functionality, Device device) async {
+    return await device.editWidget(context, environment.myEstate());
   }
 
   // returns a function for functionality editing. Each inherited class should implement their own version of this
-  Future<bool> Function(BuildContext context, Estate estate, Functionality functionality, Function callback)  myEditingFunction() {
+  Future<bool> Function(BuildContext context, Environment environment, Functionality functionality, Function callback)  myEditingFunction() {
     return editFunctionality;
   }
 
@@ -195,7 +197,7 @@ class Functionality {
   }
 
   //
-  List <String> _connectedDeviceNames() {
+  List <String> connectedDeviceNames() {
     if (connectedDevices.isEmpty) {
       return ['-'];
     }
@@ -213,7 +215,7 @@ class Functionality {
     return formatterWidget(
         headline: 'liitetyt laitteet',
         textLines:
-        _connectedDeviceNames(),
+        connectedDeviceNames(),
         widgets: List<Widget>.empty(growable: true)
     ) as Widget;
   }
@@ -245,7 +247,7 @@ class Functionality {
         connectedDevices.add(device);
       }
       else {
-        log.error('Functionality connectedDevice id "$deviceId" is missing in functionality "$id"');
+        log.error('Functionality.fromJson: connectedDevice "$deviceId" of functionality "$id" is not found');
       }
     }
     operationModes = OperationModes.fromJson(json['operationModes'] ?? {});
@@ -313,6 +315,10 @@ Functionality extendedFunctionalityFromJson( Map<String, dynamic> json) {
       case 'GeneralAgent':
         myFunctionality = GeneralAgent.fromJson(json);
         break;
+
+      case 'Thermostat':
+        myFunctionality = Thermostat.fromJson(json);
+        break;
       default:
         log.error('unknown functionality jsonObject($myType) not implemented');
         return allFunctionalities.noFunctionality();
@@ -333,7 +339,7 @@ Functionality extendedFunctionalityFromJson( Map<String, dynamic> json) {
 }
 
 
-Future<bool> editFunctionality(BuildContext context, Estate estate, Functionality functionality, Function callback) async {
+Future<bool> editFunctionality(BuildContext context, Environment environment, Functionality functionality, Function callback) async  {
   log.error('editFunctionality not implemented in ${functionality.runtimeType.toString()}');
   return false;
 }

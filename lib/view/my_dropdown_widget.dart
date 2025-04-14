@@ -33,10 +33,8 @@ class _MyDropdownWidgetState extends State<MyDropdownWidget> {
       value: dropdownValue,
       icon: const Icon(Icons.arrow_downward),
       iconSize: 14,
-      // elevation: 16,
       style: const TextStyle(//backgroundColor: Colors.white,
           color: mySecondaryFontColor,
-          //fontSize: 20,
           height: 1.2,
           fontWeight: FontWeight.bold),
       underline: emptyWidget(),
@@ -45,7 +43,8 @@ class _MyDropdownWidgetState extends State<MyDropdownWidget> {
         int index = widget.dropdownContent.optionIndex(dropdownValue);
         widget.dropdownContent.setIndex(index);
         widget.setValue(index);
-        setState(() {});
+        // TODO: CHECK IF THIS CHANGE HAS UNNECESSARY EFFECT (Done because of editThermometerView
+        // setState(() {});
       },
       items: widget.dropdownContent.options()
           .map<DropdownMenuItem<String>>((String value) {

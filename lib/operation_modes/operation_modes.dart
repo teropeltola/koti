@@ -6,6 +6,7 @@ import 'package:koti/operation_modes/conditional_operation_modes.dart';
 import 'package:koti/operation_modes/hierarcical_operation_mode.dart';
 import '../devices/device/device.dart';
 import '../devices/mixins/on_off_switch.dart';
+import '../estate/environment.dart';
 import '../logic/select_index.dart';
 import '../logic/services.dart';
 import '../look_and_feel.dart';
@@ -24,7 +25,7 @@ class OperationMode {
 
   OperationMode();
 
-  void init(String estateName, [OperationModes? initOperationModes]) {
+  void init(/* String environmentId ,*/ [OperationModes? initOperationModes]) {
   }
 
   void clear() {
@@ -225,14 +226,14 @@ class OperationModes {
 
   OperationModes();
 
-  void initModeStructure({ required Estate estate,
+  void initModeStructure({ required Environment environment,
               required String parameterSettingFunctionName,
               required String deviceId,
               required List<DeviceAttributeCapability> deviceAttributes,
               required Function setFunction,
               required Function getFunction }) {
 
-    _currentIndex = SelectIndex('${estate.id}/$deviceId');
+    _currentIndex = SelectIndex('${environment.id}/$deviceId');
 
     controlledDevice.initStructure(
       deviceId: deviceId,
@@ -242,7 +243,7 @@ class OperationModes {
     );
 
     for (var operationMode in _modes) {
-      operationMode.init(estate.name, this);
+      operationMode.init(/*environment.name,*/ this);
     }
   }
 
@@ -320,7 +321,7 @@ class OperationModes {
       log.error('OperationModes select: $name not found');
     }
     else {
-      await selectIndex(index);
+      await selectIndex(index, parentModes);
       _currentIndex.setIndexAndParentInfo(index, parentModes.currentIndexRef());
     }
   }
@@ -457,6 +458,11 @@ class ObjectRegistry {
     _typeMap[type.typeName()] = list.length-1;
   }
 
+  void registerWithName(String name, OperationMode type) {
+    list.add(type);
+    _typeMap[name] = list.length-1;
+  }
+
   OperationMode createObject(String typeText) {
     final typeIndex = _typeMap[typeText];
     if (typeIndex == null) {
@@ -473,6 +479,7 @@ void registerOperationModeTypes() {
   operationModeTypeRegistry.register(ConditionalOperationModes());
   operationModeTypeRegistry.register(HierarchicalOperationMode());
   operationModeTypeRegistry.register(ConstantOperationMode());
+  operationModeTypeRegistry.register(BoolServiceOperationMode());
 }
 
 

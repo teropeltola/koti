@@ -3,7 +3,7 @@ description: A new Flutter project.
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
-version: 1.0.2+31
+version: 1.0.2+45
 
 environment:
   sdk: '>=3.3.0 <4.0.0'
@@ -34,6 +34,7 @@ dependencies:
   mockito: ^5.4.4
   network_discovery: ^1.0.0
   network_info_plus: ^4.1.0
+  numberpicker: ^2.1.2
   path_provider: ^2.1.2
   permission_handler: ^11.0.1
   provider: ^6.0.5
@@ -47,6 +48,7 @@ dependencies:
   talker_flutter: ^4.2.3
   thermostat: ^1.1.5
   time_range_picker: ^2.3.0
+  toggle_switch: ^2.3.0
   webview_flutter: ^4.4.1
   # workmanager: ^0.5.2
 

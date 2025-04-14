@@ -13,12 +13,13 @@ import '../../../../look_and_feel.dart';
 import '../../../../operation_modes/view/edit_generic_operation_modes_view.dart';
 import '../../../../view/ready_widget.dart';
 import '../../../../view/interrupt_editing_widget.dart';
+import '../../../estate/environment.dart';
 import '../../boiler_heating/view/boiler_heating_parameter_setting.dart';
 
 class CreatePlainSwitchView extends StatefulWidget {
-  final Estate estate;
+  final Environment environment;
   const CreatePlainSwitchView({Key? key,
-    required this.estate}) : super(key: key);
+    required this.environment}) : super(key: key);
 
   @override
   _CreatePlainSwitchViewState createState() => _CreatePlainSwitchViewState();
@@ -28,17 +29,20 @@ class _CreatePlainSwitchViewState extends State<CreatePlainSwitchView> {
   PlainSwitchFunctionality plainSwitch = PlainSwitchFunctionality();
   List <String> foundDeviceNames = [''];
   late DropdownContent possibleDevicesDropdown;
+  late Estate estate;
 
   @override
   void initState() {
     super.initState();
+    estate = widget.environment.myEstate();
+    possibleDevicesDropdown = DropdownContent(foundDeviceNames, '', 0);
     plainSwitch.addPredefinedOperationMode('Päällä', powerOnOffWaitingService , true);
     plainSwitch.addPredefinedOperationMode('Pois', powerOnOffWaitingService , false);
     refresh();
   }
 
   void refresh() {
-    foundDeviceNames = widget.estate.findPossibleDevices(deviceService: powerOnOffWaitingService);
+    foundDeviceNames = estate.findPossibleDevices(deviceService: powerOnOffWaitingService);
     int index = max(0, foundDeviceNames.indexOf(plainSwitch.id));
     possibleDevicesDropdown = DropdownContent(foundDeviceNames, '', index);
     setState(() {});
@@ -54,7 +58,7 @@ class _CreatePlainSwitchViewState extends State<CreatePlainSwitchView> {
     return Scaffold(
       appBar: AppBar(
         leading: interruptEditingWidget(context, () async {plainSwitch.remove();}),
-        title: appIconAndTitle(widget.estate.name, 'luo sähkökytkin'),
+        title: appIconAndTitle(widget.environment.name, 'luo sähkökytkin'),
       ), // new line
       body: SingleChildScrollView(
         child:
@@ -65,19 +69,19 @@ class _CreatePlainSwitchViewState extends State<CreatePlainSwitchView> {
                 controlledDevicesWidget('Ohjattava laite', 'Sähkökatkaisin', possibleDevicesDropdown, () {setState(() {});}),
                 operationModeHandling2(
                   context,
-                  widget.estate,
+                  widget.environment,
                   plainSwitch.operationModes,
                   boilerHeatingParameterSetting,
                   refresh
                 ),
                 readyWidget(
                         () async {
-                          Device device = widget.estate.myDeviceFromName(possibleDevicesDropdown.currentString());
+                          Device device = estate.myDeviceFromName(possibleDevicesDropdown.currentString());
                           plainSwitch.pair(device);
                           await plainSwitch.init();
-                          widget.estate.addFunctionality(plainSwitch);
+                          widget.environment.addFunctionality(plainSwitch);
                           await plainSwitch.operationModes.selectIndex(0);
-                          log.info('${widget.estate.name}: laite "${device.name}" liitetty sähkökytkimeen');
+                          log.info('${widget.environment.name}: laite "${device.name}" liitetty sähkökytkimeen');
                           Navigator.pop(context, true);
                         }
                     )
@@ -87,13 +91,13 @@ class _CreatePlainSwitchViewState extends State<CreatePlainSwitchView> {
   }
 }
 
-Future <bool> createPlainSwitchSystem(BuildContext context, Estate estate) async {
+Future <bool> createPlainSwitchSystem(BuildContext context, Environment environment) async {
 
   bool success = await Navigator.push(context, MaterialPageRoute(
       builder: (context)
       {
         return CreatePlainSwitchView(
-            estate: estate
+            environment: environment
         );
       }
   ));

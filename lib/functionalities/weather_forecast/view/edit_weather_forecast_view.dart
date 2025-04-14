@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:koti/devices/weather_service_provider/weather_service_provider.dart';
 import 'package:koti/interfaces/weather_forecast_provider_data.dart';
 
+import '../../../estate/environment.dart';
 import '../../../estate/estate.dart';
 import '../../../look_and_feel.dart';
 import '../../../view/interrupt_editing_widget.dart';
@@ -55,12 +56,12 @@ class _WeatherServices {
 
 
 class EditWeatherForecastView extends StatefulWidget {
-  final Estate estate;
+  final Environment environment;
   final WeatherForecast originalWeatherForecast;
   final Function callback;
 
   const EditWeatherForecastView({Key? key,
-    required this.estate,
+    required this.environment,
     required this.originalWeatherForecast,
     required this.callback}) : super(key: key);
   @override
@@ -220,19 +221,20 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
                   informMatterToUser(context,'Sinulla ei ole yhtään sääpalvelua määritelty', 'Lisää sääpalvelu!');
                 }
                 else {
+                  Estate estate = widget.environment.myEstate();
                   // remove the old version
                   if (! createNew) {
                     for (var weatherService in widget.originalWeatherForecast.connectedDevices) {
-                      widget.estate.removeDevice(weatherService.id);
+                      estate.removeDevice(weatherService.id);
                     }
-                    widget.estate.removeFunctionality(widget.originalWeatherForecast);
+                    widget.environment.removeFunctionality(widget.originalWeatherForecast);
                     widget.originalWeatherForecast.remove();
                   }
                   // create new version
                   // note: we don't call init because everything has been created already
-                  widget.estate.addFunctionality(weatherForecast);
+                  widget.environment.addFunctionality(weatherForecast);
                   for (var weatherService in weatherForecast.connectedDevices) {
-                    widget.estate.addDevice(weatherService);
+                    estate.addDevice(weatherService);
                   }
 
                   // weatherForecast.
@@ -248,13 +250,13 @@ class _EditWeatherForecastViewState extends State<EditWeatherForecastView> {
 }
 
 
-Future<bool> createWeatherForecastSystem(BuildContext context, Estate estate) async {
+Future<bool> createWeatherForecastSystem(BuildContext context, Environment environment) async {
 
   bool success = await Navigator.push(
       context, MaterialPageRoute(
     builder: (context) {
       return EditWeatherForecastView(
-          estate: estate,
+          environment: environment,
           originalWeatherForecast: WeatherForecast(), // create a new one
           callback: () {}
       );

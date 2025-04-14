@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../devices/device/view/short_device_view.dart';
 import '../../../devices/ouman/ouman_device.dart';
+import '../../../estate/environment.dart';
 import '../../../estate/estate.dart';
 import '../../../logic/dropdown_content.dart';
 import '../../../look_and_feel.dart';
@@ -11,17 +12,19 @@ import '../../../view/ready_widget.dart';
 import '../radiator_water_circulation.dart';
 
 class EditRadiatorWaterCirculationView extends StatefulWidget {
-  Estate estate;
+  Environment environment;
   RadiatorWaterCirculation radiatorSystem;
-  EditRadiatorWaterCirculationView({Key? key, required this.estate, required this.radiatorSystem}) : super(key: key);
+  EditRadiatorWaterCirculationView({Key? key, required this.environment, required this.radiatorSystem}) : super(key: key);
 
   @override
   _EditRadiatorWaterCirculationViewState createState() => _EditRadiatorWaterCirculationViewState();
 }
 
 class _EditRadiatorWaterCirculationViewState extends State<EditRadiatorWaterCirculationView> {
+
   @override
   Widget build(BuildContext context) {
+    Estate estate = widget.environment.myEstate();
     return Scaffold(
         appBar: AppBar(
           leading: IconButton(
@@ -37,25 +40,25 @@ class _EditRadiatorWaterCirculationViewState extends State<EditRadiatorWaterCirc
                   Navigator.of(context).pop();
                 }
               }),
-          title: appIconAndTitle(widget.estate.name, RadiatorWaterCirculation.functionalityName),
+          title: appIconAndTitle(widget.environment.name, RadiatorWaterCirculation.functionalityName),
         ), // new line
         body: SingleChildScrollView(
         child: Column(children: <Widget>[
           operationModeHandling(
             context,
-            widget.estate,
+            widget.environment,
             widget.radiatorSystem.operationModes,
             airPumpParameterSetting,
             () {setState(() {});}
           ),
-          devicesGrid(context, 'liitetyt laitteet', Colors.blue, widget.estate, widget.radiatorSystem.connectedDevices, (){}),
+          devicesGrid(context, 'liitetyt laitteet', Colors.blue, estate, widget.radiatorSystem.connectedDevices, (){}),
           Container(
             margin: myContainerMargin,
             padding: myContainerPadding,
             child: InputDecorator(
               decoration: const InputDecoration(labelText: 'Lisää uusi laite'),
                 child: Column(children: <Widget>[
-                  _categoryOfDevices(context, widget.estate, widget.radiatorSystem, (){setState(() {});}),
+                  _categoryOfDevices(context, estate, widget.radiatorSystem, (){setState(() {});}),
 
                 ]
                 )
@@ -63,7 +66,7 @@ class _EditRadiatorWaterCirculationViewState extends State<EditRadiatorWaterCirc
           ),
           readyWidget(() async {
             String name = RadiatorWaterCirculation.functionalityName;
-            log.info('${widget.estate.name}: $name luotu');
+            log.info('${widget.environment.name}: $name luotu');
             showSnackbarMessage('Ouman-laitteen tietoja päivitetty!');
             Navigator.pop(context, true);
           }),

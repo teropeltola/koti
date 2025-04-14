@@ -31,8 +31,7 @@ Widget controlledDevicesWidget(
                         keyString: 'boilerDropdown',
                         dropdownContent: possibleDevicesDropdown,
                         setValue: (newValue) {
-                          possibleDevicesDropdown
-                              .setIndex(newValue);
+                          // possibleDevicesDropdown.setIndex(newValue);
                           callback();
                         }
                     )
