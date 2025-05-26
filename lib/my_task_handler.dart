@@ -1,5 +1,6 @@
 // The callback function should always be a top-level or static function.
 import 'package:flutter_foreground_task/flutter_foreground_task.dart';
+import 'package:hive/hive.dart';
 
 import 'logic/task_handler_controller.dart';
 
@@ -16,7 +17,7 @@ class MyTaskHandler extends TaskHandler {
   @override
   Future<void> onStart(DateTime timestamp, TaskStarter starter) async {
     print('onStart(starter: ${starter.name})');
-    await taskHandlerController.initOnStart(timestamp, starter);
+    await taskHandlerController.initOnStart(timestamp, starter, false);
   }
 
   // Called based on the eventAction set in ForegroundTaskOptions.
@@ -28,8 +29,9 @@ class MyTaskHandler extends TaskHandler {
 
   // Called when the task is destroyed.
   @override
-  Future<void> onDestroy(DateTime timestamp) async {
-    print('onDestroy');
+  Future<void> onDestroy(DateTime timestamp, bool isTimeout) async {
+    await Hive.close();
+    print('onDestroy: $timestamp/${taskHandlerController.toString()}, isTimeout=$isTimeout');
   }
 
   // Called when data is sent using `FlutterForegroundTask.sendDataToTask`.
@@ -37,7 +39,7 @@ class MyTaskHandler extends TaskHandler {
   void onReceiveData(Object data) {
     print('MyTaskHandler.onReceiveData: ${data.runtimeType.toString()}/$data');
     if (data is Map<String, dynamic>) {
-      Map<String, dynamic> response = taskHandlerController.onReceiveControl(data);
+      Map<String, dynamic> response = taskHandlerController.onReceiveControl(DateTime.now(), data);
       print('MyTaskHandler: response=$response');
       if (response.isNotEmpty) {
         print('MyTaskHandler: response=$response');

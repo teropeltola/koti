@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:koti/estate/view/edit_environment_view.dart';
+import 'package:provider/provider.dart';
 
+import '../../devices/device/device_state.dart';
 import '../../view/task_controller_view.dart';
 import '../environment.dart';
 import '../estate.dart';
@@ -42,9 +44,13 @@ class _EnvironmentViewState extends State<EnvironmentView> {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(title: appIconAndTitle(currentEstate.name, widget.environment.name), actions: [
-          currentEstate.reactiveWifiIsActive(context)
-              ? const Icon(Icons.wifi, color: Colors.green)
-              : const Icon(Icons.wifi_off, color: Colors.red)
+            Consumer<StateNotifier>(
+              builder: (context, stateNotifier, child) {
+                return stateNotifier.data == StateModel.connected // currentEstate.myWifiDevice().state.connected()
+                  ? const Icon(Icons.wifi, color: Colors.green)
+                  : const Icon(Icons.wifi_off, color: Colors.red);
+              },
+            )
         ]),
         //drawer: Drawer(child: myDrawerView(context, () {widget.callback();})),
         body: SingleChildScrollView(
@@ -85,14 +91,17 @@ class _EnvironmentViewState extends State<EnvironmentView> {
                         size: 40),
                     tooltip: 'muokkaa näytön tietoja',
                     onPressed: () async {
-                      await Navigator.push(
+                      bool storeResults = await Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder: (context) {
-                              return EditEnvironmentView(environment: widget.environment);
+                              return EditEnvironmentView(environment: widget.environment,);
                             },
                           )
                       );
+                      if (storeResults) {
+                        await storeChanges();
+                      }
                       // local variables like currentEstate need to be updated
                       refresh();
                     }

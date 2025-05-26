@@ -207,11 +207,25 @@ class Environment extends ChangeNotifier {
 
   void removeData(){
 
+    for (var e in environments) {
+      e.removeData();
+    }
+
+    environments.clear();
+
     for (var f in features) {
       f.remove();
     }
 
+    features.clear();
+
     operationModes.clear();
+  }
+
+  Environment clone() {
+    Environment newEnvironment = Environment.fromJson(toJson());
+    newEnvironment.parentEnvironment = parentEnvironment;
+    return newEnvironment;
   }
 
   // note: estate has duplicate code because of the device initialization order

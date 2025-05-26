@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../app_configurator.dart';
 import 'package:koti/look_and_feel.dart';
@@ -211,3 +212,9 @@ class TrendData {
     return const Text('not implemented', style: TextStyle(color:Colors.red));
   }
 }
+
+Future <String> hiveDirectoryPath() async {
+  var directory = await getApplicationDocumentsDirectory();
+  return directory.path;
+}
+

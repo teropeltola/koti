@@ -61,7 +61,6 @@ class ShellyBluGw extends ShellyDevice {
         bluTrvStatusList.add(BluConfigAndStatus(status, config, info));
       }
     }
-
   }
 
   @override
@@ -70,11 +69,16 @@ class ShellyBluGw extends ShellyDevice {
 
     await super.init();
 
-    await updateConnectedDevices();
+    if (state.connected()) {
+      await updateConnectedDevices();
 
-    await sysGetConfig();
+      await sysGetConfig();
 
-    _initOfferedServices();
+      _initOfferedServices();
+    }
+    else {
+      setupShellyRetryTimer(init);
+    }
   }
 
   Future<void> getDataFromDevice() async {
@@ -164,6 +168,7 @@ class ShellyBluGw extends ShellyDevice {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
           'IP-osoite: $ipAddress',
         ],
         widgets: [

@@ -6,6 +6,7 @@ import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:koti/interfaces/network_connectivity.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 
@@ -34,7 +35,7 @@ Future<void> _requestFlutterForegroundTaskPermissions() async {
   //
   // iOS: If you need notification, ask for permission.
   final NotificationPermission notificationPermission =
-  await FlutterForegroundTask.checkNotificationPermission();
+    await FlutterForegroundTask.checkNotificationPermission();
   if (notificationPermission != NotificationPermission.granted) {
     await FlutterForegroundTask.requestNotificationPermission();
   }
@@ -73,7 +74,7 @@ Future <void> getPermissions() async {
 
 bool runningInSimulator = false;
 
-ConnectionStatusListener connectionStatusListener = ConnectionStatusListener(activeWifiName);
+ConnectionStatusListener connectionStatusListener = ConnectionStatusListener(activeWifi);
 
 Future <void> resetAllFatal() async {
   await myEstates.resetAll();
@@ -100,9 +101,11 @@ Future <void> appInitializationRoutines() async {
 
   await foregroundInterface.init();
 
-  await shellyScan.init();
-
   await connectionStatusListener.initialize();
+
+  await initNetworkConnectivityInfo();
+
+  await shellyScan.init();
 
   await trend.init();
 
@@ -113,7 +116,7 @@ Future <void> appInitializationRoutines() async {
   //electricityPriceParameters.init();
   electricityPriceParameters = await readElectricityPriceParameters();
 
-  events.write('','',ObservationLevel.ok,'$appName käynnistyi (laitteen wifi on "${activeWifiName.activeWifiName}")');
+  events.write('','',ObservationLevel.ok,'$appName käynnistyi (laitteen wifi on "${activeWifi.name}")');
 
   await foregroundInterface.initDataStructures();
 }
@@ -151,14 +154,13 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
     super.initState();
-    // Add a callback to receive data sent from the TaskHandler.
-    //foregroundInterface.init();
   }
 
   @override
   void dispose() {
-    // Remove a callback to receive data sent from the TaskHandler.
-    //foregroundInterface.dispose();
+    foregroundInterface.dispose();
+    Hive.close();
+    disposeNetworkConnectivity();
     super.dispose();
   }
 

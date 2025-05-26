@@ -320,17 +320,62 @@ void main() {
 
 
   group('ElectricityPriceData Update tasks', () {
-    test('empty data Analyzer tests', () {
+    test('empty addition ', () {
       ElectricityPriceData data = ElectricityPriceData();
-      data.distributionPrice.setConstantParameters('test', 0.0, 0.0);
-      expect(data.prices.isEmpty, isTrue);
+      data.tariff.setValue('test', TariffType.spot, 10.0);
+      data.distributionPrice.setConstantParameters('test', 10.0, 20.0);
+      data.storeElectricityPrice([TrendElectricity(100, 10.0), TrendElectricity(200, noValueDouble)]);
 
       data.updateElectricityPrice([]);
-      expect(data.prices.isEmpty, isTrue);
 
-      expect (data.findPercentile(1.0), noValueDouble);
+      expect(data.prices.length, 2);
+      expect(data.priceAtTimestamp(99), noValueDouble);
+      expect(data.priceAtTimestamp(100), closeTo(50.0*_vatMultiplier,0.0001));
+      expect(data.priceAtTimestamp(199), closeTo(50.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(200), noValueDouble);
     });
 
+    test('single additions', () {
+      ElectricityPriceData data = ElectricityPriceData();
+      data.tariff.setValue('test', TariffType.spot, 10.0);
+      data.distributionPrice.setConstantParameters('test', 10.0, 20.0);
+      data.storeElectricityPrice([TrendElectricity(100, 10.0), TrendElectricity(200, noValueDouble)]);
+
+      data.updateElectricityPrice([TrendElectricity(200, 15.0), TrendElectricity(300, noValueDouble)]);
+
+      expect(data.prices.length, 3);
+      expect(data.priceAtTimestamp(99), noValueDouble);
+      expect(data.priceAtTimestamp(100), closeTo(50.0*_vatMultiplier,0.0001));
+      expect(data.priceAtTimestamp(199), closeTo(50.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(200), closeTo(55.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(299), closeTo(55.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(300), noValueDouble);
+
+      data.updateElectricityPrice([TrendElectricity(200, 15.0), TrendElectricity(300, noValueDouble)]);
+      expect(data.prices.length, 3);
+      expect(data.priceAtTimestamp(99), noValueDouble);
+      expect(data.priceAtTimestamp(100), closeTo(50.0*_vatMultiplier,0.0001));
+      expect(data.priceAtTimestamp(199), closeTo(50.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(200), closeTo(55.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(299), closeTo(55.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(300), noValueDouble);
+
+      data.updateElectricityPrice([TrendElectricity(400, 15.0), TrendElectricity(500, noValueDouble)]);
+      expect(data.prices.length, 5);
+      expect(data.priceAtTimestamp(99), noValueDouble);
+      expect(data.priceAtTimestamp(100), closeTo(50.0*_vatMultiplier,0.0001));
+      expect(data.priceAtTimestamp(199), closeTo(50.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(200), closeTo(55.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(299), closeTo(55.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(300), noValueDouble);
+      expect(data.priceAtTimestamp(399), noValueDouble);
+
+      expect(data.priceAtTimestamp(400), closeTo(55.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(499), closeTo(55.0*_vatMultiplier, 0.0001));
+      expect(data.priceAtTimestamp(500), noValueDouble);
+
+    });
+  });
   }
 
 List <TrendElectricity> _electricityPrices(DateTime since, int amount) {

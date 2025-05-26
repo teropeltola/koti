@@ -8,7 +8,7 @@ void main() {
   group('ActiveWifiName Tests', () {
     test('Initialization', () {
       final testWifiName = ActiveWifiName(); // Create a new instance for this test.
-      expect(testWifiName.activeWifiName, '');
+      expect(testWifiName.name, '');
       testWifiName.dispose(); // Close the stream controller after the test.
     });
 
@@ -17,21 +17,21 @@ void main() {
       final testWifiName = ActiveWifiName(); // Create a new instance for this test.
       const newName = 'NewWifiName';
       testWifiName.changeWifiName(newName);
-      expect(testWifiName.activeWifiName, newName);
+      expect(testWifiName.name, newName);
       testWifiName.dispose(); // Close the stream controller after the test.
     });
 
     test('activeWifiName variable', () {
-      expect(activeWifiName.activeWifiName, '');
-      activeWifiName.changeWifiName('new Name');
-      expect(activeWifiName.activeWifiName, 'new Name');
+      expect(activeWifi.name, '');
+      activeWifi.changeWifiName('new Name');
+      expect(activeWifi.name, 'new Name');
     });
 
     test('iAmActive', () {
-      expect(activeWifiName.iAmActive('nope'), false);
-      activeWifiName.changeWifiName('new Name');
-      expect(activeWifiName.iAmActive('new Name'), true);
-      expect(activeWifiName.iAmActive('nope'), false);
+      expect(activeWifi.iAmActive('nope'), false);
+      activeWifi.changeWifiName('new Name');
+      expect(activeWifi.iAmActive('new Name'), true);
+      expect(activeWifi.iAmActive('nope'), false);
     });
 
     testWidgets('Stream Updates', (WidgetTester tester) async {

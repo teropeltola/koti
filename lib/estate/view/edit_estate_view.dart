@@ -5,16 +5,11 @@ import 'package:koti/devices/wlan/active_wifi_name.dart';
 import 'package:koti/estate/view/environment_list_widget.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
 import 'package:koti/operation_modes/view/edit_operation_mode_view.dart';
-import 'package:koti/operation_modes/view/operation_modes_selection_view.dart';
 
 import '../../devices/porssisahko/porssisahko.dart';
 import '../../functionalities/electricity_price/electricity_price.dart';
 import '../../functionalities/electricity_price/view/edit_electricity_view.dart';
 import '../../functionalities/functionality/view/edit_environment_functionalities_view.dart';
-import '../../operation_modes/conditional_operation_modes.dart';
-import '../../operation_modes/hierarcical_operation_mode.dart';
-import '../../operation_modes/operation_modes.dart';
-import '../../operation_modes/view/conditional_option_list_view.dart';
 import '../../view/my_button_widget.dart';
 import '../../view/my_snapshot_waiting_widget.dart';
 import '../../view/ready_widget.dart';
@@ -38,7 +33,7 @@ class _EditEstateViewState extends State<EditEstateView> {
   final FocusNode _focusNodeWifi = FocusNode();
   final myEstateNameController = TextEditingController();
   List<Functionality> existingServices = [];
-  Future<bool> estateCloned = Future.value(false);
+  Future<bool> estateIsCloned = Future.value(false);
 
   @override
   void initState() {
@@ -47,14 +42,14 @@ class _EditEstateViewState extends State<EditEstateView> {
     if (_createNewEstate()) {
       editedEstate = myEstates.candidateEstate();
       myEstates.activateCandidate();
-      editedEstate.init('',activeWifiName.activeWifiName);
+      editedEstate.init('',activeWifi.name);
       addElectricityPriceWithoutEditing(editedEstate);
       myEstateNameController.text = editedEstate.name;
     }
     else {
       editedEstate = myEstates.cloneCandidate(widget.estateName);
       myEstateNameController.text = editedEstate.name;
-      estateCloned = editedEstate.initDevicesAndFunctionalities();
+      estateIsCloned = editedEstate.initDevicesAndFunctionalities();
     }
   }
 
@@ -77,7 +72,7 @@ class _EditEstateViewState extends State<EditEstateView> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<bool>(
-      future: estateCloned, // a previously-obtained Future<bool> or null
+      future: estateIsCloned, // a previously-obtained Future<bool> or null
       builder: (BuildContext context, AsyncSnapshot<bool> snapshot)
     {
       if (! snapshot.hasData) {

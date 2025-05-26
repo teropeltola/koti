@@ -55,7 +55,10 @@ class PlainSwitchFunctionality extends Functionality {
   @override
   Future<void> init () async {
     initStructures();
-    mySwitchDeviceService = myDevice().services.getService(powerOnOffWaitingService) as DeviceServiceClass<OnOffSwitchService>;
+    var myService = myDevice().services.getService(powerOnOffWaitingService);
+    if (myService is DeviceServiceClass<OnOffSwitchService>) {
+      mySwitchDeviceService = myService;
+    }
   }
 
   Device myDevice() {

@@ -4,6 +4,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:koti/devices/device/device_state.dart';
 import 'package:koti/devices/mitsu_air-source_heat_pump/view/edit_mitsu_view.dart';
 
 import 'dart:convert' show jsonDecode, utf8;
@@ -127,6 +128,7 @@ class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
     );
     services.addService(onOffServiceDefinition());
     await fetchAndAnalyzeData();
+    state.defineDependency(stateDependantOnIP, name);
   }
 
   Future<bool> fetchAndAnalyzeData() async {
@@ -420,6 +422,7 @@ class MitsuHeatPumpDevice extends DeviceWithLogin with OnOffSwitch {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
           _timer.isActive ? 'Ajastin aktiivinen' : 'Ajastin pois päältä',
           'datan hakuaika: ${dumpTimeString(fetchingTime())}',
           'osoite: ${webLoginCredentials.url}',

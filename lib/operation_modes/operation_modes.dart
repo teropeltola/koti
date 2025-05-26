@@ -420,11 +420,12 @@ class OperationModes {
   }
 
   Widget dumpData({required Function formatterWidget}) {
+    String currentModeText = currentModeName();
     return formatterWidget(
         headline: 'Toimintotilat',
         textLines: [
           'Toimintotilojen lukumäärä: ${nbrOfModes()}',
-          'Nykyinen tila: ${currentModeName()}',
+          'Nykyinen tila: ${(currentModeText.isEmpty) ? '-' : currentModeText}',
         ],
         widgets: [const Text('')]
           //for (int i=0; i<nbrOfModes(); i++)

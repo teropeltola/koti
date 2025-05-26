@@ -7,6 +7,7 @@ import 'package:koti/devices/ouman/view/edit_ouman_view.dart';
 import 'package:koti/foreground_configurator.dart';
 import 'package:koti/interfaces/foreground_interface.dart';
 import 'package:koti/service_catalog.dart';
+import 'package:koti/trend/trend.dart';
 
 import '../../app_configurator.dart';
 import '../../estate/estate.dart';
@@ -78,6 +79,8 @@ class OumanDevice extends DeviceWithLogin {
 
     webLoginCredentials.url = _oumanUrl();
 
+    state.defineDependency(myEstate.myWifiDevice().id, name);
+
     foregroundInterface.defineRecurringService(
       oumanForegroundService,
       _oumanFetchingIntervalInMinutes,
@@ -87,7 +90,8 @@ class OumanDevice extends DeviceWithLogin {
           username: await webLoginCredentials.username(),
           password: await webLoginCredentials.password(),
           url: webLoginCredentials.url,
-          wifiName: myEstate.myWifi).toJson(),
+          wifiName: myEstate.myWifi,
+          directoryPath: await hiveDirectoryPath()).toJson(),
     );
 
     await readData();
@@ -250,6 +254,7 @@ class OumanDevice extends DeviceWithLogin {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
           'datan hakuaika: ${dumpTimeString(fetchingTime())}',
           'IP-osoite: $_ipAddress',
         ],

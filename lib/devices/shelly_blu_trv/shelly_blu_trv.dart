@@ -51,6 +51,7 @@ class ShellyBluTrv extends Device {
   @override
   Future<void> init() async {
     myGw = allDevices.findDevice(myGwDeviceId) as ShellyBluGw;
+    state.defineDependency(myGwDeviceId, name);
     myInfo = await myGw.bluInfo(idNumber);
 
     _initOfferedServices();
@@ -115,6 +116,7 @@ class ShellyBluTrv extends Device {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
           'Gw Id: $myGwDeviceId',
           'tunnus gw:ssä: $idNumber',
         ],

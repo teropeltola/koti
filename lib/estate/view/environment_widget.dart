@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../../devices/device/device_state.dart';
 import '../../operation_modes/view/operation_modes_selection_view.dart';
 import '../environment.dart';
+import '../estate.dart';
 import 'environment_view.dart';
 
 const int _crossAxicCount = 3;
@@ -46,18 +49,23 @@ Widget _gridEnvironmentButton(BuildContext context, Environment environment, Fun
   return ElevatedButton(
       style:_buttonStyle(Colors.green, Colors.white),
       onPressed: () async {
+        final myWifiStateNotifier = myEstates.currentEstate().myWifiDevice().state.stateNotifier();
+
         await Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) {
-                return EnvironmentView(
+              builder: (routeContext) {
+                return ChangeNotifierProvider<StateNotifier>.value(
+                    value: myWifiStateNotifier, // Provide the SAME EXISTING instance to the new route
+                    child:EnvironmentView(
                   environment: environment,
                   callback: callback,
+                )
                 );
               },
             )
         );
-        //bool status = await .editWidget(context, estate);
+
         callback();
       },
       child: Column(

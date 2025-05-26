@@ -59,6 +59,18 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
   /// Returns the service resolver function of the given service.
   VoidCallback? getServiceResolverFunction(BonsoirService service) => _servicesResolver[service.name];
 
+  /// store services while ignoring wlan host updates
+  bool _storeService(BonsoirService service) {
+    if (service is ResolvedBonsoirService) {
+      if (service.host!.contains('wlan')) {
+        log.info('bonsoir service storing (${service.name}) ignoring WLAN host (${service.toJson()})');
+        return false;
+      }
+    }
+    _services[service.name] = service;
+    log.info('Current bonsoir services: ${_services.toString()}');
+    return true;
+  }
   /// Triggered when a Bonsoir discovery event occurred.
   void _onEventOccurred(BonsoirDiscoveryEvent event) {
     if (event.service == null) {
@@ -67,19 +79,19 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
 
     BonsoirService service = event.service!;
     if (event.type == BonsoirDiscoveryEventType.discoveryServiceFound) {
-      _services[service.name] = service;
-      log.info('bonsoir service (${service.name}) discoveryServiceFound');
       _servicesResolver[service.name] = () => _resolveService(service);
       _resolveService(service);
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceResolved) {
-      _services[service.name] = service;
-      log.info('bonsoir service (${service.name}) discoveryServiceResolved');
-      _servicesResolver.remove(service.name);
+      if (_storeService(service)) {
+        log.info('bonsoir service (${service
+            .name}) discoveryServiceResolved (${service.toJson()})');
+        _servicesResolver.remove(service.name);
+      }
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceResolveFailed) {
       _servicesResolver[service.name] = () => _resolveService(service);
-      log.info('bonsoir service (${service.name}) discoveryServiceResolveFailed');
+      log.info('bonsoir service (${service.name}) discoveryServiceResolveFailed (${service.toJson()})');
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceLost) {
-      log.info('bonsoir service (${service.name}) discoveryServiceLost');
+      log.info('bonsoir service (${service.name}) discoveryServiceLost (${service.toJson()})');
       _services.remove(service.name);
     }
     notifyListeners();

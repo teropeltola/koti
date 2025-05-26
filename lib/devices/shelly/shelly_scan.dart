@@ -2,6 +2,7 @@
 import 'package:bonsoir/bonsoir.dart';
 import 'package:koti/devices/wlan/bonsoir_discovery.dart';
 
+const String bonsoirNotFound = '#not found#';
 
 const String shellyBonsoirService = '_shelly._tcp';
 
@@ -56,8 +57,10 @@ class ShellyScan {
   }
 
   Future<void> init() async {
+    print('##debug## init()');
     bonsoirDiscoveryModel.init(shellyBonsoirService);
     await bonsoirDiscoveryModel.start();
+    print('##debug## init() done response: $response');
   }
 
   List<String> listPossibleServices() {
@@ -68,6 +71,7 @@ class ShellyScan {
     for (var e in currentServices) {
       serviceNames.add(e.name);
     }
+    print('##debug## listPossibleServices(): serviceNames = $serviceNames ');
 
     return serviceNames;
   }
@@ -75,15 +79,16 @@ class ShellyScan {
   ResolvedBonsoirService resolveServiceData(String serviceName) {
     BonsoirService dyn = _getServiceData(serviceName);
     if (dyn.runtimeType != ResolvedBonsoirService) {
-      dyn =  ResolvedBonsoirService(name:'#not found#',type: '', host: '', port: 0,  attributes: {});
+      dyn =  ResolvedBonsoirService(name: bonsoirNotFound,type: '', host: '', port: 0,  attributes: {});
     }
+    print('###debug### resolveServiceData: $dyn');
     return dyn as ResolvedBonsoirService;
   }
 
   BonsoirService _getServiceData(serviceName) {
     BonsoirService? bs = bonsoirDiscoveryModel.getServiceData(serviceName);
     if (bs == null) {
-      return  ResolvedBonsoirService(name:'#not found#',type: '', host: '', port: 0,  attributes: {});
+      return  ResolvedBonsoirService(name: bonsoirNotFound,type: '', host: '', port: 0,  attributes: {});
     }
     return bs;
   }

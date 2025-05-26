@@ -2,6 +2,7 @@
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 import 'package:koti/functionalities/boiler_heating/view/boiler_heating_overview.dart';
+import 'package:koti/look_and_feel.dart';
 import 'package:koti/service_catalog.dart';
 
 import '../../../devices/mixins/on_off_switch.dart';
@@ -9,15 +10,25 @@ import '../../../logic/services.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../boiler_heating_functionality.dart';
 
+class BoilerHeatingPalette extends ColorPalette {
+
+}
+
 class BoilerHeatingFunctionalityView extends FunctionalityView {
 
   late DeviceServiceClass<OnOffSwitchService> _mySwitch;
   bool cacheNotOk = true;
 
+  bool deviceConnected() {
+    return myBoilerFunctionality().connectedDevices[0].connected();
+  }
+
   DeviceServiceClass<OnOffSwitchService> mySwitch() {
     if (cacheNotOk) {
-      _mySwitch = myBoilerFunctionality().connectedDevices[0].services.getService(powerOnOffWaitingService) as DeviceServiceClass<OnOffSwitchService>;
-      cacheNotOk = false;
+        _mySwitch =
+        myBoilerFunctionality().connectedDevices[0].services.getService(
+            powerOnOffWaitingService) as DeviceServiceClass<OnOffSwitchService>;
+        cacheNotOk = false;
     }
     return _mySwitch;
   }
@@ -34,10 +45,14 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
   @override
   Widget gridBlock(BuildContext context, Function callback) {
 
+    ColorPalette currentPalette = BoilerHeatingPalette().currentPalette(
+      false, // TODO: alarm set on implemented
+      deviceConnected(),
+      mySwitch().services.peek()
+    );
+
     return ElevatedButton(
-        style: mySwitch().services.peek()
-          ? buttonStyle(Colors.green, Colors.white)
-          : buttonStyle(Colors.grey, Colors.white),
+        style: buttonStyle(currentPalette.backgroundColor, currentPalette.textColor),
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
@@ -59,8 +74,13 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
                 fontSize: 12)),
             _currentOperationModeWidget(
                 myBoilerFunctionality().operationModes.currentModeName(),
-                mySwitch().services.peek()),
-            _heaterIcon(mySwitch().services.peek()),
+                currentPalette.textColor
+            ),
+            Icon(
+              currentPalette.icon,
+              size: 40,
+              color: currentPalette.iconColor
+            )
           ]),
 
     );
@@ -78,6 +98,13 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
 
 }
 
+Icon _notConnectedIcon() {
+  return const Icon(
+    Icons.not_interested,
+    size: 40,
+    color: Colors.red
+  );
+}
 
 Icon _heaterIcon(bool heating) {
   if (heating) {
@@ -97,7 +124,7 @@ Icon _heaterIcon(bool heating) {
 
 }
 
-Widget _currentOperationModeWidget(String opModeName, bool heating) {
+Widget _currentOperationModeWidget(String opModeName, Color textColor ) {
   return
     Container(
 //      margin: const EdgeInsets.all(0.0),
@@ -107,18 +134,16 @@ Widget _currentOperationModeWidget(String opModeName, bool heating) {
       onPressed: () {},
       style: OutlinedButton.styleFrom(
         padding: const EdgeInsets.all(0.0),
-        foregroundColor: heating
-            ? Colors.white
-            : Colors.white,
-        side: const BorderSide(
-            color: Colors.white
+        foregroundColor: textColor,
+        side:  BorderSide(
+            color: textColor
         ),
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(10.0)),
       ),
       child: AutoSizeText(
           opModeName,
-        style: const TextStyle(fontSize: 10, color: Colors.white),
+        style: TextStyle(fontSize: 10, color: textColor),
         minFontSize: 8,
           maxLines: 1,
           )));

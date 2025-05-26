@@ -2,6 +2,7 @@
 import 'package:hive/hive.dart';
 import 'package:hive_flutter/adapters.dart';
 import 'package:koti/devices/ouman/ouman_foreground.dart';
+import 'package:koti/trend/trend.dart';
 import 'package:koti/trend/trend_event.dart';
 
 import 'app_configurator.dart';
@@ -32,7 +33,7 @@ const String standardForegroundService = 'standard';
 
 const Map <String, String> foregroundServiceNames = {
   oumanForegroundService : 'Ouman-pumppu',
-  electricityPriceForegroundService : 'Sähkön hinnan nouto',
+  electricityPriceForegroundService : 'Sähkön hinta',
   testOnOffForegroundService : 'Testikytkin',
   standardForegroundService : 'Yksinkertainen'
 };
@@ -66,7 +67,7 @@ const String dataKey = 'data';
 const String messageData = 'messageData';
 const String responseMessage = 'responseMessage';
 
-void createFunctionTable() {
+void createFunctionTable(TaskServiceFunctions taskFunctions) {
   taskFunctions.clear();
   taskFunctions.add(standardForegroundService, foregroundStandardTaskInitFunction, foregroundStandardTaskExecutionFunction);
   taskFunctions.add(oumanForegroundService,oumanInitFunction, oumanExecutionFunction);
@@ -87,7 +88,7 @@ class ForegroundTrendEventBox {
   late Box<TrendEvent> box;
 
   Future<void> init() async {
-    await Hive.openBox<TrendEvent>(hiveTrendEventName);
+    await Hive.openBox<TrendEvent>(hiveTrendEventName,path: await hiveDirectoryPath());
     box = Hive.box<TrendEvent>(hiveTrendEventName);
   }
 

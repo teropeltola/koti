@@ -28,12 +28,11 @@ class Estate extends Environment {
   }
 
   String get myWifi => myWifiDevice().name;
-//  set myWifi(String newName) { this.myWifiDevice().name = newName; }
 
-  bool get myWifiIsActive => myWifiDevice().iAmActive.value;
+  bool get myWifiIsActive => myWifiDevice().state.connected();
 
   bool reactiveWifiIsActive(BuildContext context) {
-    return myWifiDevice().iAmActive.reactiveValue(context);
+    return myWifiDevice().state.connected();
   }
 
   Wifi myWifiDevice() {
@@ -71,16 +70,21 @@ class Estate extends Environment {
   }
   // note: this is called both with and without waiting
   Future<bool> initDevicesAndFunctionalities() async {
+    try {
+      // first non waiting activities
+      updateDeviceData();
+      connectFunctionalitiesToDevices();
 
-    // first non waiting activities
-    updateDeviceData();
-    connectFunctionalitiesToDevices();
-
-    for (var d in devices) {
-      await d.init();
+      for (var d in devices) {
+        await d.init();
+      }
+      await initFunctionalities();
+      return true;
     }
-    await initFunctionalities();
-    return true;
+    catch (e, st) {
+      log.handle(e, st, 'exception in initDevicesAndFunctionalities');
+      return false;
+    }
   }
 
   ElectricityPrice myDefaultElectricityPrice() {

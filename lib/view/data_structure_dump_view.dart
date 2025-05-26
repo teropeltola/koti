@@ -5,7 +5,10 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:koti/functionalities/functionality/functionality.dart';
 import 'package:screenshot/screenshot.dart';
 
+import '../devices/device/device.dart';
+import '../devices/wlan/active_wifi_name.dart';
 import '../estate/estate.dart';
+import '../interfaces/network_connectivity.dart';
 import '../look_and_feel.dart';
 
 class DataStructureDumpView extends StatefulWidget {
@@ -146,6 +149,9 @@ Widget _genDataWidget() {
           'Asuntojen lukumäärä: ${myEstates.nbrOfEstates()}',
           'Toiminnallisuuksien lukumäärä: ${allFunctionalities
               .nbrOfFunctionalities()}',
+          //'Kaikkien laitteiden lukumäärä: ${allDevices.list.length}',
+          'IP-yhteys: ${ipNetworkState.data.text()}',
+          'Aktiivinen wifi-verkko: ${activeWifi.name}'
         ],
     widgets: []
   );

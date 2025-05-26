@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:koti/devices/device/device_state.dart';
 import '../../logic/unique_id.dart';
 import '../network_device/network_device.dart';
 
@@ -15,6 +16,7 @@ class WeatherServiceProvider extends NetworkDevice {
     _titleText = title;
     internetPage = webPage;
     _locationName = locationName;
+    state.defineDependency(stateDependantOnIP, name);
   }
 
   String weatherPage() {
@@ -31,6 +33,7 @@ class WeatherServiceProvider extends NetworkDevice {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
           'otsikko: $_titleText',
           'paikka: $locationName',
           'osoite: $internetPage',

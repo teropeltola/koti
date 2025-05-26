@@ -2,6 +2,7 @@ import'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:koti/devices/device/device_state.dart';
 
 import '../../../look_and_feel.dart';
 
@@ -28,6 +29,7 @@ class Porssisahko extends NetworkDevice {
   @override
   Future<void> init() async {
     internetPage = _latestPricesCommand;
+    state.defineDependency(stateDependantOnIP, name);
   }
 
 
@@ -51,6 +53,7 @@ class Porssisahko extends NetworkDevice {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
           'verkko-osoite: $internetPage',
           'hakuaika: ${fetchingStartHour.toString().padLeft(2, '0')}:${fetchingStartMinutes.toString().padLeft(2, '0')}',
         ],

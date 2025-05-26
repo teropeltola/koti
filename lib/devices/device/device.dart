@@ -86,6 +86,8 @@ class Device {
   void remove() {
     connectedFunctionalities.clear();
     allDevices.remove(this);
+    observationMonitor.dispose();
+    state.dispose();
   }
 
   Device clone2() {
@@ -93,7 +95,15 @@ class Device {
 
     Device newDevice = extendedDeviceFromJson(json);
 
+    newDevice.myEstateId = myEstateId;
+    newDevice.observationMonitor = observationMonitor;
     newDevice.services = services.clone();
+    newDevice.state = state.clone();
+    for (var c in connectedFunctionalities) {
+      newDevice.connectedFunctionalities.add(c);
+    }
+    newDevice.myEstateId = myEstateId;
+    newDevice.observationMonitor = observationMonitor;
 
     return newDevice;
   }
@@ -141,6 +151,10 @@ class Device {
 
   bool connected() {
     return state.connected();
+  }
+
+  bool alarmOn() {
+    return observationMonitor.currentLevel() == ObservationLevel.alarm;
   }
 
   ObservationLevel observationLevel() {

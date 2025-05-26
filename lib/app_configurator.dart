@@ -14,7 +14,6 @@ import 'package:koti/trend/trend_switch.dart';
 
 import 'devices/device/device.dart';
 import 'devices/ouman/ouman_device.dart';
-import 'devices/ouman/ouman_workmanager.dart';
 import 'devices/ouman/trend_ouman.dart';
 import 'devices/porssisahko/porssisahko.dart';
 import 'devices/shelly_blu_gw/shelly_blu_gw.dart';

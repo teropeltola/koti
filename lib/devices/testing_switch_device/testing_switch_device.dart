@@ -5,6 +5,7 @@ import '../../estate/estate.dart';
 import '../../foreground_configurator.dart';
 import '../../interfaces/foreground_interface.dart';
 import '../../logic/services.dart';
+import '../../logic/task_handler_controller.dart';
 import '../../logic/unique_id.dart';
 import '../../service_catalog.dart';
 import '../../trend/trend_switch.dart';
@@ -42,6 +43,7 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
   Future<void> init () async {
     Estate myEstate = myEstates.estateFromId(myEstateId);
     await super.init();
+    state.setConnected();
 
     await initSwitch(
         myEstate: myEstates.estateFromId(myEstateId),
@@ -106,6 +108,7 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
         ],
         widgets: [
           dumpDataMyFunctionalities(formatterWidget: formatterWidget),
@@ -162,11 +165,11 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
 }
 
 // foreground routines - not using the same address space
-Future<bool> testOnOffInitFunction(Map<String, dynamic> inputData) async {
+Future<bool> testOnOffInitFunction(TaskHandlerController controller, Map<String, dynamic> inputData) async {
   return true;
 }
 
-Future<bool> testOnOffExecutionFunction(Map<String, dynamic> inputData) async {
+Future<bool> testOnOffExecutionFunction(TaskHandlerController controller, Map<String, dynamic> inputData) async {
   print('foreground: testOnOffExecutionFunction');
   Map<String, dynamic> response = {
     messageKey: responseMessage,

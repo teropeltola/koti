@@ -170,4 +170,40 @@ void main() {
 
   });
 
+
+  group('clone environment', () {
+
+    test('clone - basic test 1', () {
+      Environment e = Environment();
+      e.name = 'test';
+      Environment child1 = Environment();
+      child1.name = 'test1';
+      child1.id = 'test1 id';
+      Environment child2 = Environment();
+      child2.name = 'test2';
+      child2.id = 'test2 id';
+      Environment child3 = Environment();
+      child3.name = 'test3';
+      child3.id = 'test3 id';
+      Functionality f = Functionality();
+      child3.addFunctionality(f);
+
+      e.addSubEnvironment(child1);
+      e.addSubEnvironment(child2);
+      child1.addSubEnvironment(child3);
+      Environment e2 = e.clone();
+      expect(e2.name, 'test');
+      expect(e2.id, e.id );
+      expect(e2.nbrOfSubEnvironments(), 2);
+      expect(e2.environments[0].name, 'test1');
+      expect(e2.environments[1].name, 'test2');
+      expect(child1.nbrOfSubEnvironments(), 1);
+      expect(e2.environments[0].environments[0].name, 'test3');
+      expect(e2.environments[0].environments[0].features.length, 1);
+      expect(e2.environments[0].environments[0].features[0].id, f.id);
+
+    });
+
+  });
+
 }

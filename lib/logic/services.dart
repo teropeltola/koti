@@ -16,12 +16,22 @@ class Services {
     _services.add(newService);
   }
 
+  int _index(String serviceName) {
+    return _services.indexWhere((s) => s.serviceName == serviceName);
+  }
+
   bool offerService(String requestedServiceName) {
-    return _services.indexWhere((s) => s.serviceName == requestedServiceName) != -1;
+    return _index(requestedServiceName) != -1;
   }
 
   DeviceService getService(String serviceName) {
-    return _services.firstWhere((s) => s.serviceName == serviceName);
+    int index = _index(serviceName);
+    if (index == -1) {
+      return AttributeDeviceService(attributeName: serviceName);
+    }
+    else {
+      return _services[index];
+    }
   }
 
   Services clone() {

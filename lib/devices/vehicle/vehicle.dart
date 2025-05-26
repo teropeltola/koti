@@ -9,11 +9,18 @@ class Vehicle extends Device {
   }
 
   @override
+  Future<void> init() async {
+
+    state.setConnected();
+  }
+
+  @override
   Widget dumpData({required Function formatterWidget}) {
     return formatterWidget(
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
         ],
         widgets: [
           dumpDataMyFunctionalities(formatterWidget: formatterWidget),

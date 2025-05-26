@@ -39,7 +39,7 @@ const String minimumValue = 'minimi';
 const String maximumValue = 'maksimi';
 
 const List<String> _possiblePriceParameterNames = ['vakio', 'minimi', 'maksimi'];
-class _PriceParameters {
+class _PriceParameters extends SpotCondition {
   String currentType() {
     return possiblePriceParameterTypes.currentString();
   }
@@ -47,8 +47,6 @@ class _PriceParameters {
   DropdownContent possiblePriceParameterTypes = DropdownContent(
       _possiblePriceParameterNames, '', 0);
 
-  OperationComparisons comparison = OperationComparisons.less;
-  double parameterValue = 0.0;
 }
 
 class SetTimerTask extends StatefulWidget {
@@ -69,12 +67,14 @@ class _SetTimerTaskState extends State<SetTimerTask> {
   bool onOffValue = false;
   _TimeParameters timeParameters = _TimeParameters();
   _PriceParameters priceParameters = _PriceParameters();
+  bool possibleToSetTasks = false;
 
   @override
   void initState() {
     super.initState();
     estate = myEstates.currentEstate();
     onOffDeviceCanditates = estate.findPossibleDevices(deviceService: powerOnOffWaitingService);
+    possibleToSetTasks = onOffDeviceCanditates.isNotEmpty;
     onOffDevices = DropdownContent(onOffDeviceCanditates, '', 0);
     currentActionType = possibleActionTypes.currentString();
     currentAction = possibleActions.currentString();
@@ -90,8 +90,10 @@ class _SetTimerTaskState extends State<SetTimerTask> {
         title: appIconAndTitle(estate.name, 'ajasta tehtävä'),
       ), //new line
       body: SingleChildScrollView(
-        child:
-          Column(children: <Widget>[
+        child: !possibleToSetTasks
+          ? Text('\n\n       Ei laitteita, joille voisi ajastaa tehtäviä!'
+                   '\n       Palaa takaisin ja lisää ensin laitteita!')
+          : Column(children: <Widget>[
             Container(
               margin: myContainerMargin,
               padding: myContainerPadding,
@@ -222,9 +224,8 @@ class _SetTimerTaskState extends State<SetTimerTask> {
                 }
                 else { // price task
                   parameters[recurringKey] = true;
-                  parameters[priceComparisonTypeKey] = constantPrice;
-                  parameters[priceLogicComparisonKey] = priceParameters.comparison.index;
-                  parameters[priceComparisonValueKey] = priceParameters.parameterValue;
+                  priceParameters.myType = SpotPriceComparisonType.constant;
+                  parameters[priceComparisonTypeKey] = priceParameters.toJson();
                 }
 
                 userAccepted = await askUserGuidance(context,
@@ -485,9 +486,9 @@ String _userGuidanceTitle(String deviceName, Map<String, dynamic> parameters) {
   String titleStart = 'Uusi tehtävä: ${deviceName} asetetaan ${parameters[powerOn] ?? false ? 'pois' : 'päälle'}';
   bool recurring = parameters[recurringKey] ?? false;
   if (parameters[priceComparisonTypeKey] != null) {
-    OperationComparisons comparison = OperationComparisons.values[parameters[priceLogicComparisonKey]];
+    SpotCondition spotCondition = SpotCondition.fromJson(parameters[priceComparisonTypeKey]);
     return '$titleStart päivittäin, kun sähkö hinta muuttuu '
-            '${comparison.changeText()} ${currencyCentInText(parameters[priceComparisonValueKey]}.';
+            '${spotCondition.comparison.changeText()} ${currencyCentInText(spotCondition.parameterValue)}.';
   }
   else if (parameters[timeOfDayHourKey] != null) {
     //timeOfDay

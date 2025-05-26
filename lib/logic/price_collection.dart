@@ -1,3 +1,4 @@
+
 import '../functionalities/electricity_price/trend_electricity.dart';
 import 'electricity_price_data.dart';
 
@@ -31,7 +32,16 @@ class PriceCollection {
     currentEstateData.update(estateTrendData);
   }
 
-  void createPriceAgent(String estateId, ElectricityTariff tariff, ElectricityDistributionPrice distributionPrice) {
+  /*
+  DateTime getNextExecutionTime(String estateId) {
+    ElectricityPriceAgent estate = getEstateData(estateId);
+    return estate.electricityPriceData.getNextExecutionTime();
+  }
+
+   */
+
+  void createPriceAgent(String estateId, ElectricityTariff tariff, ElectricityDistributionPrice distributionPrice)  {
+    print('createPriceAgent($estateId, $tariff, $distributionPrice) called');
     ElectricityPriceAgent estate = getEstateData(estateId);
     estate.electricityPriceData.tariff = tariff;
     estate.electricityPriceData.distributionPrice = distributionPrice;

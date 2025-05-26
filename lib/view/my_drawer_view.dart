@@ -17,6 +17,7 @@ import 'package:talker_flutter/talker_flutter.dart';
 
 import '../devices/device/device.dart';
 import '../devices/porssisahko/json/porssisahko_data.dart';
+import '../devices/wlan/active_wifi_name.dart';
 import '../estate/estate.dart';
 import '../estate/view/edit_estate_view.dart';
 import '../estate/view/estate_list_view.dart';
@@ -80,18 +81,20 @@ Drawer myDrawerView( BuildContext context,
             Navigator.pop(context);
           },
         ),
-        /*
         ListTile(
           leading: const Icon(Icons.temple_hindu,
               color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
-          title: const Text('Testaa fore', style: TextStyle(color: _primaryDrawerFontColor)),
+          title: const Text('Tulosta wifi-tiedot', style: TextStyle(color: _primaryDrawerFontColor)),
           onTap: () async {
+            log.info('activeWifi.name: ${activeWifi.name}');
+            log.info('myEstates.currentEstate.wifi name&status: ${myEstates.currentEstate().myWifiDevice().name} ${myEstates.currentEstate().myWifiDevice().state.toString()}');
+
             var x = foregroundInterface.sendData('xxx',{});
 
           },
         ),
 
-         */
+
         ListTile(
           leading: const Icon(Icons.temple_hindu,
               color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),

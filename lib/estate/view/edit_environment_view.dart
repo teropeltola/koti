@@ -28,17 +28,20 @@ class EditEnvironmentView extends StatefulWidget {
 class _EditEnvironmentViewState extends State<EditEnvironmentView> {
   late Estate editedEstate;
 
+  late Environment environment;
+
   final FocusNode _focusNode = FocusNode();
   final myNameController = TextEditingController();
   List<Functionality> existingServices = [];
 
-  bool newEstate = false;
+  bool isNewEnvironment = false;
 
   @override
   void initState() {
     super.initState();
+    environment = widget.environment.clone();
     editedEstate = widget.environment.myEstate();
-    newEstate = (widget.environment.name == '');
+    isNewEnvironment = (widget.environment.name == '');
     myNameController.text = widget.environment.name;
     refresh();
   }
@@ -68,12 +71,14 @@ class _EditEnvironmentViewState extends State<EditEnvironmentView> {
                       'Haluatko poistua muutossivulta ?'
                       );
                   if (doExit) {
-                    Navigator.of(context).pop();
+                    environment.removeData();
+                    environment.dispose();
+                    Navigator.of(context).pop(false);
                   }
                 }),
-            title:newEstate
+            title:isNewEnvironment
               ? appIconAndTitle( "Uusi alue", 'syötä tiedot')
-              : appIconAndTitle(widget.environment.name, 'muuta tietoja')
+              : appIconAndTitle(environment.name, 'muuta tietoja')
           ), // new line
           body:
             SingleChildScrollView(
@@ -96,7 +101,7 @@ class _EditEnvironmentViewState extends State<EditEnvironmentView> {
                         controller: myNameController,
                         maxLines: 1,
                         onChanged: (String newText) {
-                          widget.environment.name = newText;
+                          environment.name = newText;
                         },
                         onEditingComplete: () {
                           _focusNode.unfocus();
@@ -105,29 +110,36 @@ class _EditEnvironmentViewState extends State<EditEnvironmentView> {
                 ),
               ),
               EnvironmentListWidget(
-                  environment: widget.environment,
+                  environment: environment,
                   callback: refresh),
               EditEnvironmentFunctionalitiesView(
-                    environment: widget.environment,
+                    environment: environment,
                     callback: refresh
                 ),
               operationModeHandling(
                   context,
-                  widget.environment,
-                  widget.environment.operationModes,
+                  environment,
+                  environment.operationModes,
                   environmentOperationModes,
                   refresh
               ),
               readyWidget(() async {
-                if (editedEstate.name == '') {
+                if (environment.name == '') {
                   informMatterToUser(context,'Nimi ei voi olla tyhjä', 'Lisää nimi!');
                 }
                 else {
-                  String problems = widget.environment.operationModes.searchConditionLoops();
+                  String problems = environment.operationModes.searchConditionLoops();
                   if (problems.isNotEmpty) {
                     informMatterToUser(context,'Toimintotila "$problems" viittaa kehässä itseensä', 'Poista kehäviittaukset!');
                   }
                   else {
+                    // remove earlier version of environment
+                    environment.parentEnvironment!.removeSubEnvironment(widget.environment);
+                    widget.environment.removeData();
+                    widget.environment.dispose();
+                    // add new environment to the parent
+                    environment.parentEnvironment!.addSubEnvironment(environment);
+
                     Navigator.pop(context, true);
                   }
                 }

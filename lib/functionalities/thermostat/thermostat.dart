@@ -54,7 +54,7 @@ class Thermostat extends Functionality {
     List<double> targetTemperatures = [];
 
     for (var device in connectedDevices) {
-      if (device.services.offerService(thermostatService)) {
+      if ((device.connected()) && (device.services.offerService(thermostatService))) {
         ThermostatControlService thermostatControlService =
             (device.services.getService(thermostatService) as DeviceServiceClass<ThermostatControlService>)
                 .services;
@@ -176,6 +176,7 @@ class Thermostat extends Functionality {
         headline: functionalityName,
         textLines: [
           'tunnus: $id',
+          'nimi: $thermoName',
 //          switchStatus() ? 'päällä' : 'suljettu',
         ],
         widgets: [

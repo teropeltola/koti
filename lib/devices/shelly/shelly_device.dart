@@ -27,6 +27,8 @@ const String _rpc = '/rpc/';
 
 const int _retryIntervalInMinutes = 2;
 
+const String connectionNotAvailableString = '##NoConn##';
+
 class ShellyDevice extends Device {
 
   String ipAddress = '';
@@ -51,28 +53,26 @@ class ShellyDevice extends Device {
   @override
   Future<void> init() async {
     ResolvedBonsoirService bSData = shellyScan.resolveServiceData(id);
+    state.defineDependency(myEstates.estateFromId(myEstateId).myWifiDevice().id, name);
+    state.setState(StateModel.notConnected);
 
     if (bSData.name != "#not found#") {
       initFromScan(bSData);
       state.setConnected();
     }
-    else {
-      state.setState(StateModel.notConnected);
-      _setupRetryTimer();
-    }
   }
 
-  void _setupRetryTimer() {
+  void setupShellyRetryTimer(Future <void> Function() initFunction) {
     const Duration delay =  Duration(
       minutes: _retryIntervalInMinutes,
     );
 
     // Schedule the daily task at given time
     Timer timer = Timer(delay, () async {
-      await init();
+      log.info('shelly retry timer fired: $name');
+      await initFunction();
     });
   }
-
 
   void initScript(ShellyDevice myDevice) {
     script = ShellyScript(myDevice);
@@ -93,10 +93,14 @@ class ShellyDevice extends Device {
     return '$_http$ipAddress$_rpc$commandName';
   }
 
+  bool connectionNotAvailable() {
+    return errorClarification.startsWith(connectionNotAvailableString);
+  }
+
   Future <String> rpcCall(String commandName) async {
     if (! state.connected()) {
-      // todo: what is the right answer here to tell that connection is not available?
-      return '';
+      errorClarification = connectionNotAvailableString+commandName;
+      return "";
     }
     try {
       var uri = Uri.parse(_cmd(commandName));

@@ -50,7 +50,7 @@ void main() {
 
       FunctionalityView fv2 = extendedFunctionalityViewFromJson(json);
       expect(fv2 is FunctionalityView, true);
-      expect(fv2.myFunctionality.id, f.id);
+      expect(fv2.myFunctionality.taskId, f.id);
 
       HeatingSystem h = HeatingSystem();
       allFunctionalities.addFunctionality(h);
@@ -62,7 +62,7 @@ void main() {
 
       FunctionalityView fv3 = extendedFunctionalityViewFromJson(json);
       expect(fv3 is HeatingSystemView, true);
-      expect(fv3.myFunctionality.id, h.id);
+      expect(fv3.myFunctionality.taskId, h.id);
 
       PlainSwitchFunctionality p = PlainSwitchFunctionality();
       allFunctionalities.addFunctionality(p);
@@ -72,7 +72,7 @@ void main() {
 
       FunctionalityView fv4 = extendedFunctionalityViewFromJson(json);
       expect(fv4 is PlainSwitchFunctionalityView, true);
-      expect(fv4.myFunctionality.id, p.id);
+      expect(fv4.myFunctionality.taskId, p.id);
 
       VehicleCharging t = VehicleCharging();
       allFunctionalities.addFunctionality(t);
@@ -82,7 +82,7 @@ void main() {
 
       FunctionalityView fv5 = extendedFunctionalityViewFromJson(json);
       expect(fv5 is VehicleChargingView, true);
-      expect(fv5.myFunctionality.id, t.id);
+      expect(fv5.myFunctionality.taskId, t.id);
 
       WeatherForecast w = WeatherForecast();
       allFunctionalities.addFunctionality(w);
@@ -92,7 +92,7 @@ void main() {
 
       FunctionalityView fv6 = extendedFunctionalityViewFromJson(json);
       expect(fv6 is WeatherForecastView, true);
-      expect(fv6.myFunctionality.id, w.id);
+      expect(fv6.myFunctionality.taskId, w.id);
 
       ElectricityPrice ep = ElectricityPrice();
       allFunctionalities.addFunctionality(ep);
@@ -102,7 +102,7 @@ void main() {
 
       FunctionalityView fv7 = extendedFunctionalityViewFromJson(json);
       expect(fv7 is ElectricityGridBlock, true);
-      expect(fv7.myFunctionality.id, ep.id);
+      expect(fv7.myFunctionality.taskId, ep.id);
 
     });
 

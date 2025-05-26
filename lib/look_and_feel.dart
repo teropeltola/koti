@@ -75,7 +75,69 @@ const Color mySecondaryFontColor = Colors.white;
 const Color myDropdownFontColor = Colors.blueGrey;
 const Color myPrimaryButtonColor = Colors.blueGrey;
 
+// Device color palette: working&on, working&offf, not connected, alarm set
+const Color deviceWorkingOnBackgroundColor = Colors.green;
+const Color deviceWorkingOffBackgroundColor = Colors.yellow;
+const Color deviceNotConnectedBackgroundColor = Colors.grey;
+const Color deviceAlarmSetBackgroundColor = Colors.red;
+
+const Color deviceWorkingOnTextColor = Colors.white;
+const Color deviceWorkingOffTextColor = Colors.black;
+const Color deviceNotConnectedTextColor = Colors.black;
+const Color deviceAlarmSetTextColor = Colors.white;
+
+const Color deviceWorkingOnIconColor = Colors.white;
+const Color deviceWorkingOffIconColor = Colors.black;
+const Color deviceNotConnectedIconColor = Colors.black;
+const Color deviceAlarmSetIconColor = Colors.white;
+
+class ColorPalette {
+  Color backgroundColor =Colors.green;
+  Color textColor =Colors.white;
+  Color iconColor = Colors.black;
+  IconData icon = Icons.device_unknown;
+
+  ColorPalette({newBackgroundColor=Colors.green, newTextColor=Colors.white, newIconColor=Colors.white, newIcon=Icons.device_unknown}) {
+    backgroundColor = newBackgroundColor;
+    textColor = newTextColor;
+    iconColor = newIconColor;
+    icon = newIcon;
+  }
+
+  ColorPalette alarmSet() {
+    return ColorPalette(newBackgroundColor:deviceAlarmSetBackgroundColor, newTextColor:deviceAlarmSetTextColor, newIconColor: deviceAlarmSetIconColor, newIcon: Icons.alarm_on);
+  }
+
+  ColorPalette notConnected() {
+    return ColorPalette(newBackgroundColor:deviceNotConnectedBackgroundColor, newTextColor:deviceNotConnectedTextColor, newIconColor: deviceNotConnectedIconColor, newIcon: Icons.not_interested);
+  }
+
+  ColorPalette workingOn() {
+    return ColorPalette(newBackgroundColor:deviceWorkingOnBackgroundColor, newTextColor:deviceWorkingOnTextColor, newIconColor: deviceWorkingOnIconColor, newIcon: Icons.power_outlined);
+  }
+
+  ColorPalette workingOff() {
+    return ColorPalette(newBackgroundColor:deviceWorkingOffBackgroundColor, newTextColor:deviceWorkingOffTextColor, newIconColor: deviceWorkingOffIconColor, newIcon: Icons.power_off);
+  }
+
+  ColorPalette currentPalette(bool alarmOn, bool connected, bool isOn) {
+    if (alarmOn) {
+      return alarmSet();
+    }
+    else if (!connected) {
+      return notConnected();
+    }
+    else if (isOn) {
+      return workingOn();
+    }
+    else {
+      return workingOff();
+    }
+  }
+}
+
 const Color defaultIconColor = myPrimaryFontColor;
+
 
 const myAlertDialogTitleScale = 0.6;
 const EdgeInsets myContainerMargin =  EdgeInsets.all(2.0);
@@ -244,7 +306,7 @@ Future <void> storeChanges() async {
 
 String currencyCentInText(double cents) {
   if (cents == noValueDouble) {
-    return '??';
+    return '?? c';
   }
   else {
     return '${cents.toStringAsFixed(2)} c';

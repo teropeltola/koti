@@ -33,7 +33,7 @@ class PlainSwitchFunctionalityView extends FunctionalityView {
 
   @override
   Widget gridBlock(BuildContext context, Function callback) {
-    return ItemWidget(mySwitch(), mySwitch().mySwitchDeviceService.services.switchOn, callback);
+    return ItemWidget(mySwitch(),  callback);
     /*
     return ElevatedButton(
         style: mySwitch().switchStatusPeek()
@@ -158,52 +158,75 @@ class _SwitchTrendViewState extends State<SwitchTrendView> {
 
 class ItemWidget extends StatelessWidget {
   final PlainSwitchFunctionality mySwitch;
-  final StateBoolNotifier myBoolNotifier;
   final Function callback;
 
-  ItemWidget(this.mySwitch, this.myBoolNotifier, this.callback);
+  ItemWidget(this.mySwitch, this.callback);
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (context) => myBoolNotifier,
-      child: Consumer<StateBoolNotifier>(
-        builder: (context, notifier, child) {
-          return ElevatedButton(
-              style: notifier.data
-                  ? _buttonStyle(Colors.green, Colors.white)
-                  : _buttonStyle(Colors.grey, Colors.white),
-              onPressed: () async {
-                await mySwitch.toggle();
-                callback();
-              },
-              onLongPress: () async {
-                await _switchStatistics(context, mySwitch, 0);
-
-              },
-              child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Text(
-                        mySwitch.myDevice().name,
-                        style: const TextStyle(
-                            fontSize: 12)),
-                    Icon(
-                      notifier.data
-                          ? Icons.power
-                          : Icons.power_off,
-                      size: 50,
-                      color:
-                      notifier.data
-                          ? Colors.yellowAccent
-                          : Colors.white,
-
-                    )
-                  ])
-          );
-        },
-      ),
-    );
+    if (!mySwitch.myDevice().connected()) {
+      ColorPalette colorPalette = ColorPalette().notConnected();
+      return ElevatedButton(
+          style: _buttonStyle(
+              colorPalette.backgroundColor, colorPalette.textColor),
+          onPressed: () async {
+            await informMatterToUser(context, "Laitteeseen ei ole yhteyttä",
+                "Odota, kun yhteys on luotu uudestaan");
+          },
+          onLongPress: () async {
+            await _switchStatistics(context, mySwitch, 0);
+          },
+          child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                    mySwitch
+                        .myDevice()
+                        .name,
+                    style: const TextStyle(
+                        fontSize: 12)),
+                Icon(colorPalette.icon,
+                    size: 50,
+                    color: colorPalette.iconColor
+                )
+              ])
+      );
+    }
+    else {
+      final myBoolNotifier = mySwitch.mySwitchDeviceService.services.switchOn;
+      return ChangeNotifierProvider(
+          create: (context) => myBoolNotifier,
+          child: Consumer<StateBoolNotifier>(
+              builder: (context, notifier, child) {
+                ColorPalette colorPalette = notifier.data ? ColorPalette().workingOn() : ColorPalette().workingOff();
+                return ElevatedButton(
+                    style:  _buttonStyle(colorPalette.backgroundColor, colorPalette.textColor),
+                    onPressed: () async {
+                      await mySwitch.toggle();
+                      callback();
+                    },
+                    onLongPress: () async {
+                      await _switchStatistics(context, mySwitch, 0);
+                    },
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          Text(mySwitch.myDevice().name,
+                              style: const TextStyle(
+                                  fontSize: 12)),
+                          Icon(
+                            notifier.data
+                                ? Icons.power
+                                : Icons.power_off,
+                            size: 50,
+                            color: colorPalette.iconColor
+                          )
+                        ])
+                );
+              }
+          )
+      );
+    }
   }
 }
 

@@ -56,8 +56,8 @@ class _TaskControllerViewState extends State<TaskControllerView> {
                   flex: 1,
                   child: myIconButtonWidget(
                       Icons.timer,
-                      'Lisää ajastin',
-                      'Lisää kellonaikaan liittyvä tehtävä',
+                      'Lisää tehtävä',
+                      'Lisää kellonaikaan tai sähkön hintaan liittyvä tehtävä',
                           () async {
                             await Navigator.push(
                                 context,
@@ -71,17 +71,7 @@ class _TaskControllerViewState extends State<TaskControllerView> {
                             refresh();
                       }
                   ),
-
                 ),
-              Expanded(
-                  flex: 1,
-                  child:
-                  myIconButtonWidget( Icons.stacked_line_chart,'Lisää hinta', 'Lisää sähkön hintaan liittyvä tehtävä',
-                        () {
-
-                    }
-                ),
-              )
               ]
               ),
             ),

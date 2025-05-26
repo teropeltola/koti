@@ -21,12 +21,12 @@ class ConnectionStatusListener {
 //  late Stream activeWifiNameBroadcastStream;
 
   //The test to actually see if there is a connection
-  Future<bool> checkConnection(ConnectivityResult connectivityResult) async {
+  Future<bool> checkConnection(List <ConnectivityResult> connectivityResult) async {
     String wifiName = '';
 
     try {
 
-      if (connectivityResult == ConnectivityResult.wifi) {
+      if (connectivityResult.contains(ConnectivityResult.wifi)) {
         // I am connected to a wifi network.
         hasWifiConnection = true;
 
@@ -48,17 +48,14 @@ class ConnectionStatusListener {
     return hasWifiConnection;
   }
 
-
   //flutter_connectivity's listener
-  void _connectionChange(ConnectivityResult connectivityResult) async {
+  void _connectionChange(List<ConnectivityResult> connectivityResult) async {
     await checkConnection(connectivityResult);
   }
 
   //Hook into connectivity_plus's Stream to listen for changes
-  //And check the connection status out of the gate
   Future<void> initialize() async {
     _connectivity.onConnectivityChanged.listen(_connectionChange);
-    // await checkConnection();
   }
 
 }

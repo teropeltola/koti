@@ -15,6 +15,7 @@ import '../../functionalities/functionality/functionality.dart';
 import '../../logic/electricity_price_data.dart';
 import '../../logic/my_change_notifier.dart';
 import '../../look_and_feel.dart';
+import '../../trend/trend.dart';
 
 int constantSlotSize = 60; // constant parameter that can be patched
                            // eg. testing 1 or in future 15
@@ -201,10 +202,6 @@ class ElectricityPrice extends Functionality {
     electricity.poke();
   }
 
-  Future <String> _trendDirectoryPath() async {
-    var directory = await getApplicationDocumentsDirectory();
-    return directory.path;
-  }
 
   @override
   Future <void> init() async {
@@ -215,7 +212,7 @@ class ElectricityPrice extends Functionality {
       String estateId = connectedDevices[0].myEstateId;
       Porssisahko stockElectricity = (connectedDevices[0] as Porssisahko);
       Map<String, dynamic> parameters = {internetPageKey : stockElectricity.internetPage,
-        boxPathKey : await _trendDirectoryPath()};
+        boxPathKey : await hiveDirectoryPath()};
 
       parameters[estateIdKey] = estateId;
       parameters[electricityTariffKey] = electricity.data.tariff.toJson();
@@ -263,7 +260,7 @@ class ElectricityPrice extends Functionality {
 
   Future <List<TrendElectricity>> getAllTrendData() async {
     var box = await Hive.openBox<TrendElectricity>(hiveTrendElectricityPriceName,
-        path: await _trendDirectoryPath()
+        path: await hiveDirectoryPath()
     );
 
     // print('box.length: ${box.length}, path: ${box.path}');

@@ -87,7 +87,7 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
         Column(children: <Widget>[
           Padding(
             padding: const EdgeInsets.all(20),
-            child: Text('Sähkön hinta nyt: ${currentPrice.toStringAsFixed(2)} c/kWh',
+            child: Text('Sähkön hinta nyt: ${currencyCentInText(currentPrice)}/kWh',
                 textScaler: const TextScaler.linear(1.5),
             ),
           ),
@@ -126,7 +126,7 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
             padding: const EdgeInsets.all(5),
             child: Text('- Edullisin tunti: '
                 '${_timePeriodFormat(electricityChartData.minPrice.time, 1)} '
-                '(${electricityChartData.minPrice.price.toStringAsFixed(2)} c/kWh)',
+                '(${currencyCentInText(electricityChartData.minPrice.price)}/kWh)',
                 textScaler: const TextScaler.linear(1.2),
             ),
           ),
@@ -134,7 +134,7 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
             padding: const EdgeInsets.all(5),
             child: Text('- Kaksituntinen: '
                 '${_timePeriodFormat(electricityChartData.min2hourPeriod.time,2)}'
-                ' (${electricityChartData.min2hourPeriod.price.toStringAsFixed(2)} c/kWh)',
+                ' (${currencyCentInText(electricityChartData.min2hourPeriod.price)}/kWh)',
                 textScaler: const TextScaler.linear(1.2),
             ),
           ),
@@ -142,7 +142,7 @@ class _ElectricityPriceViewState extends State<ElectricityPriceView> {
             padding: const EdgeInsets.all(5),
             child: Text('- Kolmituntinen: '
                 '${_timePeriodFormat(electricityChartData.min3hourPeriod.time,3)}'
-                ' (${electricityChartData.min3hourPeriod.price.toStringAsFixed(2)} c/kWh)',
+                ' (${currencyCentInText(electricityChartData.min3hourPeriod.price)}/kWh)',
                 textScaler: const TextScaler.linear(1.2),
             ),
           ),
@@ -205,7 +205,12 @@ String _hourString(int inputHour) {
   return (inputHour % 24).toStringAsFixed(2);
 }
 String _timePeriodFormat(DateTime dT, int hours) {
-  return '${_hourString(dT.hour)}-${_hourString(dT.hour+hours)}';
+  if (dT.year == 0) { // todo: would be better to have own definition for empty
+    return '??';
+  }
+  else {
+    return '${_hourString(dT.hour)}-${_hourString(dT.hour + hours)}';
+  }
 }
 
 class ChartData {

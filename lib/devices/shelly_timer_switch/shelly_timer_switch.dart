@@ -22,19 +22,27 @@ class ShellyTimerSwitch extends ShellyDevice with OnOffSwitch {
 
     await super.init();
 
-    await initSwitch(
-        myEstate: myEstates.estateFromId(myEstateId),
-        device: this,
-        boxName: id,
-        getFunction: getPower,
-        setFunction: setPower,
-        peekFunction: switchStatus,
-        defineTask: _defineTask
-    );
+    if (state.connected()) {
+      await initSwitch(
+          myEstate: myEstates.estateFromId(myEstateId),
+          device: this,
+          boxName: id,
+          getFunction: getPower,
+          setFunction: setPower,
+          peekFunction: switchStatus,
+          defineTask: _defineTask
+      );
 
-    _initOfferedServices();
+      _initOfferedServices();
 
-    trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, switchStatus(), 'alustus käynnistyksessä'));
+      trendBox.add(TrendSwitch(DateTime
+          .now()
+          .millisecondsSinceEpoch, myEstateId, id, switchStatus(),
+          'alustus käynnistyksessä'));
+    }
+    else {
+      setupShellyRetryTimer(init);
+    }
   }
 
   bool switchToggle() {
@@ -76,6 +84,7 @@ class ShellyTimerSwitch extends ShellyDevice with OnOffSwitch {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
           'IP-osoite: $ipAddress',
         ],
         widgets: [

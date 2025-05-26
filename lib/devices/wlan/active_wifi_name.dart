@@ -1,34 +1,35 @@
-
-
 import 'dart:async';
-
-import 'package:flutter/cupertino.dart';
+import 'package:flutter/material.dart';
 
 import '../../look_and_feel.dart';
 
 class ActiveWifiName extends ChangeNotifier{
 
-  var _activeWifiName = '';
+  var _nameString = '';
   final _controller = StreamController<String>();
 
+  late final Stream<String> broadcastStream;
+
   ActiveWifiName() {
+    broadcastStream = _controller.stream.asBroadcastStream();
     _controller.sink.add('');
   }
 
   void changeWifiName(String newName) {
-    _activeWifiName = newName;
+    log.debug('changeWifiName "$_nameString" -> "$newName"');
+    _nameString = newName;
     if (newName.isEmpty) {
       log.info('Ei wifi-yhteyttä');
     }
     else {
-      log.info('Aktiivinen wifi: "$_activeWifiName"');
+      log.info('Aktiivinen wifi: "$_nameString"');
     }
     notifyListeners();
     _controller.sink.add(newName);
   }
 
   bool iAmActive(String myWifiName) {
-    return myWifiName == _activeWifiName;
+    return myWifiName == _nameString;
   }
 
   @override
@@ -37,12 +38,12 @@ class ActiveWifiName extends ChangeNotifier{
     _controller.close();
   }
 
-  String get activeWifiName => _activeWifiName;
+  String get name => _nameString;
 
-  Stream<String> get stream => _controller.stream.asBroadcastStream();
 }
 
 // todo: should we use this kind of additional class of the following variables
+/*
 class ActiveWifiBroadcaster {
   ActiveWifiBroadcaster(ActiveWifiName activeWifi) {
     activeWifiName = activeWifi;
@@ -55,11 +56,14 @@ class ActiveWifiBroadcaster {
     return activeWifiNameBroadcastStream.listen(listeningFunction);
   }
 
-  String wifiName() => activeWifiName.activeWifiName;
+  String wifiName() => activeWifiName.name;
 
   void dispose() => activeWifiName.dispose();
 }
 
-final activeWifiName = ActiveWifiName();
-final ActiveWifiBroadcaster activeWifiBroadcaster = ActiveWifiBroadcaster(activeWifiName);
-final activeWifiNameBroadcastStream = activeWifiName.stream.asBroadcastStream();
+
+ */
+final activeWifi = ActiveWifiName();
+/*
+final ActiveWifiBroadcaster activeWifiBroadcaster = ActiveWifiBroadcaster(activeWifi);
+*/

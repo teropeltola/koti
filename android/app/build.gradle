@@ -31,7 +31,8 @@ if (flutterVersionName == null) {
 }
 
 android {
-    compileSdkVersion 34
+    compileSdkVersion 35
+    ndkVersion = "26.3.11579264"
     namespace = "com.mosahybrid.koti"
 
     sourceSets {

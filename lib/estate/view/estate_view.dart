@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
 import 'package:koti/view/my_drawer_view.dart';
+import 'package:provider/provider.dart';
 import 'package:talker_flutter/talker_flutter.dart';
 import '../../app_configurator.dart';
 import '../../devices/device/device.dart';
+import '../../devices/device/device_state.dart';
 import '../../functionalities/functionality/functionality.dart';
 import '../../logic/diagnostics.dart';
 import '../../view/task_controller_view.dart';
@@ -83,17 +85,26 @@ class _EstateViewState extends State<EstateView> {
       }
     }
 
-    return Scaffold(
-      appBar: AppBar(title: appIconAndTitle(currentEstate.name, ''), actions: [
-        currentEstate.reactiveWifiIsActive(context)
-          ? const Icon(Icons.wifi, color: Colors.green)
-          : const Icon(Icons.wifi_off, color: Colors.red)
-        ]),
-      drawer: Drawer(child: myDrawerView(context, () {widget.callback();})),
-      body: SingleChildScrollView(
-        child: enviromentWidget(context, currentEstate, () {setState(() {});}),
-      ),
-      bottomNavigationBar: Container(
+    final myWifiStateNotifier = currentEstate.myWifiDevice().state.stateNotifier();
+
+    return ChangeNotifierProvider<StateNotifier>.value(
+      value: myWifiStateNotifier,
+      child:
+        Scaffold(
+          appBar: AppBar(title: appIconAndTitle(currentEstate.name, ''), actions: [
+            Consumer<StateNotifier>(
+              builder: (context, stateNotifier, child) {
+              return (stateNotifier.data == StateModel.connected) // currentEstate.myWifiDevice().state.connected()
+                ? const Icon(Icons.wifi, color: Colors.green)
+                : const Icon(Icons.wifi_off, color: Colors.red);
+              },
+            )
+          ]),
+        drawer: Drawer(child: myDrawerView(context, () {widget.callback();})),
+        body: SingleChildScrollView(
+          child: enviromentWidget(context, currentEstate, () {setState(() {});}),
+        ),
+        bottomNavigationBar: Container(
                 height: bottomNavigatorHeight,
                 alignment: AlignmentDirectional.topCenter,
                 color: myPrimaryColor,
@@ -163,7 +174,8 @@ class _EstateViewState extends State<EstateView> {
 
                     ]),
               )
-          );
+        )
+     );
   }
 }
 

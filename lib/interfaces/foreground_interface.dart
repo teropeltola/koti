@@ -11,6 +11,7 @@ import '../foreground_configurator.dart';
 import '../logic/events.dart';
 import '../logic/my_change_notifier.dart';
 import '../logic/observation.dart';
+import '../logic/task_handler_controller.dart';
 import '../logic/task_list.dart';
 import '../look_and_feel.dart';
 import '../my_task_handler.dart';
@@ -301,11 +302,11 @@ class ForegroundStandardTask {
   }
 }
 
-Future<bool> foregroundStandardTaskInitFunction(Map<String, dynamic> inputData) async {
-  return await foregroundStandardTaskExecutionFunction(inputData);
+Future<bool> foregroundStandardTaskInitFunction(TaskHandlerController controller, Map<String, dynamic> inputData) async {
+  return await foregroundStandardTaskExecutionFunction(controller, inputData);
 }
 
-Future<bool> foregroundStandardTaskExecutionFunction(Map<String, dynamic> inputData) async {
+Future<bool> foregroundStandardTaskExecutionFunction(TaskHandlerController controller,Map<String, dynamic> inputData) async {
   ForegroundStandardTask standardTask = ForegroundStandardTask.fromJson(inputData);
   print('foregroundStandardTaskExecutionFunction');
   await standardTask.execute();

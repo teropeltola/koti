@@ -56,6 +56,8 @@ class TestingThermostatDevice extends Device {
 
     services.addService(
         DeviceServiceClass<ThermostatControlService>(serviceName: thermostatService, services: thermostatControlService));
+
+    state.setConnected();
   }
 
   Future<void> updateData() async {
@@ -95,6 +97,7 @@ class TestingThermostatDevice extends Device {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
         ],
         widgets: [
           dumpDataMyFunctionalities(formatterWidget: formatterWidget),

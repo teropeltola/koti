@@ -121,6 +121,20 @@ class _EditShellyBluTrvViewState extends State<EditShellyBluTrvView> {
                             ]),
                       ),
                     ),
+                  Container(
+                      margin: myContainerMargin,
+                      padding: myContainerPadding,
+                      child: InputDecorator(
+                          decoration: const InputDecoration(
+                              labelText: 'Laitteeseen kytketyt toiminnallisuudet'),
+                          child: Column(
+                            children: [
+                              for (var functionality in shellyBluTrv.connectedFunctionalities)
+                                functionality.dumpData(formatterWidget: _myFunctionalityListFormat),
+                            ]
+                          )
+                      )
+                    ),
                     Container(
                         margin: myContainerMargin,
                         padding: myContainerPadding,
@@ -129,6 +143,7 @@ class _EditShellyBluTrvViewState extends State<EditShellyBluTrvView> {
                                 labelText: 'Laitteen yksityiskohtaiset tiedot'),
                             child: Column(
                               children: [
+                                Text('GW nimi: ${shellyBluTrv.myGw}'),
                                 Text('GW id: ${bluTrvInfo.status.id}'),
                                 Text('patterin lataustaso ${bluTrvInfo.status.battery} %'),
                                 Text('viimeisin päivitys: ${timestampToDateTimeString(bluTrvInfo.status.lastUpdatedTs)}'),
@@ -140,8 +155,11 @@ class _EditShellyBluTrvViewState extends State<EditShellyBluTrvView> {
                     ),
                     readyWidget(() async {
 
-                      // remove earlier version
+                      // remove earlier version and updated connected funnctionalities
                       widget.estate.removeDevice(widget.shellyBluTrv.id);
+                      for (var functionality in shellyBluTrv.connectedFunctionalities) {
+                        functionality.replaceDevice(widget.shellyBluTrv, shellyBluTrv);
+                      }
                       widget.shellyBluTrv.remove();
                       // create new
                       await shellyBluTrv.init();
@@ -195,8 +213,35 @@ class _EditShellyBluTrvViewState extends State<EditShellyBluTrvView> {
         );
       },
     );
-
-
-
   }
+}
+
+Widget _myFunctionalityListFormat(
+    {required String headline,
+    required List<String> textLines,
+    required List<Widget> widgets}) {
+    try {
+      return Container(
+          margin: myContainerMargin,
+          padding: myContainerPadding,
+          child: InputDecorator(
+              decoration: InputDecoration(labelText: headline),
+              textAlignVertical: TextAlignVertical.top,
+              child:
+              Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget> [
+                    for (var textLine in textLines)
+                      AutoSizeText(textLine, maxLines: 1),
+                    for (var widget in widgets)
+                      widget,
+                  ]
+              )
+          )
+      );
+    }
+    catch (e, st) {
+      log.error('Unvalid dump formatter with "$headline"', e, st);
+      return const Text('Sisäinen virhe tietojen tulostuksessa ("headline"');
+    }
 }

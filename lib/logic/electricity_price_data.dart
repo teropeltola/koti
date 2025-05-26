@@ -219,21 +219,37 @@ class ElectricityPriceData {
   }
 
   void updateElectricityPrice(List <TrendElectricity> electricityPrices) {
+    if (prices.isEmpty) {
+      prices.add(ElectricityTotalPriceItem());
+    }
+    // first skip the overlapping items from added prices
     int latestTimestamp = prices.last.timestamp;
-    int startingIndex = 0;
+    int startingIndex = -1;
     for (int index=0; index<electricityPrices.length; index++) {
       if (electricityPrices[index].timestamp >= latestTimestamp) {
         startingIndex = index;
         break;
       }
     }
+    if (startingIndex == -1) {
+      // no new prices
+      return;
+    }
+    // if the last timestamp is the same as the latest timestamp then we can
+    // remove the latest existing item
+    if (electricityPrices[startingIndex].timestamp == latestTimestamp) {
+      prices.removeLast();
+    }
+
+    int indexOfFirstAdded = prices.length;
+
     for (int index=startingIndex; index<electricityPrices.length; index++) {
       ElectricityTotalPriceItem item = ElectricityTotalPriceItem();
       item.timestamp = electricityPrices[index].timestamp;
       item.electricityPrice = noValue(electricityPrices[index].price) ? noValueDouble : tariff.priceWithVat(electricityPrices[index].price);
       prices.add(item);
     }
-    _storeTransferPrice(startingIndex);
+    _storeTransferPrice(indexOfFirstAdded);
   }
 
   void _storeTransferPrice(int fromIndex) {
@@ -514,6 +530,10 @@ class PriceComponents {
 class PriceAndTime {
   double price = noValueDouble;
   DateTime time = DateTime(0);
+
+  isEmpty() {
+    return time.year == 0;
+  }
 }
 
 class PriceAndDuration {

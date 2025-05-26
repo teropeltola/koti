@@ -13,6 +13,7 @@ import 'package:koti/devices/ouman/trend_ouman.dart';
 import '../../app_configurator.dart';
 import '../../foreground_configurator.dart';
 import '../../logic/observation.dart';
+import '../../logic/task_handler_controller.dart';
 import '../../trend/trend_event.dart';
 
 const Map <String, String> oumanCodes = {
@@ -39,6 +40,7 @@ class OumanForeground {
   String username = '';
   String password = '';
   String wifiName = '';
+  String directoryPath = '';
 
   OumanForeground({
     required this.estateId,
@@ -46,7 +48,8 @@ class OumanForeground {
     required this.username,
     required this.password,
     required this.url,
-    required this.wifiName
+    required this.wifiName,
+    required this.directoryPath
   }
   );
 
@@ -57,7 +60,8 @@ class OumanForeground {
         username: json['username'] ?? '',
         password: json['password'] ?? '',
         url: json['url'] ?? '',
-        wifiName: json['wifiName'] ?? ''
+        wifiName: json['wifiName'] ?? '',
+        directoryPath: json['directoryPath'] ?? '',
   );
 
   Map<String, dynamic> toJson() {
@@ -68,6 +72,7 @@ class OumanForeground {
     json['password'] = password;
     json['url'] = url;
     json['wifiName'] = wifiName;
+    json['directoryPath'] = directoryPath;
     return json;
   }
 
@@ -92,7 +97,7 @@ class OumanForeground {
     //await initHiveForForeground();
     await event.init();
 
-    await Hive.openBox<TrendOuman>(hiveTrendOumanName);
+    await Hive.openBox<TrendOuman>(hiveTrendOumanName, path: directoryPath);
     oumanBox = Hive.box<TrendOuman>(hiveTrendOumanName);
 
   }
@@ -232,14 +237,14 @@ class OumanForeground {
   }
 }
 
-Future<bool> oumanInitFunction(Map<String, dynamic> inputData) async {
+Future<bool> oumanInitFunction(TaskHandlerController controller, Map<String, dynamic> inputData) async {
   OumanForeground oumanForeground = OumanForeground.fromJson(inputData);
   await oumanForeground.init();
   await oumanForeground.getData();
   return true;
 }
 
-Future<bool> oumanExecutionFunction(Map<String, dynamic> inputData) async {
+Future<bool> oumanExecutionFunction(TaskHandlerController controller, Map<String, dynamic> inputData) async {
   OumanForeground oumanForeground = OumanForeground.fromJson(inputData);
   print('oumanExecutionFunction');
   await oumanForeground.init();

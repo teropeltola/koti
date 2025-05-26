@@ -44,18 +44,29 @@ class ShellyPro2 extends ShellyDevice with OnOffSwitch {
     await super.init();
 
     await initSwitch(
-      myEstate: myEstates.estateFromId(myEstateId),
-      device: this,
+        myEstate: myEstates.estateFromId(myEstateId),
+        device: this,
         boxName: id,
         getFunction: getFullPower,
         setFunction: setFullPower,
-        peekFunction: (){return switchStatus(ShellyPro2Id.both); },
+        peekFunction: () {
+          return switchStatus(ShellyPro2Id.both);
+        },
         defineTask: _defineTask
     );
 
     _initOfferedServices();
 
-    trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, switchStatus(ShellyPro2Id.both), 'alustus käynnistyksessä'));
+    if (state.connected()) {
+
+      trendBox.add(TrendSwitch(DateTime
+          .now()
+          .millisecondsSinceEpoch, myEstateId, id,
+          switchStatus(ShellyPro2Id.both), 'alustus käynnistyksessä'));
+    }
+    else {
+      setupShellyRetryTimer(init);
+    }
   }
 
 
@@ -145,6 +156,7 @@ class ShellyPro2 extends ShellyDevice with OnOffSwitch {
         headline: name,
         textLines: [
           'tunnus: $id',
+          'tila: ${state.stateText()}',
           'IP-osoite: $ipAddress',
         ],
         widgets: [

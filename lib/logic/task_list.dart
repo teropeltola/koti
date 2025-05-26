@@ -2,17 +2,20 @@ import 'package:flutter/material.dart';
 
 import '../foreground_configurator.dart';
 import '../look_and_feel.dart';
+import '../operation_modes/conditional_operation_modes.dart';
+import 'electricity_price_data.dart';
 
 class TaskItem {
   late String serviceName;
-  late String id;
+  late String estateId;
+  late String taskId;
   bool recurring = false;
   late Map <String, dynamic> parameters;
   late DateTime nextExecution;
   late int taskExecutionFunctionIndex;
   bool removeThis = false;
 
-  TaskItem(this.serviceName, this.id, this.recurring, this.parameters, this.nextExecution, this.taskExecutionFunctionIndex);
+  TaskItem(this.serviceName, this.estateId, this.taskId, this.recurring, this.parameters, this.nextExecution, this.taskExecutionFunctionIndex);
 
   void updateNextExecution() {
     print('task item ${this.runtimeType.toString()} missing updateNextExecution');
@@ -20,7 +23,12 @@ class TaskItem {
 
 
   String nextExecutionString() {
-    return myDateTimeFormatter(nextExecution, withoutYear: true);
+    if (nextExecution.year == _noExecutionValue) {
+      return '-';
+    }
+    else {
+      return myDateTimeFormatter(nextExecution, withoutYear: true);
+    }
   }
 
   @override
@@ -40,7 +48,7 @@ class TaskItem {
     return {
       'runtimeType': runtimeType.toString(),
       'serviceName': serviceName,
-      'id': id,
+      'id': taskId,
       'recurring': recurring,
       'parameters': parameters,
       'nextExecution': nextExecution.toIso8601String(),// Convert DateTime to ISO 8601 string
@@ -51,7 +59,7 @@ class TaskItem {
   // JSON Decoding
   TaskItem.fromJson(Map<String, dynamic> json) {
     serviceName = json['serviceName'] ?? 'serviceNameNotFound';
-    id = json['id'] ?? 'idNotFound';
+    taskId = json['id'] ?? 'idNotFound';
     recurring = json['recurring'] ?? false;
     parameters = json['parameters'] ?? {};
     nextExecution = DateTime.parse(json['nextExecution']); // Parse ISO 8601 string to DateTime
@@ -62,7 +70,8 @@ class TaskItem {
 class IntervalTask extends TaskItem {
   int intervalInMinutes = 60;
 
-  IntervalTask(String serviceName, String id, bool recurring, this.intervalInMinutes, Map <String, dynamic> parameters, DateTime dateTime, int functionIndex ) : super(serviceName, id, recurring, parameters, dateTime, functionIndex);
+  IntervalTask(String serviceName, String estateId, String id, bool recurring, this.intervalInMinutes, Map <String, dynamic> parameters, DateTime dateTime, int functionIndex )
+      : super(serviceName, estateId, id, recurring, parameters, dateTime, functionIndex);
 
   @override
   void updateNextExecution() {
@@ -102,7 +111,8 @@ class TimeOfDayTask extends TaskItem {
   int hour = 0;
   int minute = 0;
 
-  TimeOfDayTask(String serviceName, String id, bool recurring, this.hour, this.minute,  Map <String, dynamic> parameters, DateTime dateTime, int functionIndex) : super(serviceName, id, recurring, parameters, dateTime, functionIndex);
+  TimeOfDayTask(String serviceName, String estateId, String id, bool recurring, this.hour, this.minute,  Map <String, dynamic> parameters, DateTime dateTime, int functionIndex)
+      : super(serviceName, estateId, id, recurring, parameters, dateTime, functionIndex);
 
 
   @override
@@ -127,7 +137,15 @@ class TimeOfDayTask extends TaskItem {
   @override
   String description(Map <String, dynamic> parameters) {
     bool _powerOn = parameters[powerOn] ?? false;
-    return 'Asetetaan ${_powerOn ? 'päälle' : 'pois päältä'} noin kello ${hour.toString().padLeft(2, '0')}.${minute.toString().padLeft(2, '0')}.';
+    String serviceName = parameters[serviceNameKey] ?? '';
+    switch (serviceName) {
+      case electricityPriceForegroundService:
+        return 'Tieto haetaan noin kello ${hour.toString().padLeft(2, '0')}.${minute.toString().padLeft(2, '0')}.';
+      case standardForegroundService:
+        return 'Asetetaan ${_powerOn ? 'päälle' : 'pois päältä'} noin kello ${hour.toString().padLeft(2, '0')}.${minute.toString().padLeft(2, '0')}.';
+      default:
+        return 'foreground service description missing: $serviceName';
+    }
   }
 
   @override
@@ -145,19 +163,61 @@ class TimeOfDayTask extends TaskItem {
   }
 }
 
+const int _noExecutionValue = 9999;
+
 class PriceTask extends TaskItem {
 
+  SpotCondition condition = SpotCondition();
+  ElectricityPriceData electricityPriceData = ElectricityPriceData();
 
+  PriceTask(String serviceName, String estateId, String id, bool recurring, Map <String, dynamic> parameters, DateTime dateTime, int functionIndex, ElectricityPriceData initElectricityPriceData)
+      : super(serviceName, estateId, id, recurring, parameters, dateTime, functionIndex) {
+    condition = SpotCondition.fromJson(parameters[priceComparisonTypeKey] ?? {});
+    electricityPriceData = initElectricityPriceData;
+  }
 
-  PriceTask(String serviceName, String id, bool recurring, Map <String, dynamic> parameters, DateTime dateTime, int functionIndex) : super(serviceName, id, recurring, parameters, dateTime, functionIndex);
-
+  bool findNextExecution(int firstIndex) {
+    for (int index = firstIndex+1; index < electricityPriceData.prices.length; index++) {
+      double totalPrice = electricityPriceData.prices[index].totalPrice;
+      if (noValue(totalPrice)) {
+        // don't use this data
+      } else if (condition.isTrue(totalPrice, electricityPriceData)) {
+        nextExecution = electricityPriceData.slotStartingTime(index);
+        return true;
+      }
+    }
+    return false;
+  }
 
   @override
   void updateNextExecution() {
-    DateTime now = DateTime.now();
-//    nextExecution = DateTime(now.year, now.month, now.day, hour, minute);
-    if (nextExecution.isBefore(now)) {
-      nextExecution = nextExecution.add(Duration(days: 1));
+
+    int nextExecutionIndex = electricityPriceData.findIndex(nextExecution);
+    if (nextExecutionIndex < 0) { // not existing  data
+      return;
+    }
+
+    bool updated = findNextExecution(nextExecutionIndex+1);
+
+    if (!updated) {
+      // next execution time not found - update to a future date
+      nextExecution = DateTime(_noExecutionValue);
+    }
+  }
+
+  void updateAfterPriceDataUpdate(DateTime now) {
+    int nextExecutionIndex = 0;
+    if (nextExecution.year != _noExecutionValue) {
+      nextExecutionIndex = electricityPriceData.findIndex(nextExecution);
+    }
+    else {
+      nextExecutionIndex = electricityPriceData.findIndex(now);
+    }
+    bool updated = findNextExecution(nextExecutionIndex);
+
+    if (!updated) {
+      // next execution time not found - update to a future date
+      nextExecution = DateTime(_noExecutionValue);
     }
   }
 
@@ -173,8 +233,10 @@ class PriceTask extends TaskItem {
 
   @override
   String description(Map <String, dynamic> parameters) {
-    bool _powerOn = parameters[powerOn] ?? false;
-    return 'Asetetaan ${_powerOn ? 'päälle' : 'pois päältä'} sähkön hinta muuttuu  ${nextExecution.hour.toString().padLeft(2, '0')}.${nextExecution.minute.toString().padLeft(2, '0')}.';
+    bool toPowerOn = parameters[powerOn] ?? false;
+    SpotCondition spotCondition = SpotCondition.fromJson(parameters[priceComparisonTypeKey]);
+
+    return 'Asetetaan ${toPowerOn ? 'päälle' : 'pois päältä'}, kun sähkön hinta muuttuu ${spotCondition.comparison.changeText()} ${currencyCentInText(spotCondition.parameterValue)}.';
   }
 
   @override
@@ -198,6 +260,10 @@ TaskItem extendedTaskItemFromJson( Map<String, dynamic> json) {
       return IntervalTask.fromJson(json);
     case 'TimeOfDayTask':
       return TimeOfDayTask.fromJson(json);
+    case 'PriceTask':
+      return PriceTask.fromJson(json);
+    default:
+      print('unknown task type: $myType');
   }
   return TaskItem.fromJson(json);
 }

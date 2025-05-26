@@ -1,7 +1,6 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_reactive_value/flutter_reactive_value.dart';
 
 import 'package:koti/logic/observation.dart';
 
@@ -9,14 +8,9 @@ import '../../estate/estate.dart';
 import '../../logic/unique_id.dart';
 import '../../look_and_feel.dart';
 import '../device/device.dart';
-import '../wlan/active_wifi_name.dart';
+import '../device/device_state.dart';
 
 class Wifi extends Device {
-  late StreamSubscription<String> _wifiActivitySubscription;
-  late ActiveWifiBroadcaster _myWifiBroadcaster;
-
-  //bool iAmActive = false;
-  var iAmActive = ReactiveValueNotifier<bool>(false);
 
   Wifi();
 
@@ -27,54 +21,31 @@ class Wifi extends Device {
   @override
   Future<void> init () async {
     await super.init();
-    _initWifiListening();
-  }
-
-  void _initWifiListening() {
-    _myWifiBroadcaster = activeWifiBroadcaster;
-    _wifiActivitySubscription = activeWifiBroadcaster.setListener(listenWifiName);
-    iAmActive.value = isMyWifi(activeWifiBroadcaster.wifiName());
-
+    state.defineDependency(stateDependantOnWifi, name);
   }
 
   void initWifi(String myWifiName) {
     name = myWifiName;
     id = UniqueId('wifi').get();
-    _initWifiListening();
+    state.defineDependency(stateDependantOnWifi, name);
   }
 
   void changeWifiName(String newWifiName) {
     name = newWifiName;
-    bool oldStatus = iAmActive.value;
+    bool oldStatus = state.connected();
 
-    iAmActive.value = isMyWifi(_myWifiBroadcaster.wifiName());
+    state.defineDependency(stateDependantOnWifi, name);
 
-    if (oldStatus != iAmActive.value) {
+    if (oldStatus != state.connected()) {
       observationMonitor.add(ObservationLogItem(DateTime.now(),ObservationLevel.informatic));
-      //broadcast
     }
   }
 
-  void listenWifiName(String currentWifiName) {
-    bool oldStatus = iAmActive.value;
-
-    iAmActive.value = isMyWifi(currentWifiName);
-
-    if (oldStatus != iAmActive.value) {
-
-      if (iAmActive.value) {
-        observationMonitor.add((ObservationLogItem(DateTime.now(), ObservationLevel.ok)));
-      }
-      else {
-        observationMonitor.add((ObservationLogItem(DateTime.now(), ObservationLevel.warning)));
-      }
-      //broadcast
-    }
-  }
 
   // this is used in UI to get immediate updates
   bool reactiveIsActiveStatus(BuildContext context) {
-    return iAmActive.reactiveValue(context);
+    // TODO: NOT YET WORKING
+    return state.connected();
   }
 
   @override
@@ -105,9 +76,7 @@ class Wifi extends Device {
         headline: name,
         textLines: [
           'tunnus: $id',
-          iAmActive.value
-              ? 'wifi aktiivisena tässä laitteessa'
-              : 'wifi ei aktiivisena tässä laitteessa',
+          'tila: ${state.stateText()}',
         ],
         widgets: [
           dumpDataMyFunctionalities(formatterWidget: formatterWidget),
@@ -129,7 +98,6 @@ class Wifi extends Device {
   @override
   void dispose() {
     super.dispose();
-    _wifiActivitySubscription.cancel();
   }
 
 }

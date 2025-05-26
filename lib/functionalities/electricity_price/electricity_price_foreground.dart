@@ -12,28 +12,36 @@ import 'package:koti/functionalities/electricity_price/trend_electricity.dart';
 import '../../app_configurator.dart';
 import '../../devices/porssisahko/json/porssisahko_data.dart';
 import '../../foreground_configurator.dart';
+import '../../logic/electricity_price_data.dart';
+import '../../logic/price_collection.dart';
 import '../../logic/task_handler_controller.dart';
 import '../../look_and_feel.dart';
 
 class ElectricityPriceForeground {
   String internetPage = '';
   String directoryPath = '';
+  String estateId = '';
+
+  PriceCollection priceCollection = PriceCollection();
 
   ElectricityPriceForeground({
     required this.internetPage,
     required this.directoryPath,
+    required this.estateId,
   });
 
   factory ElectricityPriceForeground.fromJson(Map<String, dynamic> json) =>
       ElectricityPriceForeground(
         internetPage: json[internetPageKey] ?? '',
         directoryPath: json[boxPathKey] ?? '',
+        estateId: json[estateIdKey] ?? '',
       );
 
   Map<String, dynamic> toJson() {
     Map<String, dynamic> json = {};
     json[internetPageKey] = internetPage;
     json[boxPathKey] = directoryPath;
+    json[estateIdKey] = estateId;
     return json;
   }
 
@@ -47,10 +55,11 @@ class ElectricityPriceForeground {
     print(errorText);
   }
 
-  Future<void> init() async {
+  Future<void> init(TaskHandlerController taskHandlerController) async {
     //await initHiveForForeground();
     //await event.init();
 
+    priceCollection = taskHandlerController.priceCollection;
     await Hive.openBox<TrendElectricity>(hiveTrendElectricityPriceName, path: directoryPath);
     electricityBox = Hive.box<TrendElectricity>(hiveTrendElectricityPriceName);
     if (electricityBox.isEmpty) {
@@ -70,8 +79,7 @@ class ElectricityPriceForeground {
 
         List<TrendElectricity> trendElectricity = prices.convert();
         storePrices(trendElectricity);
-        priceCollection.updateEstateData("",trendElectricity);
-        // TODO: estateID is not real
+        priceCollection.updateEstateData(estateId, trendElectricity);
 
         return true;
       }
@@ -120,16 +128,17 @@ class ElectricityPriceForeground {
   }
 }
 
-Future<bool> electricityPriceInitFunction(Map<String, dynamic> inputData) async {
+Future<bool> electricityPriceInitFunction(TaskHandlerController taskHandlerController, Map<String, dynamic> inputData) async {
 
-  priceCollection.createPriceAgent(inputData[estateIdKey], inputData[electricityTariffKey], inputData[distributionTariffKey]);
-  return await electricityPriceExecutionFunction(inputData);
+  print('electricityPriceInitFunction called');
+  return await electricityPriceExecutionFunction(taskHandlerController, inputData);
 }
 
-Future<bool> electricityPriceExecutionFunction(Map<String, dynamic> inputData) async {
+Future<bool> electricityPriceExecutionFunction(TaskHandlerController taskHandlerController, Map<String, dynamic> inputData) async {
   ElectricityPriceForeground electricityPriceForeground = ElectricityPriceForeground.fromJson(inputData);
-  await electricityPriceForeground.init();
+  await electricityPriceForeground.init(taskHandlerController);
   bool status = await electricityPriceForeground.fetchDataFromNetwork();
+  print ('electricityPriceExecutionFunction returned $status');
   electricityPriceForeground.close();
   return status;
 }
