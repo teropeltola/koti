@@ -150,11 +150,13 @@ class Functionality {
 
 
   void pair(Device newDevice) {
+    connectedDevices.add(newDevice);
     newDevice.connectedFunctionalities.add(this);
   }
 
   void unPair(Device device) {
     device.connectedFunctionalities.remove(this);
+    connectedDevices.remove(device);
   }
 
   // both devices are already updated => only functionality is needed

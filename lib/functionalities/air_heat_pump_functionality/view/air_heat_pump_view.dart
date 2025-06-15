@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:koti/devices/mitsu_air-source_heat_pump/mitsu_air-source_heat_pump.dart';
 
+import '../../../logic/color_palette.dart';
 import '../../../logic/observation.dart';
+import '../../../look_and_feel.dart';
 import '../../functionality/view/functionality_view.dart';
 
 import '../air_heat_pump.dart';
@@ -9,22 +12,33 @@ import 'air_heat_pump_overview.dart';
 const String airHeatParameterFunction = 'airHeatParameterFunction';
 const String temperatureParameterId = 'temperature';
 
+class _AirHeatPumpPalette extends ColorPalette {
+  _AirHeatPumpPalette() : super() {
+    modify(ColorPaletteMode.workingOn, newIcon: Icons.heat_pump_rounded);
+    modify(ColorPaletteMode.workingOff, newIcon: Icons.heat_pump_rounded);
+  }
+
+}
+
 class AirHeatPumpView extends FunctionalityView {
 
   AirHeatPumpView();
 
-  ButtonStyle myButtonStyle() {
-    ObservationLevel observationLevel = (myFunctionality() as AirHeatPump).myPumpDevice().observationLevel();
-    return (observationLevel == ObservationLevel.alarm) ? buttonStyle(Colors.red, Colors.white) :
-    (observationLevel == ObservationLevel.warning) ? buttonStyle(Colors.yellow, Colors.white) :
-    buttonStyle(Colors.green, Colors.white);
-  }
-
   @override
   Widget gridBlock(BuildContext context, Function callback) {
 
+    MitsuHeatPumpDevice myPump = (myFunctionality() as AirHeatPump).myPumpDevice();
+
+
+    _AirHeatPumpPalette currentPalette = _AirHeatPumpPalette();
+    currentPalette.setCurrentPalette(
+        myPump.observationLevel() == ObservationLevel.alarm,
+        myPump.connected(),
+        myPump.onOffService.peek()
+    );
+
     return ElevatedButton(
-        style:myButtonStyle(),
+        style: buttonStyle(currentPalette.backgroundColor(), currentPalette.textColor()),
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
@@ -41,12 +55,13 @@ class AirHeatPumpView extends FunctionalityView {
                   (myFunctionality() as AirHeatPump).myPumpDevice().name,
                   style: const TextStyle(
                       fontSize: 12)),
-              shortOperationModeText(),
-              const Icon(
+              shortOperationModeText(currentPalette.textColor()),
+              currentPalette.iconWidget(),
+/*              const Icon(
                 Icons.heat_pump_rounded,
                 size: 50,
                 color: Colors.white,
-              ),
+              ),*/
             ])
     );
   }

@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/material.dart';
 
+import '../../../devices/device/device.dart';
+import '../../../logic/color_palette.dart';
 import '../../../look_and_feel.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../thermostat.dart';
@@ -28,7 +30,6 @@ class ThermostatView extends FunctionalityView {
 
   ThermostatView.fromJson(Map<String, dynamic> json);
 
-
   double _stepGranularity() {
     if (myThermostat().thermostatMode == ThermostatMode.simple) {
       return myThermostat().minAccuracy;
@@ -44,13 +45,33 @@ class ThermostatView extends FunctionalityView {
     return 1.0;
   }
 
+  ColorPalette _colorPalette() {
+    ColorPalette colorPalette = ColorPalette();
+    colorPalette.modify(ColorPaletteMode.all, newIcon: Icons.thermostat, newIconSize: 30.0);
+    if (myThermostat().thermostatMode == ThermostatMode.average) {
+      colorPalette.modify(ColorPaletteMode.workingOn, newBackgroundColor: Colors.cyan, newTextColor: Colors.white, newIconColor: Colors.white);
+      colorPalette.setCurrentPalette(false, true, true); // average is always working on
+    }
+    else {
+      if (myThermostat().connectedDevices.isEmpty) {
+        colorPalette.setCurrentPalette(true, false, false);
+      }
+      else {
+        Device myDevice = myThermostat().connectedDevices.first;
+        colorPalette.setCurrentPalette(
+            myDevice.alarmOn(), myDevice.connected(), true);
+      }
+    }
+    return colorPalette;
+  }
+
   @override
   Widget gridBlock(BuildContext context, Function callback) {
 
+    ColorPalette colorPalette = _colorPalette();
+
     return ElevatedButton(
-        style: true
-            ? buttonStyle(Colors.green, Colors.white)
-            : buttonStyle(Colors.grey, Colors.white),
+        style: buttonStyle(colorPalette.backgroundColor(), colorPalette.textColor()),
         onPressed: () async {
           callback();
         },
@@ -79,15 +100,11 @@ class ThermostatView extends FunctionalityView {
         child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                const Icon(
-                    Icons.thermostat,
-                    size: 30,
-                    color: Colors.white,
-                ),
-                AutoSizeText(
-                    '${temperatureString(myThermostat().currentTemperature())}',
-                    maxLines: 1,
-                    style: const TextStyle(
+                    colorPalette.iconWidget(),
+                    AutoSizeText(
+                      '${temperatureString(myThermostat().currentTemperature())}',
+                      maxLines: 1,
+                      style: const TextStyle(
                         fontSize: 12)
                 ),
               ]

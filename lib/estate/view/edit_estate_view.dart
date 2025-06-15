@@ -218,7 +218,7 @@ class _EditEstateViewState extends State<EditEstateView> {
   }
 }
 
-
+// this is called in the widget init routine => no real waiting
 Future <void> addElectricityPriceWithoutEditing(Estate estate) async {
   Porssisahko spot = Porssisahko();
   spot.name = 'spot';
@@ -233,77 +233,5 @@ Future <void> addElectricityPriceWithoutEditing(Estate estate) async {
   await electricityPrice.init();
 
 }
-
-/*
-Widget _estateOperationModes(
-    OperationMode operationMode,
-    Estate estate,
-    OperationModes operationModes
-) {
-
-  Widget myWidget;
-
-  if (operationMode is HierarchicalOperationMode) {
-    HierarchicalOperationMode hierarchicalOperationMode = operationMode;
-    List<Widget> featureTiles = [];
-    for (int index=0; index<estate.features.length; index++) {
-      if (estate.features[index].operationModes.nbrOfModes() > 0) {
-        featureTiles.add(
-          ListTile(
-            title: Text(estate.features[index].connectedDevices[0].name),
-            subtitle: OperationModesSelectionView2(
-              operationModes: estate.features[index].operationModes,
-              initSelectionName: hierarchicalOperationMode.operationCode(estate.features[index].id),
-              returnSelectedModeName: (opName){
-                  hierarchicalOperationMode.add(estate.features[index].id, opName );
-                  // updateOperationMode(hierarchicalOperationMode);
-                },)
-          ));
-        }
-      }
-      myWidget = Container(
-          margin: myContainerMargin,
-          padding: myContainerPadding,
-          child: InputDecorator(
-              decoration: const InputDecoration(
-                  labelText: 'Asunnon toimintotila määritys'),
-              child: (featureTiles.isEmpty)
-                  ? const Text('Asunnon toiminnoille ei ole määritelty toimintotiloja')
-                  : Column(children: [
-                ListView.builder(
-                    scrollDirection: Axis.vertical,
-                    shrinkWrap: true,
-                    itemCount: featureTiles.length,
-                    itemBuilder: (context, index) => Card(
-                        elevation: 6,
-                        margin: const EdgeInsets.all(10),
-                        child: featureTiles[index]
-                    )
-                )
-              ])
-          )
-      );
-    }
-  else if (operationMode is ConditionalOperationModes) {
-    myWidget = ConditionalOperationView(
-      conditions: operationMode
-    );
-  }
-  else {
-    myWidget = emptyWidget();
-  }
-  return myWidget;
-}
-
-class _SelectionOption {
-
-}
-
-Widget functionalitySelection(String title, List<_SelectionOption> selectionOptions) {
-  return Text(title);
-}
-
- */
-
 
 

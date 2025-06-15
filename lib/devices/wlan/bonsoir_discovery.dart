@@ -1,11 +1,9 @@
 import 'dart:async';
 
 import 'package:bonsoir/bonsoir.dart';
-//import 'package:bonsoir_example/models/app_service.dart';
 import 'package:flutter/material.dart';
 
 import '../../look_and_feel.dart';
-//import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /*
 /// The model provider.
@@ -41,7 +39,7 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
   /// Starts the Bonsoir discovery.
   Future<void> start() async {
     if (_bonsoirDiscovery == null || _bonsoirDiscovery!.isStopped) {
-      _bonsoirDiscovery = BonsoirDiscovery(type: _myType);
+      _bonsoirDiscovery = BonsoirDiscovery(type: _myType, printLogs: true);
       await _bonsoirDiscovery!.ready;
     }
 
@@ -59,11 +57,17 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
   /// Returns the service resolver function of the given service.
   VoidCallback? getServiceResolverFunction(BonsoirService service) => _servicesResolver[service.name];
 
-  /// store services while ignoring wlan host updates
+  /// store services while ignoring IPv6 host updates
   bool _storeService(BonsoirService service) {
     if (service is ResolvedBonsoirService) {
+      print('--- Resolved Service ---');
+      print('Service Name: ${service.name}');
+      print('Service Type: ${service.type}');
+      print('Service Port: ${service.port}');
+      print('Service Host (Primary): ${service.host}');
+      print('Service Attributes: ${service.attributes}');
       if (service.host!.contains('wlan')) {
-        log.info('bonsoir service storing (${service.name}) ignoring WLAN host (${service.toJson()})');
+        log.info('bonsoir service storing (${service.name}) ignoring IPv6 host (${service.toJson()})');
         return false;
       }
     }
@@ -73,6 +77,7 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
   }
   /// Triggered when a Bonsoir discovery event occurred.
   void _onEventOccurred(BonsoirDiscoveryEvent event) {
+
     if (event.service == null) {
       return;
     }
@@ -80,12 +85,18 @@ class BonsoirDiscoveryModel extends ChangeNotifier {
     BonsoirService service = event.service!;
     if (event.type == BonsoirDiscoveryEventType.discoveryServiceFound) {
       _servicesResolver[service.name] = () => _resolveService(service);
+      log.info('bonsoir service (${service
+          .name}) discoveryServiceFound (${service.toJson()})');
       _resolveService(service);
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceResolved) {
       if (_storeService(service)) {
         log.info('bonsoir service (${service
             .name}) discoveryServiceResolved (${service.toJson()})');
         _servicesResolver.remove(service.name);
+      }
+      else {
+        // ignore IPv6 host updates
+        //_resolveService(service);
       }
     } else if (event.type == BonsoirDiscoveryEventType.discoveryServiceResolveFailed) {
       _servicesResolver[service.name] = () => _resolveService(service);

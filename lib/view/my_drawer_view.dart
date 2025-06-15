@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 
+import 'package:flutter_nsd/flutter_nsd.dart';
+
+
 import 'package:koti/app_configurator.dart';
 import 'package:koti/functionalities/electricity_price/electricity_price_foreground.dart';
 import 'package:koti/interfaces/foreground_interface.dart';
@@ -18,6 +21,7 @@ import 'package:talker_flutter/talker_flutter.dart';
 import '../devices/device/device.dart';
 import '../devices/porssisahko/json/porssisahko_data.dart';
 import '../devices/wlan/active_wifi_name.dart';
+import '../devices/wlan/network_discovery.dart';
 import '../estate/estate.dart';
 import '../estate/view/edit_estate_view.dart';
 import '../estate/view/estate_list_view.dart';
@@ -98,9 +102,9 @@ Drawer myDrawerView( BuildContext context,
         ListTile(
           leading: const Icon(Icons.temple_hindu,
               color: _primaryDrawerFontColor, size: _primaryDrawerIconSize),
-          title: const Text('Testaa foreground', style: TextStyle(color: _primaryDrawerFontColor)),
+          title: const Text('Testaa nsd', style: TextStyle(color: _primaryDrawerFontColor)),
           onTap: () async {
-            await foregroundInterface.sendData(readDataStructureKey,{});
+            maxxin();
           }
           ),
 

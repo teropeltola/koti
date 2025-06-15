@@ -10,7 +10,7 @@ mixin OnOffSwitch {
 
   late TrendBox<TrendSwitch> trendBox;
 
-  late OnOffSwitchService service;
+  late OnOffSwitchService onOffService;
 
   Future <void> initSwitch(
       { required Estate myEstate,
@@ -25,19 +25,19 @@ mixin OnOffSwitch {
     await trend.initBox<TrendSwitch>(boxName);
     trendBox = trend.open(boxName);
 
-    service = OnOffSwitchService(setFunction, getFunction, peekFunction, defineTask, trendBox);
+    onOffService = OnOffSwitchService(setFunction, getFunction, peekFunction, defineTask, trendBox);
 
     myEstate.stateBroker.initNotifyingBoolStateInformer(
         device: device,
         serviceName: powerOnOffStatusService,
-        stateBoolNotifier: service.switchOn,
+        stateBoolNotifier: onOffService.switchOn,
         dataReadingFunction: peekFunction);
 
-    service.switchOn.data = await getFunction();
+    onOffService.switchOn.data = await getFunction();
   }
 
   DeviceServiceClass<OnOffSwitchService> onOffServiceDefinition() {
-    return DeviceServiceClass<OnOffSwitchService>(serviceName: powerOnOffWaitingService, services: service);
+    return DeviceServiceClass<OnOffSwitchService>(serviceName: powerOnOffWaitingService, services: onOffService);
   }
 }
 

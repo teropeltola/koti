@@ -7,6 +7,7 @@ import 'package:koti/service_catalog.dart';
 
 import '../../../devices/mixins/on_off_switch.dart';
 import '../../../logic/services.dart';
+import '../../../logic/color_palette.dart';
 import '../../functionality/view/functionality_view.dart';
 import '../boiler_heating_functionality.dart';
 
@@ -45,14 +46,15 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
   @override
   Widget gridBlock(BuildContext context, Function callback) {
 
-    ColorPalette currentPalette = BoilerHeatingPalette().currentPalette(
-      false, // TODO: alarm set on implemented
+    ColorPalette currentPalette = BoilerHeatingPalette();
+    currentPalette.setCurrentPalette(
+      false, // TODO: alarm set not implemented
       deviceConnected(),
       mySwitch().services.peek()
     );
 
     return ElevatedButton(
-        style: buttonStyle(currentPalette.backgroundColor, currentPalette.textColor),
+        style: buttonStyle(currentPalette.backgroundColor(), currentPalette.textColor()),
         onPressed: () async {
           await Navigator.push(context, MaterialPageRoute(
             builder: (context) {
@@ -74,13 +76,9 @@ class BoilerHeatingFunctionalityView extends FunctionalityView {
                 fontSize: 12)),
             _currentOperationModeWidget(
                 myBoilerFunctionality().operationModes.currentModeName(),
-                currentPalette.textColor
+                currentPalette.textColor()
             ),
-            Icon(
-              currentPalette.icon,
-              size: 40,
-              color: currentPalette.iconColor
-            )
+            currentPalette.iconWidget(),
           ]),
 
     );

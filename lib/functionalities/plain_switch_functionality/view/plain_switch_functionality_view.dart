@@ -4,6 +4,7 @@ import 'package:koti/devices/testing_switch_device/testing_switch_device.dart';
 import 'package:provider/provider.dart';
 
 import '../../../devices/device/device.dart';
+import '../../../logic/color_palette.dart';
 import '../../../logic/state_broker.dart';
 import '../../../look_and_feel.dart';
 import '../../../trend/trend_switch.dart';
@@ -164,11 +165,12 @@ class ItemWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    ColorPalette colorPalette = ColorPalette();
     if (!mySwitch.myDevice().connected()) {
-      ColorPalette colorPalette = ColorPalette().notConnected();
+      colorPalette.currentMode = ColorPaletteMode.notConnected;
       return ElevatedButton(
           style: _buttonStyle(
-              colorPalette.backgroundColor, colorPalette.textColor),
+              colorPalette.backgroundColor(), colorPalette.textColor()),
           onPressed: () async {
             await informMatterToUser(context, "Laitteeseen ei ole yhteyttä",
                 "Odota, kun yhteys on luotu uudestaan");
@@ -185,10 +187,7 @@ class ItemWidget extends StatelessWidget {
                         .name,
                     style: const TextStyle(
                         fontSize: 12)),
-                Icon(colorPalette.icon,
-                    size: 50,
-                    color: colorPalette.iconColor
-                )
+                colorPalette.iconWidget()
               ])
       );
     }
@@ -198,9 +197,9 @@ class ItemWidget extends StatelessWidget {
           create: (context) => myBoolNotifier,
           child: Consumer<StateBoolNotifier>(
               builder: (context, notifier, child) {
-                ColorPalette colorPalette = notifier.data ? ColorPalette().workingOn() : ColorPalette().workingOff();
+                 colorPalette.setCurrentPalette(false, false, notifier.data);
                 return ElevatedButton(
-                    style:  _buttonStyle(colorPalette.backgroundColor, colorPalette.textColor),
+                    style:  _buttonStyle(colorPalette.backgroundColor(), colorPalette.textColor()),
                     onPressed: () async {
                       await mySwitch.toggle();
                       callback();
@@ -214,13 +213,7 @@ class ItemWidget extends StatelessWidget {
                           Text(mySwitch.myDevice().name,
                               style: const TextStyle(
                                   fontSize: 12)),
-                          Icon(
-                            notifier.data
-                                ? Icons.power
-                                : Icons.power_off,
-                            size: 50,
-                            color: colorPalette.iconColor
-                          )
+                          colorPalette.iconWidget()
                         ])
                 );
               }

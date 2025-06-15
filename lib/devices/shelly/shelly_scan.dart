@@ -29,15 +29,7 @@ String _findTypePrefix(String s) {
     return strings[0];
   }
 }
-/*
-class ShellyScanItem {
-  String shellyType = '';
-  String shellyId = '';
 
-  ShellyScanItem(this.shellyType, this.shellyId);
-}
-
- */
 Iterable<BonsoirService> testShellyDiscovery() {
   Iterable<BonsoirService> x = [
     BonsoirService(name:'shellyplusplugs-123456', type: 'type1', port: 1),
@@ -46,6 +38,7 @@ Iterable<BonsoirService> testShellyDiscovery() {
   ];
   return x;
 }
+
 class ShellyScan {
   List <List<String>> response = [];
   BonsoirDiscoveryModel bonsoirDiscoveryModel = BonsoirDiscoveryModel();
@@ -57,10 +50,8 @@ class ShellyScan {
   }
 
   Future<void> init() async {
-    print('##debug## init()');
     bonsoirDiscoveryModel.init(shellyBonsoirService);
     await bonsoirDiscoveryModel.start();
-    print('##debug## init() done response: $response');
   }
 
   List<String> listPossibleServices() {
@@ -81,7 +72,7 @@ class ShellyScan {
     if (dyn.runtimeType != ResolvedBonsoirService) {
       dyn =  ResolvedBonsoirService(name: bonsoirNotFound,type: '', host: '', port: 0,  attributes: {});
     }
-    print('###debug### resolveServiceData: $dyn');
+    print('###debug### resolveServiceData ($serviceName with type ${dyn.runtimeType}): $dyn');
     return dyn as ResolvedBonsoirService;
   }
 

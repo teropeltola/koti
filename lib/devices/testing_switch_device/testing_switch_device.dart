@@ -62,21 +62,21 @@ class TestingSwitchDevice extends Device with OnOffSwitch {
   }
 
   bool switchToggle() {
-    setPower(!service.switchOn.data, 'Painokytkin');
-    return service.switchOn.data;
+    setPower(!onOffService.switchOn.data, 'Painokytkin');
+    return onOffService.switchOn.data;
   }
 
   bool switchStatus() {
-    return service.switchOn.data;
+    return onOffService.switchOn.data;
   }
 
   void setPower(bool value, String caller) {
-    service.switchOn.data = value;
+    onOffService.switchOn.data = value;
     trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, value, caller));
   }
 
   bool getPower()  {
-    return service.switchOn.data;
+    return onOffService.switchOn.data;
   }
 
   Future <void> asyncSetPower(bool value, String caller) async {

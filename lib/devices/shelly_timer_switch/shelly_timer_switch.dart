@@ -46,19 +46,19 @@ class ShellyTimerSwitch extends ShellyDevice with OnOffSwitch {
   }
 
   bool switchToggle() {
-    setPower(!service.switchOn.data, 'Painokytkin');
-    return service.switchOn.data;
+    setPower(!onOffService.switchOn.data, 'Painokytkin');
+    return onOffService.switchOn.data;
   }
 
   bool switchStatus() {
     // todo: should we read from the device?
-    return service.switchOn.data;
+    return onOffService.switchOn.data;
   }
 
   Future <void> setPower(bool value, String caller) async {
-    service.switchOn.data = value;
+    onOffService.switchOn.data = value;
     trendBox.add(TrendSwitch(DateTime.now().millisecondsSinceEpoch, myEstateId, id, value, caller));
-    await setSwitchOn(0, service.switchOn.data);
+    await setSwitchOn(0, onOffService.switchOn.data);
   }
 
   Future<bool> getPower() async {

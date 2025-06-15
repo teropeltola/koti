@@ -39,24 +39,24 @@ class FunctionalityView {
     return emptyWidget();
   }
 
-  Widget shortOperationModeText() {
+  Widget shortOperationModeText(Color color) {
     Functionality functionality = myFunctionality();
     if (functionality.operationModes.showCurrent())  {
       return Container(
         padding: const EdgeInsets.all(3.0), // Adjust padding as needed
         decoration: BoxDecoration(
           border: Border.all(
-            color: Colors.white, // Border color
+            color: color, // Border color
             width: 1.0, // Border width
           ),
           borderRadius: BorderRadius.circular(5.0), // Rounded corners
         ),
         child: Text(
           functionality.operationModes.currentModeName(),
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 10.0, // Adjust font size as needed
             fontWeight: FontWeight.normal, // Adjust font weight as needed
-            //color: Colors.black, // Text color
+            color: color, // Text color
           ),
         ),
       );
